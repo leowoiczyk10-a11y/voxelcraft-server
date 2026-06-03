@@ -52,6 +52,106 @@ const players = new Map();          // id -> {id,name,x,y,z,ry,health,hunger}
 let dayTime = 0.25;                 // 0..1, fuer alle synchron
 let nextId = 1;
 
+// ---- Welt-Persistenz: Supabase (Cloud, dauerhaft) ODER lokale Datei (Fallback) ----
+// Supabase wird nur genutzt, wenn diese zwei Umgebungsvariablen gesetzt sind:
+//   SUPABASE_URL   = https://deinprojekt.supabase.co
+//   SUPABASE_KEY   = der service_role key
+// Bei Railway traegst du die unter "Variables" ein. Ohne sie: ganz normales
+// Speichern in die lokale Datei (saves/world-save.json).
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_KEY = process.env.SUPABASE_KEY || '';
+const USE_SUPABASE = !!(SUPABASE_URL && SUPABASE_KEY);
+const WORLD_ROW_ID = 'main';            // wir speichern die Welt in einer Zeile mit dieser id
+
+const SAVE_DIR = path.join(__dirname, 'saves');
+const SAVE_FILE = path.join(SAVE_DIR, 'world-save.json');
+let saveDirty = false;          // gibt es ungespeicherte Aenderungen?
+let saving = false;             // gerade ein Save am Laufen? (verhindert Ueberschneidungen)
+
+// ---------- Supabase-Helfer (REST API, kein extra Paket noetig) ----------
+async function supaLoad(){
+  const url = SUPABASE_URL + '/rest/v1/worlds?id=eq.' + WORLD_ROW_ID + '&select=data';
+  const res = await fetch(url, { headers: {
+    apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY
+  }});
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const rows = await res.json();
+  return (rows && rows[0] && rows[0].data) ? rows[0].data : null;
+}
+async function supaSave(data){
+  // upsert: legt die Zeile an oder aktualisiert sie
+  const url = SUPABASE_URL + '/rest/v1/worlds?on_conflict=id';
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates'
+    },
+    body: JSON.stringify([{ id: WORLD_ROW_ID, data }])
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + (await res.text()));
+}
+
+async function loadWorld(){
+  // 1) Supabase versuchen
+  if (USE_SUPABASE){
+    try {
+      const data = await supaLoad();
+      if (data){
+        if (Array.isArray(data.overrides)) for (const [k,v] of data.overrides) blockOverrides.set(k, v);
+        if (typeof data.dayTime === 'number') dayTime = data.dayTime;
+        console.log(' Spielstand aus Supabase geladen: ' + blockOverrides.size + ' Block-Aenderungen.');
+        return;
+      }
+      console.log(' Supabase verbunden, aber noch keine Welt gespeichert. Neue Welt.');
+      return;
+    } catch(e){
+      console.log(' Supabase-Laden fehlgeschlagen (' + e.message + '), nutze lokale Datei.');
+    }
+  }
+  // 2) lokale Datei (Fallback)
+  try {
+    if (!fs.existsSync(SAVE_FILE)) { console.log(' Kein Spielstand gefunden, neue Welt.'); return; }
+    const data = JSON.parse(fs.readFileSync(SAVE_FILE, 'utf8'));
+    if (Array.isArray(data.overrides)) for (const [k,v] of data.overrides) blockOverrides.set(k, v);
+    if (typeof data.dayTime === 'number') dayTime = data.dayTime;
+    console.log(' Spielstand (lokal) geladen: ' + blockOverrides.size + ' Block-Aenderungen.');
+  } catch(e){ console.log(' Spielstand beschaedigt, starte neue Welt. (' + e.message + ')'); }
+}
+
+async function saveWorld(){
+  if (saving) return;            // nicht zwei Saves gleichzeitig
+  saving = true;
+  const data = { overrides: [...blockOverrides.entries()], dayTime, savedAt: Date.now() };
+  try {
+    if (USE_SUPABASE){
+      await supaSave(data);
+      saveDirty = false;
+    } else {
+      if (!fs.existsSync(SAVE_DIR)) fs.mkdirSync(SAVE_DIR, { recursive: true });
+      const tmp = SAVE_FILE + '.tmp';
+      fs.writeFileSync(tmp, JSON.stringify(data));
+      fs.renameSync(tmp, SAVE_FILE);
+      saveDirty = false;
+    }
+  } catch(e){
+    console.log(' FEHLER beim Speichern: ' + e.message);
+    // bei Supabase-Fehler zusaetzlich lokal sichern, damit nichts verloren geht
+    if (USE_SUPABASE){
+      try { if (!fs.existsSync(SAVE_DIR)) fs.mkdirSync(SAVE_DIR,{recursive:true});
+        fs.writeFileSync(SAVE_FILE, JSON.stringify(data)); } catch(_){}
+    }
+  } finally { saving = false; }
+}
+
+console.log(USE_SUPABASE ? ' Speicher-Modus: Supabase (Cloud)' : ' Speicher-Modus: lokale Datei');
+loadWorld();
+// regelmaessig speichern, aber nur wenn sich was geaendert hat
+setInterval(() => { if (saveDirty) saveWorld(); }, 15000);
+// auch beim sauberen Beenden speichern
+process.on('SIGINT', async () => { console.log('\n Speichere Welt...'); await saveWorld(); process.exit(0); });
+process.on('SIGTERM', async () => { await saveWorld(); process.exit(0); });
+
 // ---- Mobs serverseitig (alle sehen dieselben) ----
 const mobs = new Map();             // mobId -> {id,kind,x,y,z,dir,hp,hostile}
 let nextMobId = 1;
@@ -120,6 +220,7 @@ wss.on('connection', (ws) => {
         { const k = m.x+'_'+m.y+'_'+m.z;
           if (m.id === 0) blockOverrides.set(k, 0);   // abgebaut
           else blockOverrides.set(k, m.id);           // gesetzt
+          saveDirty = true;                            // -> wird gespeichert
           broadcast({ t:'block', x:m.x, y:m.y, z:m.z, id:m.id }, id);
         }
         break;

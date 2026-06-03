@@ -322,8 +322,8 @@ const BLOCKS = {
   OBSIDIAN: { id:20, name:'Obsidian',    top:'#1a0a2e', side:'#1a0a2e', bottom:'#1a0a2e', solid:true },
   LAVA:     { id:21, name:'Lava',        top:'#e8420a', side:'#e8420a', bottom:'#e8420a', solid:false, transparent:true, light:true },
   LANTERN:  { id:22, name:'Laterne',     top:'#ffc060', side:'#b8923a', bottom:'#ffc060', solid:true, light:true },
-  FLOWER:   { id:23, name:'Blume',       top:'#ff4a90', side:'#ff4a90', bottom:'#ff4a90', solid:false },
-  MUSHROOM: { id:24, name:'Pilz',        top:'#cc3322', side:'#cc3322', bottom:'#cc3322', solid:false },
+  FLOWER:   { id:23, name:'Blume',       top:'#ff4a90', side:'#ff4a90', bottom:'#ff4a90', solid:false, transparent:true },
+  MUSHROOM: { id:24, name:'Pilz',        top:'#cc3322', side:'#cc3322', bottom:'#cc3322', solid:false, transparent:true },
   FURNACE:  { id:25, name:'Schmelzofen', top:'#6a6a6a', side:'#5a5a5a', bottom:'#5a5a5a', solid:true },
   MYCEL:    { id:26, name:'Mycel',       top:'#7a5a7a', side:'#6b4a28', bottom:'#6b4a28', solid:true },
   GRAVEL:   { id:27, name:'Kies',        top:'#8a8080', side:'#8a8080', bottom:'#8a8080', solid:true },
@@ -463,6 +463,39 @@ function makeTexture(hex,pattern,seed){
     for(let i=0;i<s;i++)for(let j=0;j<s;j++){const n=(rnd(i,j+210)-.5)*14;
       const purp=rnd(i+21,j)<0.3;
       if(purp)px(i,j,[140+n,100+n,140+n]);else px(i,j,[100+n,80+n,60+n]);}
+  } else if(pattern==='flower'){
+    // transparenter Hintergrund, gruener Stiel, farbige Bluete
+    x.clearRect(0,0,s,s);
+    const cx=Math.floor(s/2);
+    // Stiel
+    x.fillStyle='#2f8f3a';
+    for(let i=Math.floor(s*0.45);i<s;i++)x.fillRect(cx,i,Math.max(1,Math.floor(s/16)),1);
+    // ein, zwei Blaetter am Stiel
+    x.fillStyle='#3aa84a';
+    x.fillRect(cx-Math.floor(s/8),Math.floor(s*0.62),Math.floor(s/8),Math.max(1,Math.floor(s/16)));
+    x.fillRect(cx+Math.floor(s/16),Math.floor(s*0.72),Math.floor(s/8),Math.max(1,Math.floor(s/16)));
+    // Bluetenblaetter (Farbe je nach Seed -> verschiedene Blumen)
+    const palette=[[230,70,90],[240,200,60],[150,90,210],[240,130,60],[235,235,245]];
+    const col=palette[(seed||0)%palette.length];
+    const r=Math.max(2,Math.floor(s*0.22)), by=Math.floor(s*0.32);
+    x.fillStyle=rgb2hex(col[0],col[1],col[2]);
+    // 5 Blueten-"Punkte" rund um die Mitte
+    for(let a=0;a<5;a++){const ang=a/5*Math.PI*2;
+      x.beginPath();x.arc(cx+Math.cos(ang)*r*0.7, by+Math.sin(ang)*r*0.7, r*0.5,0,7);x.fill();}
+    // gelbe Mitte
+    x.fillStyle='#ffd23a';x.beginPath();x.arc(cx,by,r*0.45,0,7);x.fill();
+  } else if(pattern==='mushroom'){
+    x.clearRect(0,0,s,s);
+    const cx=Math.floor(s/2);
+    // weisser Stiel
+    x.fillStyle='#efe8d8';
+    for(let i=Math.floor(s*0.5);i<s*0.92;i++)x.fillRect(cx-Math.floor(s/16),i,Math.max(2,Math.floor(s/8)),1);
+    // roter Hut mit weissen Punkten
+    x.fillStyle=rgb2hex(base[0],base[1],base[2]);
+    x.beginPath();x.ellipse(cx,Math.floor(s*0.45),Math.floor(s*0.32),Math.floor(s*0.22),0,0,7);x.fill();
+    x.fillStyle='#fff';
+    for(let k=0;k<4;k++){const px2=cx+Math.floor((rnd(k,3)-.5)*s*0.4), py2=Math.floor(s*0.4+(rnd(k,4)-.5)*s*0.18);
+      x.beginPath();x.arc(px2,py2,Math.max(1,s/20),0,7);x.fill();}
   }
   return c;
 }
@@ -495,6 +528,8 @@ function patternFor(id,face){
     case 29: return 'pumpkin';
     case 30: return 'ice';
     case 31: return 'mossy';
+    case 23: return 'flower';
+    case 24: return 'mushroom';
     default: return null;
   }
 }
