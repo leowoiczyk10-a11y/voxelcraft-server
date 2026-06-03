@@ -624,8 +624,8 @@ class Mob{
       [[-.18,-.35],[.18,-.35],[-.18,.35],[.18,.35]].forEach(([lx,lz])=>{
         const l=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.45,0.2),legMat);l.position.set(lx,0.22,lz);g.add(l);this.legsArr.push(l);});
     } else if(this.kind==='zombie'||this.kind==='skeleton'){
-      const torso=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.7,0.3),bodyMat);torso.position.y=1.0;torso.castShadow=true;g.add(torso);
-      const head=new THREE.Mesh(new THREE.BoxGeometry(0.45,0.45,0.45),headMat);head.position.set(0,1.6,0);head.castShadow=true;g.add(head);
+      const torso=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.7,0.3),bodyMat);torso.position.y=1.0;g.add(torso);
+      const head=new THREE.Mesh(new THREE.BoxGeometry(0.45,0.45,0.45),headMat);head.position.set(0,1.6,0);g.add(head);
       const eye=new THREE.MeshLambertMaterial({color:this.kind==='zombie'?0x102010:0x222222});
       [-0.1,0.1].forEach(ex=>{const e=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.08,0.05),eye);e.position.set(ex,1.62,0.23);g.add(e);});
       [[-0.33],[0.33]].forEach(([ax])=>{const a=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.6,0.15),bodyMat);a.position.set(ax,1.0,0.15);a.rotation.x=-1.2;g.add(a);this.arms.push(a);});
@@ -636,8 +636,8 @@ class Mob{
       const beak=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.1,0.15),new THREE.MeshLambertMaterial({color:0xe0a020}));beak.position.set(0,0.78,0.42);g.add(beak);
       [[-.1],[.1]].forEach(([lx])=>{const l=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.3,0.06),legMat);l.position.set(lx,0.15,0);g.add(l);this.legsArr.push(l);});
     } else {
-      const body=new THREE.Mesh(new THREE.BoxGeometry(0.8*sc,0.7*sc,1.1*sc),bodyMat);body.position.y=0.6;body.castShadow=true;g.add(body);
-      const head=new THREE.Mesh(new THREE.BoxGeometry(0.5*sc,0.5*sc,0.5*sc),headMat);head.position.set(0,0.8,0.7*sc);head.castShadow=true;g.add(head);
+      const body=new THREE.Mesh(new THREE.BoxGeometry(0.8*sc,0.7*sc,1.1*sc),bodyMat);body.position.y=0.6;g.add(body);
+      const head=new THREE.Mesh(new THREE.BoxGeometry(0.5*sc,0.5*sc,0.5*sc),headMat);head.position.set(0,0.8,0.7*sc);g.add(head);
       if(this.kind==='cow'){const hm=new THREE.MeshLambertMaterial({color:0xeeeeee});
         [-0.15,0.15].forEach(hx=>{const h=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.08,0.08),hm);h.position.set(hx,1.0,0.7);g.add(h);});}
       if(this.kind==='pig'){const nm=new THREE.MeshLambertMaterial({color:0xff9090});
@@ -656,7 +656,7 @@ class Mob{
     if(this.attackAnim>0)this.attackAnim-=dt;
     const toPlayer=new THREE.Vector3().subVectors(player.pos,this.pos);const dist=toPlayer.length();
     let moving=false;
-    if(this.kind==='zombie'&&ctx&&!ctx.isNight){this._burnT=(this._burnT||0)+dt;if(this._burnT>=1){this._burnT=0;this.hit(1,0,0);if(this.dead)return;}}
+    if(this.hostile&&this.kind!=='creeper'&&ctx&&!ctx.isNight){this._burnT=(this._burnT||0)+dt;if(this._burnT>=0.5){this._burnT=0;this.burned=true;this.hit(2,0,0);if(this.dead){this.burned=true;return;}}}
     if(this.hostile&&dist<18){
       this.dir=Math.atan2(toPlayer.x,toPlayer.z);
       if(this.kind==='skeleton'){
@@ -720,8 +720,10 @@ class MobManager{
     if(this.spawnT<=0){this.spawnT=4;
       const passive=this.mobs.filter(m=>!m.hostile).length;
       const hostile=this.mobs.filter(m=>m.hostile).length;
-      if(passive<8)this.spawn(false);
-      if(isNight&&hostile<8)this.spawn(true);}
+      if(this.mobs.length<16){
+        if(passive<8)this.spawn(false);
+        if(isNight&&hostile<8)this.spawn(true);
+      }}
     const ctx={isNight,shoot:(f,d,dm)=>this._shoot(f,d,dm),explode:(pos,r,dmg)=>this._explode(pos,r,dmg)};
     for(const m of this.mobs)m.update(dt,this.player,ctx);
     for(let i=this.projectiles.length-1;i>=0;i--){const p=this.projectiles[i];p.life-=dt;p.vel.y-=9*dt;
@@ -731,7 +733,7 @@ class MobManager{
       if(hitPlayer)this.player.hurt(p.dmg);
       if(p.life<=0||hitGround||hitPlayer){this.scene.remove(p.mesh);this.projectiles.splice(i,1);}}
     for(let i=this.mobs.length-1;i>=0;i--){const m=this.mobs[i];const far=m.pos.distanceTo(this.player.pos)>48;
-      if(m.dead||far){this.scene.remove(m.mesh);if(m.dead&&m.hp<=0&&onDrop)onDrop(m.dropId,m.dropN);this.mobs.splice(i,1);}}
+      if(m.dead||far){this.scene.remove(m.mesh);if(m.dead&&m.hp<=0&&!m.burned&&!far&&onDrop)onDrop(m.dropId,m.dropN);this.mobs.splice(i,1);}}
   }
   _explode(pos,radius,dmg){
     // Blöcke in Radius zerstören
