@@ -589,7 +589,7 @@ function makeTexture(hex,pattern,seed){
     for(let i=Math.floor(s*0.5);i<s*0.92;i++)x.fillRect(cx-Math.floor(s/16),i,Math.max(2,Math.floor(s/8)),1);
     // roter Hut mit weissen Punkten
     x.fillStyle=rgb2hex(base[0],base[1],base[2]);
-    x.beginPath();x.ellipse(cx,Math.floor(s*0.45),Math.floor(s*0.32),Math.floor(s*0.22),0,0,7);x.fill();
+    x.save();x.scale(1,0.22/0.32);x.beginPath();x.arc(cx,Math.floor(s*0.45*(0.32/0.22)),Math.floor(s*0.32),0,Math.PI*2);x.restore();x.fill();
     x.fillStyle='#fff';
     for(let k=0;k<4;k++){const px2=cx+Math.floor((rnd(k,3)-.5)*s*0.4), py2=Math.floor(s*0.4+(rnd(k,4)-.5)*s*0.18);
       x.beginPath();x.arc(px2,py2,Math.max(1,s/20),0,7);x.fill();}
@@ -1556,12 +1556,13 @@ class Chunk{
       }
     }
     // Dungeon-Räume (selten)
+    const biomeCenter=w.biomeAt(bx+Math.floor(cs/2),bz+Math.floor(cs/2));
     const dungeonR=w.hashRand(bx+7,0,bz+7);
     if(dungeonR<0.03){
       const dy=6+Math.floor(w.hashRand(bx,500,bz)*5);
       this._dungeon(7,dy,7);
     }
-    if(biome===BIOME.PLAINS&&w.hashRand(bx+.3,300,bz+.3)<0.0008)this._village(Math.floor(bx%16),hh,Math.floor(bz%16));
+    if(biomeCenter===BIOME.PLAINS&&w.hashRand(bx+.3,300,bz+.3)<0.0008)this._village(Math.floor(bx%16),hh,Math.floor(bz%16));
     // Overrides
     const ov=this.world.overrides;
     for(let lx=0;lx<cs;lx++)for(let lz=0;lz<cs;lz++)for(let y=0;y<this.H;y++){
