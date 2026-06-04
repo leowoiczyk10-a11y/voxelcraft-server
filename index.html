@@ -324,6 +324,37 @@ canvas{display:block;}
   <div id="mpStatus" style="font-size:12px;opacity:.8;margin-top:4px;"></div>
 </div>
 
+<!-- Chat -->
+<div id="chatBox" style="position:fixed;bottom:120px;left:8px;width:280px;max-height:160px;overflow-y:auto;z-index:9;pointer-events:none;display:flex;flex-direction:column;gap:2px;" id="chatBox"></div>
+<div id="chatInput" style="display:none;position:fixed;bottom:84px;left:8px;z-index:10;display:none;gap:6px;align-items:center;">
+  <input id="chatField" type="text" maxlength="80" placeholder="Nachricht..." style="background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.4);color:#fff;padding:6px 10px;border-radius:6px;font-family:monospace;font-size:13px;width:220px;outline:none;">
+  <button id="chatSend" style="padding:6px 12px;background:#4a90d9;border:none;color:#fff;border-radius:6px;font-family:monospace;cursor:pointer;">→</button>
+</div>
+
+<!-- Handel-Panel -->
+<div class="panel" id="tradePanel"><h2>🏪 Handel</h2>
+  <div id="tradeList" style="display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow-y:auto;width:100%;max-width:400px;"></div>
+  <button id="tradeClose">Schließen</button></div>
+
+<!-- Verzauberungs-Panel -->
+<div class="panel" id="enchantPanel"><h2>✨ Verzauberung</h2>
+  <div style="font-size:12px;opacity:.7;text-align:center;margin-bottom:8px">Braucht: Zauberbuch + Lapislazuli + XP</div>
+  <div id="enchantStatus" style="text-align:center;font-size:11px;margin-bottom:8px"></div>
+  <div id="enchantList" style="display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow-y:auto;width:100%;max-width:380px;"></div>
+  <button id="enchantClose">Schließen</button></div>
+
+<!-- Rezept-Browser -->
+<div class="panel" id="recipePanel" style="overflow-y:auto;"><h2>📖 Rezeptbuch</h2>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:8px" id="recipeFilter">
+    <button data-filter="" style="padding:4px 10px;background:#444;border:1px solid #666;color:#fff;border-radius:5px;font-family:monospace;font-size:11px">Alle</button>
+    <button data-filter="Werkzeug" style="padding:4px 10px;background:#444;border:1px solid #666;color:#fff;border-radius:5px;font-family:monospace;font-size:11px">⚒ Werkzeuge</button>
+    <button data-filter="Rüstung" style="padding:4px 10px;background:#444;border:1px solid #666;color:#fff;border-radius:5px;font-family:monospace;font-size:11px">🛡 Rüstung</button>
+    <button data-filter="Block" style="padding:4px 10px;background:#444;border:1px solid #666;color:#fff;border-radius:5px;font-family:monospace;font-size:11px">🧱 Blöcke</button>
+  </div>
+  <div id="recipeList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;max-width:600px;width:100%;"></div>
+  <div style="margin-top:10px;font-size:11px;opacity:.6;text-align:center">🟢=alle Materialien da &nbsp;🔴=fehlt etwas</div>
+  <button id="recipeClose" style="margin-top:10px">Schließen</button></div>
+
 <script type="importmap">
 { "imports": {
   "three": "./three.module.js",
@@ -3003,35 +3034,5 @@ requestAnimationFrame(loop);
 <script>
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('SW reg failed',e));});}
 </script>
-<!-- Chat -->
-<div id="chatBox" style="position:fixed;bottom:120px;left:8px;width:280px;max-height:160px;overflow-y:auto;z-index:9;pointer-events:none;display:flex;flex-direction:column;gap:2px;" id="chatBox"></div>
-<div id="chatInput" style="display:none;position:fixed;bottom:84px;left:8px;z-index:10;display:none;gap:6px;align-items:center;">
-  <input id="chatField" type="text" maxlength="80" placeholder="Nachricht..." style="background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.4);color:#fff;padding:6px 10px;border-radius:6px;font-family:monospace;font-size:13px;width:220px;outline:none;">
-  <button id="chatSend" style="padding:6px 12px;background:#4a90d9;border:none;color:#fff;border-radius:6px;font-family:monospace;cursor:pointer;">→</button>
-</div>
-
-<!-- Handel-Panel -->
-<div class="panel" id="tradePanel"><h2>🏪 Handel</h2>
-  <div id="tradeList" style="display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow-y:auto;width:100%;max-width:400px;"></div>
-  <button id="tradeClose">Schließen</button></div>
-
-<!-- Verzauberungs-Panel -->
-<div class="panel" id="enchantPanel"><h2>✨ Verzauberung</h2>
-  <div style="font-size:12px;opacity:.7;text-align:center;margin-bottom:8px">Braucht: Zauberbuch + Lapislazuli + XP</div>
-  <div id="enchantStatus" style="text-align:center;font-size:11px;margin-bottom:8px"></div>
-  <div id="enchantList" style="display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow-y:auto;width:100%;max-width:380px;"></div>
-  <button id="enchantClose">Schließen</button></div>
-
-<!-- Rezept-Browser -->
-<div class="panel" id="recipePanel" style="overflow-y:auto;"><h2>📖 Rezeptbuch</h2>
-  <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:8px" id="recipeFilter">
-    <button data-filter="" style="padding:4px 10px;background:#444;border:1px solid #666;color:#fff;border-radius:5px;font-family:monospace;font-size:11px">Alle</button>
-    <button data-filter="Werkzeug" style="padding:4px 10px;background:#444;border:1px solid #666;color:#fff;border-radius:5px;font-family:monospace;font-size:11px">⚒ Werkzeuge</button>
-    <button data-filter="Rüstung" style="padding:4px 10px;background:#444;border:1px solid #666;color:#fff;border-radius:5px;font-family:monospace;font-size:11px">🛡 Rüstung</button>
-    <button data-filter="Block" style="padding:4px 10px;background:#444;border:1px solid #666;color:#fff;border-radius:5px;font-family:monospace;font-size:11px">🧱 Blöcke</button>
-  </div>
-  <div id="recipeList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;max-width:600px;width:100%;"></div>
-  <div style="margin-top:10px;font-size:11px;opacity:.6;text-align:center">🟢=alle Materialien da &nbsp;🔴=fehlt etwas</div>
-  <button id="recipeClose" style="margin-top:10px">Schließen</button></div>
 </body>
 </html>
