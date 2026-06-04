@@ -1862,16 +1862,15 @@ function finishMining(){
   if(isHeldTool()){const k=TOOL_BY_ID[held].kind;if(k==='pick'||k==='shovel'||k==='axe')wearTool(held);}
 }
 
-$('break').addEventListener('touchstart',e=>{e.preventDefault();if(!player)return;
+// Abbau-Aktion als eigene Funktion (Touch + PC)
+function handleBreakAction(){
+  if(!player)return;
   const held=heldId();
-  // Angel = Fischen
   if(isHeldTool()&&TOOL_BY_ID[held].kind==='rod'){startFishing();return;}
-  // Bogen = Pfeil
   if(isHeldTool()&&TOOL_BY_ID[held].kind==='bow'){
     if((inventory[ITEMS.ARROW.id]||0)>0){takeItem(ITEMS.ARROW.id,1);
       if(mobs){const dir=new THREE.Vector3();camera.getWorldDirection(dir);mobs._shoot(camera.position.clone(),dir,TOOL_BY_ID[held].dmg);}
       wearTool(held);}else toast('Keine Pfeile!');return;}
-  // Mob treffen (sofort) - Schwert/Werkzeug-Schaden
   let dmg=2;
   if(isHeldTool()&&(TOOL_BY_ID[held].kind==='sword'||TOOL_BY_ID[held].kind==='axe'||TOOL_BY_ID[held].kind==='pick'))dmg=TOOL_BY_ID[held].dmg;
   if(mobs&&mobs.attack(camera,dmg,(dropId,n,kind,mpos)=>{
@@ -1880,18 +1879,15 @@ $('break').addEventListener('touchstart',e=>{e.preventDefault();if(!player)retur
       else{addItem(dropId,n);}stats.kills++;player.gainXP(5);if(isHeldTool())wearTool(held);
   })){return;}
   const r=raycastBlock();if(!r)return;const id=world.getBlock(r.hit[0],r.hit[1],r.hit[2]);
-  // Truhe/Ofen oeffnen (sofort, kein Abbau)
   if(id===BLOCKS.CHEST.id&&!player.sneaking){openChest(r.hit[0],r.hit[1],r.hit[2]);return;}
   if(id===BLOCKS.FURNACE.id&&!player.sneaking){openFurnace(r.hit[0],r.hit[1],r.hit[2]);return;}
-  // sonst: Abbau-Vorgang starten (halten!)
   startMining();
-},{passive:false});
-$('break').addEventListener('touchend',e=>{e.preventDefault();stopMining();},{passive:false});
-$('break').addEventListener('touchcancel',e=>{stopMining();},{passive:false});
+}
 
-$('place').addEventListener('touchstart',e=>{e.preventDefault();if(!player)return;
+// Setzen-Aktion als eigene Funktion (Touch + PC)
+function handlePlaceAction(){
+  if(!player)return;
   const id=heldId();
-  // Auge der Finsternis: beschwoert den Boss (verbraucht sich)
   if(id===ITEMS.DARK_EYE.id){
     if((inventory[id]||0)<=0){toast('Kein Auge der Finsternis');return;}
     if(mobs&&mobs.spawnBoss()){takeItem(id,1);swingHand&&swingHand();toast('👹 Der Boss erwacht!');}
@@ -1903,7 +1899,13 @@ $('place').addEventListener('touchstart',e=>{e.preventDefault();if(!player)retur
   if((inventory[id]||0)<=0){toast('Keine '+itemName(id));return;}
   const inP=Math.floor(player.pos.x)===px&&(Math.floor(player.pos.y)===py||Math.floor(player.pos.y+1)===py)&&Math.floor(player.pos.z)===pz;
   if(!inP){world.setBlock(px,py,pz,id);mpSend({t:'block',x:px,y:py,z:pz,id});takeItem(id,1);stats.placed++;sndPlace();}
-},{passive:false});
+}
+
+$('break').addEventListener('touchstart',e=>{e.preventDefault();handleBreakAction();},{passive:false});
+$('break').addEventListener('touchend',e=>{e.preventDefault();stopMining();},{passive:false});
+$('break').addEventListener('touchcancel',e=>{stopMining();},{passive:false});
+
+$('place').addEventListener('touchstart',e=>{e.preventDefault();handlePlaceAction();},{passive:false});
 
 $('eat').addEventListener('touchstart',e=>{e.preventDefault();if(!player)return;
   if(player.hunger>=player.maxHunger){toast('Schon satt');return;}
@@ -2160,6 +2162,107 @@ function loop(now){
   if(usePostFX)composer.render();else renderer.render(scene,camera);
   requestAnimationFrame(loop);}
 requestAnimationFrame(loop);
+
+// ===================== PC / MAUS-STEUERUNG =====================
+(function(){
+  const canvas = renderer.domElement;
+  let pcMode = false;
+
+  function hideTouchUI(){
+    if(pcMode) return;
+    pcMode = true;
+    ['joy','jump','sneak','sprint','fly','eat','break','place'].forEach(id=>{
+      const el=document.getElementById(id);if(el)el.style.display='none';
+    });
+    toast('PC-Modus: WASD+Maus | Linksklick=Abbauen | Rechtsklick=Setzen | E=Inventar | F=Fliegen');
+  }
+
+  canvas.addEventListener('click',()=>{
+    if(!running)return;
+    if(document.pointerLockElement!==canvas)canvas.requestPointerLock();
+  });
+
+  document.addEventListener('mousemove',(e)=>{
+    if(document.pointerLockElement!==canvas||!player)return;
+    hideTouchUI();
+    const sens=0.0024;
+    player.yaw   -= e.movementX*sens;
+    player.pitch -= e.movementY*sens;
+    const lim=Math.PI/2-0.05;
+    player.pitch=Math.max(-lim,Math.min(lim,player.pitch));
+  });
+
+  let mouseBreaking=false;
+  canvas.addEventListener('mousedown',(e)=>{
+    if(document.pointerLockElement!==canvas||!player)return;
+    if(e.button===0){
+      mouseBreaking=true;
+      handleBreakAction();
+    } else if(e.button===2){
+      handlePlaceAction();
+    }
+  });
+  canvas.addEventListener('mouseup',(e)=>{
+    if(e.button===0&&mouseBreaking){
+      mouseBreaking=false;
+      stopMining();
+    }
+  });
+  document.addEventListener('pointerlockchange',()=>{
+    if(document.pointerLockElement!==canvas){
+      mouseBreaking=false;
+      stopMining();
+      if(player){player.moveX=0;player.moveZ=0;player.wantJump=false;}
+    }
+  });
+  canvas.addEventListener('contextmenu',e=>e.preventDefault());
+
+  const keys={};
+  document.addEventListener('keydown',(e)=>{
+    const uiOpen=['inv','craft','furnaceUI','chest'].some(id=>{
+      const el=document.getElementById(id);
+      return el&&el.classList.contains('show');
+    });
+    if(uiOpen&&e.code!=='Escape')return;
+    keys[e.code]=true;
+    if(e.code.startsWith('Digit')){
+      const n=parseInt(e.code.slice(5),10);
+      if(n>=1&&n<=9){selected=n-1;if(typeof renderHotbar==='function')renderHotbar();}
+    }
+    if(e.code==='KeyE'){const inv=document.getElementById('invBtn');if(inv)inv.click();}
+    if(e.code==='KeyF'&&player){player.flying=!player.flying;$('fly').classList.toggle('on',player.flying);toast(player.flying?'\u2708 Flug an':'Flug aus');}
+    if(e.code==='Escape')document.exitPointerLock&&document.exitPointerLock();
+    applyMove();
+  });
+  document.addEventListener('keyup',(e)=>{
+    keys[e.code]=false;
+    if(e.code==='Space'&&player)player.wantJump=false;
+    applyMove();
+  });
+
+  function applyMove(){
+    if(!player||document.pointerLockElement!==canvas)return;
+    hideTouchUI();
+    player.moveZ=(keys['KeyW']?1:0)-(keys['KeyS']?1:0);
+    player.moveX=(keys['KeyD']?1:0)-(keys['KeyA']?1:0);
+    player.wantJump=!!keys['Space'];
+    player.sneaking=!!(keys['ShiftLeft']||keys['ShiftRight']);
+    const wantSprint=!!(keys['ControlLeft']||keys['KeyR']);
+    if(wantSprint!==player.sprinting){
+      player.sprinting=wantSprint;
+      $('sprint').classList.toggle('on',player.sprinting);
+    }
+  }
+
+  canvas.addEventListener('wheel',(e)=>{
+    if(!player)return;
+    e.preventDefault();
+    selected=(selected+(e.deltaY>0?1:-1)+9)%9;
+    if(typeof renderHotbar==='function')renderHotbar();
+  },{passive:false});
+})();
+// ===================== ENDE PC-STEUERUNG =====================
+
 </script>
 <script>
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('SW reg failed',e));});}
