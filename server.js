@@ -240,7 +240,24 @@ wss.on('connection', (ws) => {
     players.delete(id);
     broadcast({ t:'leave', id });
   });
+  ws.isAlive = true;
+  ws.on('pong', () => { ws.isAlive = true; });
 });
+
+// ---- Heartbeat: tote Verbindungen (z.B. Home-Button ohne sauberes Close) finden ----
+setInterval(() => {
+  for (const ws of wss.clients) {
+    if (ws.isAlive === false) {
+      // hat letzten Ping nicht beantwortet -> Geist, rauswerfen
+      const pid = ws._pid;
+      if (pid && players.has(pid)) { players.delete(pid); broadcast({ t:'leave', id: pid }); }
+      try { ws.terminate(); } catch(_){}
+      continue;
+    }
+    ws.isAlive = false;
+    try { ws.ping(); } catch(_){}
+  }
+}, 5000);
 
 // ---- Server-Tick: Zeit + Mob-Bewegung an alle senden ----
 setInterval(() => {
