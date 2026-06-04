@@ -2275,9 +2275,7 @@ addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updat
 // ============================================================
 let last=performance.now(),clock=0,minimapT=0;
 function loop(now){
-  // Mobile: 30fps Cap verhindert Thermal Throttling
-  if(_isMobile&&now-last<28){requestAnimationFrame(loop);return;}
-  const dt=Math.min((now-last)/1000,0.1);last=now;clock+=dt; // dt cap bei 0.1s (Tab-Wechsel etc.)
+  const dt=Math.min((now-last)/1000,0.1);last=now;clock+=dt;
   updateSky(dt);updateHurtVig(dt);
   if(running&&player){
     player.update(dt);world.update(player.pos.x,player.pos.z);
