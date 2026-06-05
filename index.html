@@ -400,6 +400,7 @@ const BLOCKS = {
   WHEAT1:   { id:51, name:'Weizen (mittel)',top:'#b8d840', side:'#b8d840', bottom:'#b8d840', solid:false, transparent:true, crop:true },
   WHEAT2:   { id:52, name:'Weizen (reif)', top:'#e8c840', side:'#e8c840', bottom:'#e8c840', solid:false, transparent:true, crop:true },
   FARMLAND: { id:53, name:'Ackerboden',   top:'#5a3a1a', side:'#5a3a1a', bottom:'#5a3a1a', solid:true },
+  BEDROCK:  { id:54, name:'Grundgestein', top:'#2a2a2e', side:'#2a2a2e', bottom:'#2a2a2e', solid:true, speckle:'#1a1a1e', unbreakable:true },
   MUSHROOM: { id:24, name:'Pilz',        top:'#cc3322', side:'#cc3322', bottom:'#cc3322', solid:false, transparent:true },
   FURNACE:  { id:25, name:'Schmelzofen', top:'#6a6a6a', side:'#5a5a5a', bottom:'#5a5a5a', solid:true },
   MYCEL:    { id:26, name:'Mycel',       top:'#7a5a7a', side:'#6b4a28', bottom:'#6b4a28', solid:true },
@@ -1162,7 +1163,7 @@ class MobManager{
       if(dx*dx+dy*dy+dz*dz>radius*radius)continue;
       const bx=Math.round(pos.x)+dx,by=Math.round(pos.y)+dy,bz=Math.round(pos.z)+dz;
       const id=this.world.getBlock(bx,by,bz);
-      if(id&&id!==BLOCKS.OBSIDIAN.id&&id!==BLOCKS.WATER.id){this.world.setBlock(bx,by,bz,0);mpSend({t:'block',x:bx,y:by,z:bz,id:0});}
+      if(id&&id!==BLOCKS.OBSIDIAN.id&&id!==BLOCKS.WATER.id&&id!==BLOCKS.BEDROCK.id){this.world.setBlock(bx,by,bz,0);mpSend({t:'block',x:bx,y:by,z:bz,id:0});}
     }
     if(particleMgr)particleMgr.explode(pos.x,pos.y,pos.z);
   }
@@ -1506,7 +1507,9 @@ class Chunk{
       h=Math.max(1,Math.min(this.H-4,h));
       for(let y=0;y<=h;y++){
         let id;
-        if(y===h){
+        if(y===0){id=BLOCKS.BEDROCK.id;}
+        else if(y===1&&w.hashRand(x,1,z)<0.5){id=BLOCKS.BEDROCK.id;}
+        else if(y===h){
           if(h<=CFG.seaLevel+1)id=BLOCKS.SAND.id;
           else if(biome===BIOME.DESERT)id=BLOCKS.SAND.id;
           else if(biome===BIOME.SNOW)id=BLOCKS.SNOW.id;
@@ -2418,6 +2421,7 @@ function startMining(){
   const r=raycastBlock(); if(!r){mining.active=false;return;}
   const id=world.getBlock(r.hit[0],r.hit[1],r.hit[2]);
   if(id===0||id===BLOCKS.WATER.id||id===BLOCKS.LAVA.id){mining.active=false;return;}
+  if(id===BLOCKS.BEDROCK.id){mining.active=false;toast('Grundgestein ist unzerstörbar!');return;}
   const held=heldId();
   const info=miningInfo(id, isHeldTool()?held:null);
   if((enchanted[held]||[]).includes('efficiency'))info.time=Math.max(0.05,info.time/2);
