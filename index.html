@@ -1562,7 +1562,12 @@ class Chunk{
       const dy=6+Math.floor(w.hashRand(bx,500,bz)*5);
       this._dungeon(7,dy,7);
     }
-    if(biomeCenter===BIOME.PLAINS&&w.hashRand(bx+.3,300,bz+.3)<0.0008)this._village(Math.floor(bx%16),hh,Math.floor(bz%16));
+    if(biomeCenter===BIOME.PLAINS&&w.hashRand(bx+.3,300,bz+.3)<0.0008){
+      // Bodenhöhe am Chunk-Zentrum lokal berechnen (keine Rekursion)
+      const cxw=bx+4,czw=bz+4;
+      const vh1=w.n1(cxw/30,czw/30),vh2=w.n1(cxw/10,czw/10)*0.35,vh3=w.n1(cxw/5,czw/5)*0.15;
+      let vh=Math.floor(CFG.seaLevel+(vh1+vh2+vh3+1)*5);vh=Math.max(1,Math.min(this.H-4,vh));
+      this._village(4,vh+1,4);}
     // Overrides
     const ov=this.world.overrides;
     for(let lx=0;lx<cs;lx++)for(let lz=0;lz<cs;lz++)for(let y=0;y<this.H;y++){
@@ -1899,6 +1904,23 @@ let world=null,player=null,mobs=null,drops=null,particleMgr=null,running=false,d
 const inventory={};const durability={};const chests={};
 const stats={placed:0,broken:0,kills:0,deaths:0,days:0,fished:0,smelted:0,trades:0,bossKills:0};
 
+// ── Tränke / Status-Effekte ──
+const activeEffects={strength:0,speed:0,fireResist:0};
+function applyPotion(it){
+  if(!it||!it.potion)return;
+  if(it.potion==='heal'){if(player){player.health=Math.min(player.maxHealth,player.health+(it.potionVal||4));renderStat();}toast('❤️ Geheilt');return;}
+  activeEffects[it.potion]=(activeEffects[it.potion]||0)+(it.potionVal||30);
+  const names={strength:'💪 Stärke',speed:'⚡ Schnelligkeit',fireResist:'🔥 Feuerschutz'};
+  toast((names[it.potion]||'Trank')+' aktiv');
+}
+function updateEffects(dt){
+  if(!player)return;
+  for(const k of ['strength','speed','fireResist'])if(activeEffects[k]>0){activeEffects[k]-=dt;if(activeEffects[k]<0)activeEffects[k]=0;}
+  player._potionSpeedMul=activeEffects.speed>0?1.4:1;
+  player._potionStrMul=activeEffects.strength>0?2:1;
+  player._potionFireRes=activeEffects.fireResist>0;
+}
+
 // ============================================================
 // ACHIEVEMENTS
 // ============================================================
@@ -2062,7 +2084,7 @@ const TRADES=[
   {give:[101,3],  get:[113,1]},  // 3 Rindfleisch -> 1 Smaragd
 ];
 function openTrade(){
-  const list=$('tradePanel').querySelector('#tradeList');list.innerHTML='';
+  const list=$('tradeList');if(!list)return;list.innerHTML='';
   TRADES.forEach(t=>{
     const can=(inventory[t.give[0]]||0)>=t.give[1];
     const row=document.createElement('div');
@@ -2859,7 +2881,6 @@ function loop(now){
       const bob=Math.sin(_bobT)*0.025*(player.sprinting?1.5:1);
       heldGroup.rotation.z=bob;heldGroup.position.y=-0.42+Math.abs(Math.sin(_bobT))*0.015;}
     else{_bobT=0;heldGroup.rotation.z*=0.85;}}
-  let _bobT=_bobT||0;
   updateSky(dt);updateHurtVig(dt);
   if(running&&player){
     player.update(dt);world.update(player.pos.x,player.pos.z);
