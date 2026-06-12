@@ -162,7 +162,8 @@ canvas{display:block;}
   <div id="mineprogfill" style="height:100%;width:0%;background:#fff;transition:width .05s linear;"></div>
 </div>
 <div id="info"></div>
-<div id="compassHUD" style="position:fixed;top:44px;left:50%;transform:translateX(-50%);font-family:monospace;font-size:11px;z-index:6;pointer-events:none;background:rgba(0,0,0,.4);padding:2px 10px;border-radius:4px;letter-spacing:1px;"></div>
+<div id="blockInfoHUD" style="position:fixed;bottom:78px;left:50%;transform:translateX(-50%);font-family:monospace;font-size:11px;color:rgba(255,255,255,.65);z-index:6;pointer-events:none;text-shadow:1px 1px 2px #000;"></div>
+<div id="compassHUD"  style="position:fixed;top:44px;left:50%;transform:translateX(-50%);font-family:monospace;font-size:11px;z-index:6;pointer-events:none;background:rgba(0,0,0,.4);padding:2px 10px;border-radius:4px;letter-spacing:1px;"></div>
 <div id="effectsHUD" style="position:fixed;top:6px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:6;pointer-events:none;"></div>
 <div id="health"></div>
 <div id="hunger"></div>
@@ -243,6 +244,8 @@ canvas{display:block;}
 
 <!-- Schmelzofen -->
 <div class="panel" id="furnacePanel"><h2>🔥 Schmelzofen</h2>
+  <div id="fuelBar" style="width:120px;height:8px;background:rgba(255,255,255,.15);border-radius:4px;margin:4px auto;overflow:hidden;"><div id="fuelFill" style="height:100%;width:0%;background:linear-gradient(90deg,#ff4400,#ffaa00);border-radius:4px;transition:width .3s;"></div></div>
+  <div id="fuelLabel" style="font-size:10px;opacity:.6;text-align:center;margin-bottom:6px"></div>
   <div style="display:flex;gap:20px;align-items:center;justify-content:center;flex-wrap:wrap;">
     <div style="text-align:center">
       <div style="font-size:11px;opacity:.7;margin-bottom:4px">Erz (Eingabe)</div>
@@ -325,7 +328,13 @@ canvas{display:block;}
 </div>
 
 <!-- Chat -->
-<div id="chatBox" style="position:fixed;bottom:120px;left:8px;width:280px;max-height:160px;overflow-y:auto;z-index:9;pointer-events:none;display:flex;flex-direction:column;gap:2px;" id="chatBox"></div>
+<div id="playerListPanel" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.82);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:16px 24px;z-index:25;flex-direction:column;align-items:center;gap:8px;min-width:200px;backdrop-filter:blur(8px);">
+  <div style="font-size:14px;font-weight:bold;margin-bottom:4px">👥 Spieler online</div>
+  <div id="playerListBody" style="font-size:13px;opacity:.9;text-align:center"></div>
+  <div style="font-size:10px;opacity:.5;margin-top:4px">Tab gedrückt halten</div>
+</div>
+
+<div id="chatBox"  style="position:fixed;bottom:120px;left:8px;width:280px;max-height:160px;overflow-y:auto;z-index:9;pointer-events:none;display:flex;flex-direction:column;gap:2px;" id="chatBox"></div>
 <div id="chatInput" style="display:none;position:fixed;bottom:84px;left:8px;z-index:10;display:none;gap:6px;align-items:center;">
   <input id="chatField" type="text" maxlength="80" placeholder="Nachricht..." style="background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.4);color:#fff;padding:6px 10px;border-radius:6px;font-family:monospace;font-size:13px;width:220px;outline:none;">
   <button id="chatSend" style="padding:6px 12px;background:#4a90d9;border:none;color:#fff;border-radius:6px;font-family:monospace;cursor:pointer;">→</button>
@@ -400,7 +409,12 @@ const BLOCKS = {
   WHEAT1:   { id:51, name:'Weizen (mittel)',top:'#b8d840', side:'#b8d840', bottom:'#b8d840', solid:false, transparent:true, crop:true },
   WHEAT2:   { id:52, name:'Weizen (reif)', top:'#e8c840', side:'#e8c840', bottom:'#e8c840', solid:false, transparent:true, crop:true },
   FARMLAND: { id:53, name:'Ackerboden',   top:'#5a3a1a', side:'#5a3a1a', bottom:'#5a3a1a', solid:true },
-  BEDROCK:  { id:54, name:'Grundgestein', top:'#2a2a2e', side:'#2a2a2e', bottom:'#2a2a2e', solid:true, speckle:'#1a1a1e', unbreakable:true },
+  BEDROCK:  { id:54, name:'Grundgestein', top:'#2a2a2e', side:'#2a2a2e', bottom:'#2a2a2e', solid:true, unbreakable:true },
+  ANVIL:    { id:55, name:'Amboss',       top:'#4a4a50', side:'#3e3e44', bottom:'#3e3e44', solid:true },
+  COBBLE:   { id:56, name:'Kopfsteinpflaster',top:'#777777',side:'#777777',bottom:'#777777',solid:true },
+  BOOKSHELF:{ id:57, name:'Bücherregal',  top:'#8a6040', side:'#8a6040', bottom:'#8a6040', solid:true },
+  MOSSY_COBBLE:{id:58,name:'Bemooste Pflastersteine',top:'#5a7a4a',side:'#5a7a4a',bottom:'#5a7a4a',solid:true },
+  BEDROCK_OLD:{ id:999, name:'Grundgestein', top:'#2a2a2e', side:'#2a2a2e', bottom:'#2a2a2e', solid:true, speckle:'#1a1a1e', unbreakable:true },
   MUSHROOM: { id:24, name:'Pilz',        top:'#cc3322', side:'#cc3322', bottom:'#cc3322', solid:false, transparent:true },
   FURNACE:  { id:25, name:'Schmelzofen', top:'#6a6a6a', side:'#5a5a5a', bottom:'#5a5a5a', solid:true },
   MYCEL:    { id:26, name:'Mycel',       top:'#7a5a7a', side:'#6b4a28', bottom:'#6b4a28', solid:true },
@@ -814,6 +828,12 @@ const ITEMS={
   // Rüstung
   IRON_HELM:  {id:200,name:'Eisenhelm',    armor:2,slot:'head'},
   GOLD_HELM:  {id:207,name:'Goldhelm',     armor:1,slot:'head'},
+  LEATHER:       {id:135,name:'Leder'},
+  XP_BOTTLE:     {id:136,name:'Erfahrungsflasche',xpVal:5},
+  LEATHER_HELM:  {id:215,name:'Lederhelm',   armor:1,slot:'head'},
+  LEATHER_CHEST: {id:216,name:'Lederpanzer',  armor:2,slot:'chest'},
+  LEATHER_LEGS:  {id:217,name:'Lederhose',    armor:1,slot:'legs'},
+  LEATHER_BOOTS: {id:218,name:'Lederstiefel', armor:1,slot:'feet'},
   IRON_CHEST: {id:201,name:'Eisenbrustpl.',armor:4,slot:'chest'},
   IRON_LEGS:  {id:202,name:'Eisenbeinsch.',armor:3,slot:'legs'},
   IRON_BOOTS: {id:203,name:'Eisenstiefel', armor:1,slot:'feet'},
@@ -840,6 +860,7 @@ const MTYPES={
   boss:     {hostile:true, hp:150,speed:2.0,dmg:8,body:0x4a1a4a,head:0x6a2a6a,drop:[18,5],legs:0x3a0a3a,boss:true},
   villager: {hostile:false,hp:20,speed:1.2,dmg:0,body:0x4a6a9a,head:0xf0c8a0,drop:[111,1],legs:0x2a4a7a,trader:true},
   blaze:    {hostile:true, hp:20,speed:2.8,dmg:5,body:0xffaa22,head:0xff8800,drop:[125,1],legs:0xee9900,flying:true},
+  bat:      {hostile:false,hp:3,speed:3.5,dmg:0,body:0x222222,head:0x1a1a1a,drop:[],legs:0x111111,flying:true,small:true},
 };
 const MOB_KINDS=Object.keys(MTYPES);
 
@@ -983,6 +1004,13 @@ class Mob{
       const rodMat=new THREE.MeshLambertMaterial({color:0xffdd44,emissive:0xff8800,emissiveIntensity:0.6});
       for(let i=0;i<4;i++){const ang2=i*Math.PI/2;const rod=new THREE.Mesh(box(0.1,0.8,0.1),rodMat);rod.position.set(Math.cos(ang2)*0.4,1.0,Math.sin(ang2)*0.4);g.add(rod);this.legsArr.push(rod);}
 
+    } else if(this.kind==='bat'){
+      const bmat=new THREE.MeshLambertMaterial({color:0x1a1a1a});
+      const body=new THREE.Mesh(box(0.28,0.22,0.18),bmat);body.position.y=0.5;g.add(body);
+      const head=new THREE.Mesh(box(0.22,0.2,0.2),new THREE.MeshLambertMaterial({color:0x111111}));head.position.set(0,0.68,0.1);g.add(head);
+      [-0.08,0.08].forEach(ex=>{const ear=new THREE.Mesh(box(0.06,0.14,0.04),bmat);ear.position.set(ex,0.82,0.1);g.add(ear);});
+      const wingM=new THREE.MeshLambertMaterial({color:0x2a1a1a,transparent:true,opacity:0.8});
+      [-1,1].forEach(side=>{const wing=new THREE.Mesh(box(0.45,0.02,0.3),wingM);wing.position.set(side*0.38,0.52,0.05);g.add(wing);this.legsArr.push(wing);});
     } else if(this.kind==='chicken'){
       // Huhn: runder Bauch, Kamm, Schnabel, dünne Beine
       const body=new THREE.Mesh(box(0.42,0.45,0.52),bodyMat);body.position.y=0.52;g.add(body);
@@ -1052,7 +1080,7 @@ class Mob{
         ctx.shoot(from,aim,this.dmg);}
       if(dist<2.5&&this.attackCd<=0){player.hurt(this.dmg);this.attackCd=1.0;this.attackAnim=0.35;
         if(player.knockback)player.knockback(toPlayer.x,toPlayer.z);}
-    } else if(this.hostile&&dist<18){
+    } else if(this.hostile&&dist<(this.isBoss?30:18)){
       this.dir=Math.atan2(toPlayer.x,toPlayer.z);
       if(this.kind==='skeleton'){
         if(dist>4)moving=true;
@@ -1095,6 +1123,10 @@ class Mob{
   hit(dmg,fromX,fromZ){if(this.dead||this.dying>0)return false;this.hp-=dmg;this.hurtT=0.18;
     // Schwebende Schadensanzeige
     spawnDmgNumber(dmg,this.pos.x,this.pos.y+1.8,this.pos.z);
+    // HP-Balken über Mob
+    try{if(!this._hpBar){const _b=document.createElement('div');_b.style.cssText='position:fixed;pointer-events:none;z-index:18;display:none;width:44px;height:5px;background:rgba(0,0,0,.55);border-radius:2px;';const _f=document.createElement('div');_f.style.cssText='height:100%;border-radius:2px;';_b.appendChild(_f);document.body.appendChild(_b);this._hpBar=_b;this._hpFill=_f;}
+    const _pct=this.hp/Math.max(1,this.maxHp);this._hpBar.style.display='block';
+    if(typeof camera!=='undefined'){const _v=new THREE.Vector3(this.pos.x,this.pos.y+(this.isBoss?4:2.2),this.pos.z);_v.project(camera);if(_v.z<1){this._hpBar.style.left=((_v.x*.5+.5)*innerWidth-22)+'px';this._hpBar.style.top=((-_v.y*.5+.5)*innerHeight-4)+'px';this._hpFill.style.width=Math.max(2,_pct*100)+'%';this._hpFill.style.background=_pct>.5?'#22cc22':_pct>.25?'#f0a020':'#cc2222';}else this._hpBar.style.display='none';}}catch(_e){}
     if(!this.hostile){this.fleeT=5;this.fleeFromX=fromX;this.fleeFromZ=fromZ;}
     // Enderman teleportiert wenn getroffen
     if(this.kind==='enderman'&&Math.random()<0.4){
@@ -1487,7 +1519,7 @@ function matchRecipe(cells,maxSize=3){const norm=normalize(cells);if(!norm)retur
 const _isMobile=navigator.maxTouchPoints>0&&/Android|iPhone|iPad/i.test(navigator.userAgent);
 const _lowEnd=_isMobile||!!(navigator.hardwareConcurrency&&navigator.hardwareConcurrency<=4);
 
-const CFG={chunkSize:16,maxHeight:_isMobile?40:56,seaLevel:14,renderRadius:3,loadPerFrame:_isMobile?2:1};
+const CFG={chunkSize:16,maxHeight:_isMobile?96:128,seaLevel:64,renderRadius:3,loadPerFrame:_isMobile?2:1};
 const key=(cx,cz)=>cx+','+cz;
 
 class Chunk{
@@ -1501,14 +1533,14 @@ class Chunk{
     for(let lx=0;lx<cs;lx++)for(let lz=0;lz<cs;lz++){
       const x=bx+lx,z=bz+lz;
       const biome=w.biomeAt(x,z);
-      const h1=w.n1(x/30,z/30),h2=w.n1(x/10,z/10)*0.35,h3=w.n1(x/5,z/5)*0.15;
-      const extra=biome===BIOME.DESERT?2:biome===BIOME.SNOW?8:biome===BIOME.JUNGLE?6:5;
-      let h=Math.floor(CFG.seaLevel+(h1+h2+h3+1)*extra);
-      h=Math.max(1,Math.min(this.H-4,h));
+      const h1=w.n1(x/40,z/40),h2=w.n1(x/14,z/14)*0.35,h3=w.n1(x/6,z/6)*0.12;
+      const extra=biome===BIOME.DESERT?6:biome===BIOME.SNOW?20:biome===BIOME.JUNGLE?16:14;
+      let h=Math.floor(CFG.seaLevel+(h1+h2+h3)*extra);
+      h=Math.max(2,Math.min(this.H-6,h));
       for(let y=0;y<=h;y++){
         let id;
         if(y===0){id=BLOCKS.BEDROCK.id;}
-        else if(y===1&&w.hashRand(x,1,z)<0.5){id=BLOCKS.BEDROCK.id;}
+        else if(y<=2&&w.hashRand(x,y,z)<0.6){id=BLOCKS.BEDROCK.id;}
         else if(y===h){
           if(h<=CFG.seaLevel+1)id=BLOCKS.SAND.id;
           else if(biome===BIOME.DESERT)id=BLOCKS.SAND.id;
@@ -1547,9 +1579,11 @@ class Chunk{
     }
     // Höhlen (verbessert)
     for(let lx=0;lx<cs;lx++)for(let lz=0;lz<cs;lz++){const x=bx+lx,z=bz+lz;
-      for(let y=2;y<CFG.seaLevel+8;y++){
-        const c=w.n1(x/14+y*0.25,z/14)+w.n2(x/8,z/8+y*0.25);
-        if(c>1.1&&this.getLocal(lx,y,lz)===BLOCKS.STONE.id){
+      for(let y=3;y<this.H-8;y++){
+        if(this.getLocal(lx,y,lz)!==BLOCKS.STONE.id)continue;
+        const cave1=w.n1(x/18+y*0.12,z/18)+w.n2(x/12,z/12+y*0.18);
+        const cave2=w.n2(x/22-y*0.08,z/22)+w.n1(x/9+y*0.1,z/9);
+        if(cave1>0.6||cave2>0.55){
           this.setLocal(lx,y,lz,0);
           // Lava ganz unten in Höhlen
           if(y<5)this.setLocal(lx,y,lz,BLOCKS.LAVA.id);
@@ -1565,6 +1599,7 @@ class Chunk{
       const dy=6+Math.floor(w.hashRand(bx,500,bz)*5);
       this._dungeon(7,dy,7);
     }
+    if((biomeCenter===BIOME.PLAINS||biomeCenter===BIOME.FOREST)&&w.hashRand(bx+17,111,bz+17)<0.015){const rh=Math.floor(CFG.seaLevel+(w.n1((bx+4)/40,(bz+4)/40)*14));this._ruin(4,Math.max(3,Math.min(this.H-6,rh))+1,4);}
     if(biomeCenter===BIOME.PLAINS&&w.hashRand(bx+.3,300,bz+.3)<0.0008){
       // Bodenhöhe am Chunk-Zentrum lokal berechnen (keine Rekursion)
       const cxw=bx+4,czw=bz+4;
@@ -1611,6 +1646,16 @@ class Chunk{
       this.setLocal(lx+hx+1,y+3,lz+hz+1,BLOCKS.LANTERN.id);}
     // Weg zwischen Häusern
     for(let i=0;i<12;i++)this.setLocal(lx+i,y,lz+5,BLOCKS.STONEBRICK.id);}
+  _ruin(lx,y,lz){
+    const rnd=(a,b)=>this.world.hashRand(lx+a,y+77,lz+b);
+    for(let dx=0;dx<7;dx++)for(let dz=0;dz<7;dz++){
+      if(dx===0||dx===6||dz===0||dz===6){
+        const wallH=1+Math.floor(rnd(dx,dz)*3);
+        for(let dy=0;dy<wallH;dy++)if(rnd(dx+dy*3,dz+dy*3)<0.7)
+          this.setLocal(lx+dx,y+dy,lz+dz,rnd(dx,dz)<0.3?BLOCKS.MOSSY_COBBLE.id:BLOCKS.COBBLE.id);}}
+    for(let dx=1;dx<6;dx++)for(let dz=1;dz<6;dz++)
+      if(rnd(dx+10,dz+10)<0.55)this.setLocal(lx+dx,y-1,lz+dz,BLOCKS.COBBLE.id);
+    if(rnd(0,0)<0.5)this.setLocal(lx+3,y,lz+3,BLOCKS.CHEST.id);}
   _dungeon(lx,y,lz){// kleiner 5x5 Raum aus Obsidian und Moosstein
     for(let dx=0;dx<6;dx++)for(let dz=0;dz<6;dz++)for(let dy=0;dy<4;dy++){
       if(dx===0||dx===5||dz===0||dz===5||dy===0||dy===3){
@@ -1694,6 +1739,7 @@ class Player{
   coll(p){const w=this.width/2;for(let dx=-w;dx<=w;dx+=w)for(let dz=-w;dz<=w;dz+=w)for(let dy=0;dy<=this.height;dy+=this.height/2)if(this.solid(p.x+dx,p.y+dy,p.z+dz))return true;return false;}
   get speed(){let s=this.baseSpeed*(this._potionSpeedMul||1);if(this.sprinting)s*=1.65;if(this.sneaking)s*=0.45;if(this.inWater||this.inLava)s*=0.5;return s;}
   update(dt){dt=Math.min(dt,.05);
+    if(this.dead)return;
     const feet=this.blockAtFeet();
     this.inWater=feet===BLOCKS.WATER.id;this.inLava=feet===BLOCKS.LAVA.id;
     // Kopf unter Wasser -> Luft verlieren
@@ -1717,7 +1763,7 @@ class Player{
     const fellFrom=this.fallStart;n.y+=this.vel.y*dt;
     if(this.coll(n)){if(this.vel.y<0){if(!this.flying&&!this.inWater&&!this.inLava&&fellFrom!==null){const fell=fellFrom-n.y;if(fell>4)this.hurt(Math.floor(fell-4));} this.onGround=true;this.fallStart=null;}n.y=this.pos.y;this.vel.y=0;}
     else{if(!this.flying){if(this.vel.y<0&&this.fallStart===null&&!this.inWater&&!this.inLava)this.fallStart=this.pos.y;this.onGround=false;}}
-    if(this.vel.y>=0)this.fallStart=null;if(n.y<-10){this.respawn();return;}this.pos.copy(n);
+    if(this.vel.y>=0)this.fallStart=null;if(n.y<-10){this.health=0;this.die();return;}this.pos.copy(n);
     if(this.world&&typeof BLOCKS!=='undefined'){const pb=this.world.getBlock(Math.floor(this.pos.x),Math.floor(this.pos.y+0.5),Math.floor(this.pos.z));
       if(pb===BLOCKS.PORTAL.id&&!this._portalCd){this._portalCd=5;setTimeout(()=>{if(typeof activateNetherPortal==='function')activateNetherPortal();},1000);}
       if(this._portalCd>0)this._portalCd-=0.05;}
@@ -1735,10 +1781,11 @@ class Player{
     const eye=this.sneaking?this.eye-0.25:this.eye;
     this.cam.position.set(this.pos.x,this.pos.y+eye,this.pos.z);this.cam.rotation.order='YXZ';this.cam.rotation.y=this.yaw;this.cam.rotation.x=this.pitch;}
   gainXP(n){this.xp+=n;if(this.xp>=this.xpToNext){this.xp-=this.xpToNext;this.level++;this.xpToNext=Math.floor(this.xpToNext*1.3+5);this.hooks.onLevelUp&&this.hooks.onLevelUp(this.level);}this.hooks.onStat&&this.hooks.onStat();}
-  hurt(d){if(d<=0)return;const reduced=Math.max(1,d-Math.floor(this.armorValue/4));this.health=Math.max(0,this.health-reduced);this.hooks.onHurt&&this.hooks.onHurt();this.hooks.onStat&&this.hooks.onStat();if(this.health<=0)this.respawn();}
+  hurt(d){if(d<=0||this.dead)return;const reduced=Math.max(1,d-Math.floor(this.armorValue/4));this.health=Math.max(0,this.health-reduced);this.hooks.onHurt&&this.hooks.onHurt();this.hooks.onStat&&this.hooks.onStat();if(this.health<=0)this.die();}
   knockback(fromX,fromZ){const dx=this.pos.x-fromX,dz=this.pos.z-fromZ,d=Math.hypot(dx,dz)||1;this.vel.x+=dx/d*4;this.vel.z+=dz/d*4;if(this.vel.y<2)this.vel.y=3;}
   eat(amount){this.hunger=Math.min(this.maxHunger,this.hunger+amount);this.hooks.onStat&&this.hooks.onStat();}
-  respawn(){this.health=this.maxHealth;this.hunger=this.maxHunger;this.pos.set(0.5,this.world.H,0.5);this.vel.set(0,0,0);this.pos.y=this.world.groundHeight(0,0)+2;this.hooks.onDeath&&this.hooks.onDeath();this.hooks.onStat&&this.hooks.onStat();}
+  die(){if(this.dead)return;this.dead=true;this.vel.set(0,0,0);this.hooks.onDeath&&this.hooks.onDeath();}
+  respawn(){this.dead=false;this.health=this.maxHealth;this.hunger=this.maxHunger;this._air=15;if(typeof activeEffects!=='undefined')Object.keys(activeEffects).forEach(k=>activeEffects[k]=0);const sp=this._spawnPoint;this.pos.set(sp?sp[0]:0.5,this.world.H,sp?sp[2]:0.5);this.vel.set(0,0,0);this.pos.y=this.world.groundHeight(this.pos.x,this.pos.z)+2;this.hooks.onStat&&this.hooks.onStat();}
 }
 
 // ============================================================
@@ -1872,14 +1919,23 @@ function animateWater(t,px,pz){waterUniforms.uTime.value=t;waterMesh.position.se
 // ============================================================
 // REGEN-SYSTEM
 // ============================================================
-let rainActive=false,rainIntensity=0;
+let rainActive=false,rainIntensity=0,_rainSndInterval=null;
 const rainCanvas=document.getElementById('rainCanvas');
 rainCanvas.width=innerWidth;rainCanvas.height=innerHeight;
 const rainCtx=rainCanvas.getContext('2d');
 let rainDrops=[];
 function initRain(){rainDrops=[];for(let i=0;i<300;i++)rainDrops.push({x:Math.random()*rainCanvas.width,y:Math.random()*rainCanvas.height,spd:8+Math.random()*8,len:12+Math.random()*20});}
 function updateRain(dt){
-  if(!rainActive)return;
+  if(!rainActive){if(_rainSndInterval){clearInterval(_rainSndInterval);_rainSndInterval=null;}return;}
+  // Regen-Sound initialisieren (einmaliges Brausen)
+  if(!_rainSndInterval&&typeof actx!=='undefined'){
+    _rainSndInterval=setInterval(()=>{
+      try{if(!actx||!rainActive)return;
+        const buf=actx.createBuffer(1,actx.sampleRate*0.06,actx.sampleRate);
+        const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*0.08;
+        const src=actx.createBufferSource(),g=actx.createGain();
+        src.buffer=buf;g.gain.value=0.4*rainIntensity;
+        src.connect(g);g.connect(actx.destination);src.start();}catch(e){}},80);}
   // Gelegentlicher Blitz
   _lightningT=(_lightningT||0)-dt;
   if(_lightningT<=0&&Math.random()<0.003){
@@ -1970,7 +2026,12 @@ const $=id=>document.getElementById(id);
 // ============================================================
 // INVENTAR
 // ============================================================
-function addItem(id,n){inventory[id]=(inventory[id]||0)+(n||1);if(isTool(id)&&durability[id]===undefined)durability[id]=TOOL_BY_ID[id].durability;renderHotbar();renderInv();}
+function addItem(id,n){
+  const max=isTool(id)?1:64;
+  const cur=inventory[id]||0;
+  inventory[id]=Math.min(cur+(n||1),max);
+  if(isTool(id)&&durability[id]===undefined)durability[id]=TOOL_BY_ID[id].durability;
+  renderHotbar();renderInv();}
 function takeItem(id,n){if((inventory[id]||0)>=(n||1)){inventory[id]-=(n||1);renderHotbar();renderInv();return true;}return false;}
 function heldId(){return HOTBAR_IDS[selected];}
 function isHeldTool(){const id=heldId();return isTool(id)&&(inventory[id]||0)>0;}
@@ -1997,7 +2058,7 @@ function renderHotbar(){const el=$('hotbar');el.innerHTML='';
       if(typeof enchanted!=='undefined'&&enchanted[id]&&enchanted[id].length>0)s.style.boxShadow='0 0 8px 2px rgba(150,80,255,.7)';
       else s.style.boxShadow='';}
     else c.textContent=inventory[id]||0;s.appendChild(c);
-    s.addEventListener('touchstart',e=>{e.preventDefault();selected=i;renderHotbar();},{passive:false});
+    s.title=id?(itemName(id)):'';s.addEventListener('touchstart',e=>{e.preventDefault();selected=i;renderHotbar();},{passive:false});
     el.appendChild(s);});}
 
 function renderInv(){const g=$('invGrid');if(!g)return;g.innerHTML='';
@@ -2235,8 +2296,16 @@ $('craftMake').addEventListener('click',()=>{
 // ============================================================
 let furnInput=null,furnFuel=null;
 let openFurnaceKey=null;
-function openFurnace(x,y,z){openFurnaceKey=x+'_'+y+'_'+z;renderFurnace();$('furnacePanel').classList.add('show');}
+function openFurnace(x,y,z){openFurnaceKey=x+'_'+y+'_'+z;if(typeof furnaceTimers!=='undefined'&&!furnaceTimers[openFurnaceKey])furnaceTimers[openFurnaceKey]={t:0};renderFurnace();$('furnacePanel').classList.add('show');}
 function renderFurnace(){
+  // Fuel-Anzeige
+  const fuel$=$('fuelFill'),fuelL=$('fuelLabel');
+  if(fuel$&&fuelL){const fuelItems=[[ITEMS.COAL_ITEM.id,8,'Kohle'],[BLOCKS.PLANK.id,3,'Planken'],[BLOCKS.WOOD.id,4,'Holz']];
+    let hasFuel=false;
+    for(const[id,dur,nm]of fuelItems){if((inventory[id]||0)>0){
+      const pct=Math.round((inventory[id]/Math.max(1,inventory[id]))*100);
+      fuel$.style.width='100%';fuelL.textContent='⛽ '+nm+' ×'+(inventory[id]||0);hasFuel=true;break;}}
+    if(!hasFuel){fuel$.style.width='0%';fuelL.textContent='Kein Brennstoff';}}
   const hasFuel=furnFuel&&(inventory[furnFuel]||0)>0;
   const hasInput=furnInput!==null&&(inventory[furnInput]||0)>0;
   const rec=furnInput?smeltResult(furnInput):null;
@@ -2480,6 +2549,8 @@ function handleBreakAction(){
   const held=heldId();
   if(isHeldTool()&&TOOL_BY_ID[held].kind==='rod'){startFishing();return;}
   if(isHeldTool()&&TOOL_BY_ID[held].kind==='bow'){
+    const _now=performance.now();if(_now-(handleBreakAction._lastBow||0)<1500){toast('🏹 Bogen lädt...');return;}
+    handleBreakAction._lastBow=_now;
     if((inventory[ITEMS.ARROW.id]||0)>0){takeItem(ITEMS.ARROW.id,1);
       if(mobs){const dir=new THREE.Vector3();camera.getWorldDirection(dir);mobs._shoot(camera.position.clone(),dir,TOOL_BY_ID[held].dmg);}
       wearTool(held);}else toast('Keine Pfeile!');return;}
@@ -2531,7 +2602,7 @@ function handlePlaceAction(){
   const r=raycastBlock();if(!r||!r.place)return;const[px,py,pz]=r.place;
   if((inventory[id]||0)<=0){toast('Keine '+itemName(id));return;}
   const inP=Math.floor(player.pos.x)===px&&(Math.floor(player.pos.y)===py||Math.floor(player.pos.y+1)===py)&&Math.floor(player.pos.z)===pz;
-  if(!inP){world.setBlock(px,py,pz,id);mpSend({t:'block',x:px,y:py,z:pz,id});takeItem(id,1);stats.placed++;sndPlace();}
+  if(!inP){world.setBlock(px,py,pz,id);mpSend({t:'block',x:px,y:py,z:pz,id});takeItem(id,1);stats.placed++;sndPlace(id);}
 }
 
 $('break').addEventListener('touchstart',e=>{e.preventDefault();handleBreakAction();},{passive:false});
@@ -2557,14 +2628,35 @@ function openChest(x,y,z){const k=x+'_'+y+'_'+z;if(!chests[k])chests[k]={items:{
 function renderChest(){if(!openChestKey)return;const c=chests[openChestKey];
   const cg=$('chestGrid');cg.innerHTML='';const cids=Object.keys(c.items).filter(id=>c.items[id]>0).map(Number);
   if(!cids.length)cg.innerHTML='<div style="opacity:.6">Truhe leer</div>';
-  cids.forEach(id=>{const el=document.createElement('div');el.className='icell';const sw=document.createElement('div');sw.className='sw';fillSwatch(sw,id);el.appendChild(sw);el.appendChild(document.createTextNode(itemName(id)));const cn=document.createElement('div');cn.className='cnt';cn.textContent=c.items[id];el.appendChild(cn);el.addEventListener('click',()=>{c.items[id]--;if(c.items[id]<=0)delete c.items[id];addItem(id,1);renderChest();});cg.appendChild(el);});
-  const ig=$('chestInv');ig.innerHTML='';const ids=Object.keys(inventory).filter(id=>(inventory[id]||0)>0).map(Number);
+  cids.forEach(id=>{const el=document.createElement('div');el.className='icell';const sw=document.createElement('div');sw.className='sw';fillSwatch(sw,id);el.appendChild(sw);el.appendChild(document.createTextNode(itemName(id)));const cn=document.createElement('div');cn.className='cnt';cn.textContent=c.items[id];el.appendChild(cn);el.addEventListener('click',(ev)=>{
+    if(ev.shiftKey){addItem(id,c.items[id]);delete c.items[id];}
+    else{c.items[id]--;if(c.items[id]<=0)delete c.items[id];addItem(id,1);}
+    renderChest();});cg.appendChild(el);});
+  const ig=$('chestInv');ig.innerHTML='';const ids=Object.keys(inventory).filter(id=>(inventory[id]||0)>0).map(Number);ig.title='Shift+Klick = alles in Truhe';
   ids.forEach(id=>{const el=document.createElement('div');el.className='icell';const sw=document.createElement('div');sw.className='sw';fillSwatch(sw,id);el.appendChild(sw);el.appendChild(document.createTextNode(itemName(id)));const cn=document.createElement('div');cn.className='cnt';cn.textContent=inventory[id];el.appendChild(cn);el.addEventListener('click',()=>{if(takeItem(id,1)){c.items[id]=(c.items[id]||0)+1;renderChest();}});ig.appendChild(el);});}
 $('chestClose').addEventListener('click',()=>{$('chest').classList.remove('show');openChestKey=null;});
 
 // ============================================================
 // SOUND - verbesserter 8-bit
 // ============================================================
+// ── Auto-Ofen ──
+const furnaceTimers={};
+function updateFurnaces(dt){
+  if(!Object.keys(furnaceTimers).length)return;
+  for(const key of Object.keys(furnaceTimers)){
+    const f=furnaceTimers[key];f.t=(f.t||0)+dt;
+    if(f.t<3)continue;f.t=0;
+    const fuelIds=[ITEMS.COAL_ITEM.id,BLOCKS.PLANK.id,BLOCKS.WOOD.id];
+    const fuelId=fuelIds.find(id=>(inventory[id]||0)>0);
+    if(!fuelId)continue;
+    for(const r of SMELT_RECIPES){
+      if((inventory[r.input]||0)>0){
+        takeItem(r.input,1);takeItem(fuelId,1);
+        addItem(r.output,r.count);stats.smelted++;if(player)player.gainXP(2);
+        if(typeof sndCraft!=='undefined')sndCraft();
+        toast('🔥 '+itemName(r.input)+' → '+itemName(r.output));
+        if($('furnacePanel').classList.contains('show'))renderFurnace();
+        break;}}}}
 let actx=null;
 function beep(freq,dur,type,vol){try{actx=actx||new(window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.type=type||'square';o.frequency.value=freq;g.gain.value=vol||0.06;o.connect(g);g.connect(actx.destination);o.start();g.gain.exponentialRampToValueAtTime(0.0001,actx.currentTime+dur);o.stop(actx.currentTime+dur);}catch(e){}}
 function chord(freqs,dur,type,vol){freqs.forEach(f=>beep(f,dur,type,vol||0.04));}
@@ -2620,7 +2712,11 @@ function updateAmbient(dt){
   }catch(e){}}
 let _stepT=0;
 function sndStep(dt,moving){if(!moving){_stepT=0;return;}_stepT+=dt;if(_stepT>0.4){_stepT=0;beep(80+Math.random()*40,0.06,'square',0.025);}}
-const sndPlace=()=>beep(320,0.08,'square',0.05);
+const sndPlace=(id)=>{
+  if(id===BLOCKS.SAND.id||id===BLOCKS.GRAVEL.id)beep(200,0.1,'triangle',0.04);
+  else if(id===BLOCKS.WOOD.id||id===BLOCKS.PLANK.id)beep(280,0.1,'square',0.04);
+  else if(id===BLOCKS.GLASS.id)beep(600,0.05,'sine',0.03);
+  else beep(320,0.08,'square',0.05);};
 const sndHurt=()=>beep(90,0.25,'sawtooth',0.1);
 const sndPickup=()=>chord([523,659],0.1,'sine',0.04);
 const sndLevel=()=>chord([523,659,784,1047],0.3,'sine',0.06);
@@ -2680,7 +2776,9 @@ function updateSky(dt){
   const wShallowDay=new THREE.Color('#4a9fe0'),wShallowNight=new THREE.Color('#1a3a6a');
   const wDeepDay=new THREE.Color('#11407a'),wDeepNight=new THREE.Color('#0a1f3a');
   waterUniforms.uShallow.value.copy(wShallowNight).lerp(wShallowDay,day);waterUniforms.uDeep.value.copy(wDeepNight).lerp(wDeepDay,day);
-  const far=22+settings.render*15;scene.fog.near=far*0.45;scene.fog.far=far;
+  const fogDay=22+settings.render*15;const fogNight=fogDay*0.5;
+  const far=fogDay*(day)+(fogNight)*(1-day);
+  scene.fog.near=far*0.4;scene.fog.far=far;
   // Biom-Fog-Farbe
   if(player){const bm=world.biomeAt(Math.floor(player.pos.x),Math.floor(player.pos.z));
     if(bm===BIOME.DESERT){const df=new THREE.Color('#d4a86a');scene.fog.color.lerp(df,0.35*day);}
@@ -2695,6 +2793,9 @@ function updateSky(dt){
   // Sonne glueht warm in der Daemmerung
   const sgCol=sunSprite.material.color;sgCol.setRGB(1,1,1).lerp(new THREE.Color('#ff8a3a'),horizon*0.8);
   const moonDir=new THREE.Vector3(-Math.cos(ang),-Math.sin(ang),0.4).normalize();
+  // Mondphasen (visuell: Helligkeit variiert)
+  const moonPhase=(stats&&stats.days?stats.days%8:0)/8;
+  moonSprite.material.opacity=Math.max(0,(1-day*2)*(0.5+moonPhase*0.5));
   moonSprite.position.set(px+moonDir.x*120,moonDir.y*120,pz+moonDir.z*120);
   moonSprite.material.opacity=Math.max(0,(1-day)*0.9-0.1);
   cloudGroup.children.forEach(c=>{c.position.x+=dt*0.7;if(c.position.x>px+145)c.position.x=px-145;});
@@ -2905,7 +3006,7 @@ function loop(now){
         if(b)ghostMat.color.setStyle(b.top||'#fff');}
       else ghostMesh.visible=false;}
     if(particleMgr)particleMgr.update(dt);
-    mpUpdate(dt);updateFishing(dt);updateRain(dt);updateEffects(dt);if(typeof updateAmbient==='function')updateAmbient(dt);
+    mpUpdate(dt);updateFishing(dt);updateRain(dt);updateEffects(dt);if(typeof updateFurnaces==='function')updateFurnaces(dt);if(typeof updateAmbient==='function')updateAmbient(dt);
     minimapT+=dt;if(minimapT>0.5){minimapT=0;updateMinimap();checkAchievements();}
     // Pflanzenwachstum (zufällig, alle paar Sekunden)
     if(Math.random()<dt*0.1&&world){
@@ -2922,7 +3023,7 @@ function loop(now){
     {const yaw=((-player.yaw%(Math.PI*2))+(Math.PI*2))%(Math.PI*2);const deg=yaw*180/Math.PI|0;
     const dirs=['N','NNO','NO','ONO','O','OSO','SO','SSO','S','SSW','SW','WSW','W','WNW','NW','NNW'];
     const dir=dirs[Math.round(deg/22.5)%16];const ch=$('compassHUD');if(ch)ch.textContent=dir+' '+deg+'°';}
-    $('info').textContent=`XYZ ${player.pos.x.toFixed(0)}/${player.pos.y.toFixed(0)}/${player.pos.z.toFixed(0)}  FPS ${(1/dt).toFixed(0)}\n${tod} Tag ${stats.days+1} | ${biomeName(world.biomeAt(Math.floor(player.pos.x),Math.floor(player.pos.z)))}${player.flying?' | ✈':''}${player.inLava?' | 🔥':''}`;
+    {const _rr=raycastBlock();const _bi=_rr?world.getBlock(_rr.hit[0],_rr.hit[1],_rr.hit[2]):0;const _bn=_bi&&BLOCK_BY_ID[_bi]?BLOCK_BY_ID[_bi].name:'';const bih=$('blockInfoHUD');if(bih)bih.textContent=_bn?'[ '+_bn+' ]':'';}    $('info').textContent=`XYZ ${player.pos.x.toFixed(0)}/${player.pos.y.toFixed(0)}/${player.pos.z.toFixed(0)}  FPS ${(1/dt).toFixed(0)}\n${tod} Tag ${stats.days+1} | ${biomeName(world.biomeAt(Math.floor(player.pos.x),Math.floor(player.pos.z)))}${player.flying?' | ✈':''}${player.inLava?' | 🔥':''}`;
     // Schwimm-Kamera + Splash
     {const wasW=loop._wasW||false;if(player.inWater&&!wasW&&typeof sndSplash!=='undefined')try{sndSplash();}catch(e){}
      loop._wasW=player.inWater||false;
@@ -3025,9 +3126,15 @@ requestAnimationFrame(loop);
     if(e.code==='Escape')document.exitPointerLock&&document.exitPointerLock();
     if(e.code==='F3'){e.preventDefault();const d=$('debugScreen');if(d)d.style.display=d.style.display==='block'?'none':'block';}
     if(e.code==='KeyP'){const ps=$('pauseScreen');if(ps){const show=ps.style.display!=='flex';ps.style.display=show?'flex':'none';running=!show;if(!show)document.exitPointerLock&&document.exitPointerLock();}}
+    if(e.code==='Tab'){e.preventDefault();const pl=$('playerListPanel');if(pl){pl.style.display='flex';const body=$('playerListBody');if(body){
+  const others=Object.values(typeof mpPlayers!=='undefined'?mpPlayers:{});
+  const me=(MP&&MP.playerName)||'Du';
+  body.innerHTML='<div style="color:#5af">● '+me+' (Du)</div>'+
+    others.map(p=>'<div style="opacity:.8">● '+(p.name||'?')+'</div>').join('');}}}
     applyMove();
   });
   document.addEventListener('keyup',(e)=>{
+    if(e.code==='Tab'){const pl=$('playerListPanel');if(pl)pl.style.display='none';}
     keys[e.code]=false;
     if(e.code==='Space'&&player)player.wantJump=false;
     applyMove();
