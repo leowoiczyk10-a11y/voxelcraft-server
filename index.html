@@ -96,6 +96,23 @@
   #death.open { display: flex; }
   #death h1 { font-size: 30px; letter-spacing: 2px; margin-bottom: 20px; }
   #respawnBtn { font-size: 15px; padding: 12px 28px; border: 2px solid #ffd8d8; border-radius: 8px; cursor: pointer; display: inline-block; }
+  /* ---- Settings-Menue ---- */
+  #btnSettings { position: fixed; top: 8px; right: 8px; z-index: 8; width: 38px; height: 38px; border-radius: 9px; border: 1px solid rgba(255,255,255,0.28); background: rgba(20,22,28,0.5); color: #e8f0ff; font-size: 21px; line-height: 36px; text-align: center; cursor: pointer; user-select: none; -webkit-user-select: none; }
+  #btnSettings:hover { background: rgba(44,50,64,0.75); }
+  #settingsScreen { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(8,10,16,0.72); z-index: 10; padding: 16px; }
+  #settingsScreen.open { display: flex; }
+  #settingsPanel { width: min(420px, 94vw); max-height: 90vh; overflow-y: auto; background: linear-gradient(180deg,#1b2030,#141926); border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 18px; color: #e8eefc; box-shadow: 0 20px 60px rgba(0,0,0,0.55); }
+  .setTitle { font-size: 15px; letter-spacing: 2px; font-weight: 700; text-align: center; margin-bottom: 14px; color: #cfe0ff; }
+  .setRow { margin-bottom: 16px; }
+  .setLabel { font-size: 13px; font-weight: 600; margin-bottom: 7px; display: flex; justify-content: space-between; align-items: baseline; }
+  .setVal { color: #8fd0ff; font-family: ui-monospace, monospace; font-size: 13px; }
+  .setRow input[type=range] { width: 100%; accent-color: #4a9eff; height: 22px; }
+  .setHint { font-size: 11px; color: #8e9bb5; margin-top: 5px; line-height: 1.4; }
+  .setSeg { display: flex; gap: 6px; }
+  .setSeg button { flex: 1; padding: 9px 0; border-radius: 8px; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.05); color: #cdd9f0; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .setSeg button.active { background: #2f6fd0; border-color: #4a9eff; color: #fff; }
+  #setClose { margin-top: 6px; text-align: center; padding: 11px; border-radius: 9px; background: #2f6fd0; color: #fff; font-weight: 700; cursor: pointer; letter-spacing: 0.5px; }
+  #setClose:hover { background: #3a7de0; }
 </style>
 </head>
 <body>
@@ -113,6 +130,7 @@
 <div id="btnBreak" class="btn">ABBAU</div>
 <div id="btnPlace" class="btn">SETZEN</div>
 <div id="btnItems" class="btn">ITEMS</div>
+<div id="btnSettings" title="Einstellungen (O)">&#9881;</div>
 
 <div id="invScreen">
   <div id="invPanel">
@@ -138,6 +156,40 @@
     </div>
   </div>
   <div id="held"></div>
+</div>
+
+<div id="settingsScreen">
+  <div id="settingsPanel">
+    <div class="setTitle">EINSTELLUNGEN</div>
+    <div class="setRow">
+      <div class="setLabel">Render-Distanz <span id="setRDVal" class="setVal"></span></div>
+      <input id="setRD" type="range" min="2" max="12" step="1">
+      <div class="setHint">Wie weit die Welt geladen wird. Mehr sieht weiter, frisst aber mehr Leistung.</div>
+    </div>
+    <div class="setRow">
+      <div class="setLabel">Simulations-Distanz <span id="setSDVal" class="setVal"></span></div>
+      <input id="setSD" type="range" min="2" max="12" step="1">
+      <div class="setHint">Ab dieser Entfernung werden Mobs ausgeblendet und nicht mehr animiert.</div>
+    </div>
+    <div class="setRow">
+      <div class="setLabel">Grafik-Preset</div>
+      <div class="setSeg" id="setPreset">
+        <button data-preset="niedrig">Niedrig</button>
+        <button data-preset="mittel">Mittel</button>
+        <button data-preset="hoch">Hoch</button>
+      </div>
+      <div class="setHint">Setzt Render-Distanz, Simulation und interne Aufloesung in einem Rutsch.</div>
+    </div>
+    <div class="setRow">
+      <div class="setLabel">Block-Aufloesung</div>
+      <div class="setSeg" id="setRes">
+        <button data-res="16">16x</button>
+        <button data-res="32">32x</button>
+      </div>
+      <div class="setHint">Pixel-Aufloesung der Block-Texturen. Wirkt sofort.</div>
+    </div>
+    <div id="setClose">Fertig</div>
+  </div>
 </div>
 
 <div id="hurt"></div>
@@ -183,9 +235,21 @@ const CHUNK_SIZE   = 16;
 const Y_MIN = -64, Y_MAX = 320;          // echte Minecraft-Hoehe (Bedrock bis Bauhoehe)
 const WORLD_HEIGHT = Y_MAX - Y_MIN;      // Spannweite (384) = Array-Hoehe pro Chunk
 const WATER_LEVEL  = 62;
-// Render-Distance: bei der hohen Welt bewusst kleiner (sonst frisst Meshing/RAM die schwache GPU).
-// Laeuft's fluessig, kannst du die Desktop-Zahl hochdrehen.
-let RENDER_DISTANCE = isTouch ? 3 : 4;
+// ---- Einstellungen (Settings-Menue) -----------------------------------
+// Grafik-Presets. renderScale = interne Aufloesung (pixelRatio-Cap): kleiner = unschaerfer aber schneller.
+const PRESETS = {
+  niedrig: { renderDist:3, simDist:2, renderScale:0.7 },
+  mittel:  { renderDist:5, simDist:3, renderScale:1.0 },
+  hoch:    { renderDist:8, simDist:5, renderScale:1.0 },
+};
+const SETTINGS_KEY = 'voxelcraft_settings_v1';
+const DEFAULT_PRESET = isTouch ? 'niedrig' : 'mittel';
+let settings = Object.assign({ preset: DEFAULT_PRESET, blockRes:16 }, PRESETS[DEFAULT_PRESET]);
+try { const _raw = localStorage.getItem(SETTINGS_KEY); if(_raw){ Object.assign(settings, JSON.parse(_raw)); } } catch(_){}
+function saveSettings(){ try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch(_){} }
+let settingsOpen = false;
+let RENDER_DISTANCE = settings.renderDist;
+let SIM_DISTANCE = settings.simDist;
 let UNLOAD_DISTANCE = RENDER_DISTANCE + 2;
 let SEED = 1337;                 // Default; wird vom Server-Seed ueberschrieben
 const CHUNK_BUDGET_MS = isTouch ? 5 : 6;
@@ -586,6 +650,228 @@ function clearAllChunks(){
   lastCX=null; lastCZ=null; // erzwingt Neuaufbau in updateWorld
 }
 
+
+// =====================================================================
+//  TEXTUR-ATLAS (prozedural gemalt, 16px + 32px, ein Atlas teilt sich alle Tiles)
+// =====================================================================
+// ===================================================================
+//  VoxelCraft Textur-Generatoren  (NUR ctx.fillStyle + ctx.fillRect!)
+//  Laeuft 1:1 im Browser-Canvas und im Node-Shim -> gleiches Ergebnis.
+// ===================================================================
+
+// Kanonische Tile-Reihenfolge (= Atlas-Layout). Bloecke mappen auf diese Namen.
+const KIND_LIST = [
+  'grass_top','grass_side','dirt','stone','sand','water','planks','cobble',
+  'glass','bricks','log_top','bark','leaves','snow','gravel','crafting_top',
+  'crafting_side','bedrock','coal_ore','copper_ore','iron_ore','gold_ore',
+  'diamond_ore','furnace_top','furnace_side'
+];
+
+function hashStr(s){ let h=2166136261>>>0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
+function clamp255(v){ return v<0?0:v>255?255:v|0; }
+function shadeHex(hex,f){ return 'rgb('+clamp255(((hex>>16)&255)*f)+','+clamp255(((hex>>8)&255)*f)+','+clamp255((hex&255)*f)+')'; }
+function rgbaHex(hex,a){ return 'rgba('+((hex>>16)&255)+','+((hex>>8)&255)+','+(hex&255)+','+a+')'; }
+function lerpHex(h1,h2,t){ const r=clamp255(((h1>>16)&255)*(1-t)+((h2>>16)&255)*t), g=clamp255(((h1>>8)&255)*(1-t)+((h2>>8)&255)*t), b=clamp255((h1&255)*(1-t)+(h2&255)*t); return (r<<16)|(g<<8)|b; }
+
+// ---- kleine Mal-Helfer ----
+function px(ctx,ox,oy,x,y,style){ ctx.fillStyle=style; ctx.fillRect(ox+x,oy+y,1,1); }
+function rect(ctx,ox,oy,x,y,w,h,style){ ctx.fillStyle=style; ctx.fillRect(ox+x,oy+y,w,h); }
+
+// gleichmaessiges Rauschen ueber das ganze Tile
+function noiseFill(ctx,ox,oy,ts,rng,base,amp){
+  for(let y=0;y<ts;y++) for(let x=0;x<ts;x++){ const f=1+(rng()*2-1)*amp; px(ctx,ox,oy,x,y,shadeHex(base,f)); }
+}
+// ein paar verstreute Sprenkel (kleine Rechtecke)
+function specks(ctx,ox,oy,ts,rng,base,count,sz,darkF,liteF){
+  for(let i=0;i<count;i++){ const x=(rng()*ts)|0, y=(rng()*ts)|0, f=rng()<0.5?darkF:liteF; rect(ctx,ox,oy,x,y,sz,sz,shadeHex(base,f)); }
+}
+
+function paintTile(ctx, kind, ts, ox, oy){
+  const rng = mulberry32(hashStr(kind+'@'+ts));
+  const s = ts/16; // Skalierungsfaktor (16 -> 1, 32 -> 2)
+  switch(kind){
+    case 'stone': {
+      noiseFill(ctx,ox,oy,ts,rng,0x888d92,0.12);
+      specks(ctx,ox,oy,ts,rng,0x888d92,Math.round(7*s*s),Math.max(1,s|0),0.78,1.12);
+      // ein paar dunkle Risse
+      for(let i=0;i<2*s;i++){ const x=(rng()*ts)|0,y=(rng()*ts)|0,len=2+((rng()*3*s)|0); for(let k=0;k<len;k++){ px(ctx,ox,oy,Math.min(ts-1,x+k),y,shadeHex(0x888d92,0.62)); } }
+      break; }
+    case 'dirt': {
+      noiseFill(ctx,ox,oy,ts,rng,0x7d5c38,0.16);
+      specks(ctx,ox,oy,ts,rng,0x7d5c38,Math.round(9*s*s),Math.max(1,s|0),0.7,1.15);
+      break; }
+    case 'grass_top': {
+      noiseFill(ctx,ox,oy,ts,rng,0x5fa83d,0.16);
+      specks(ctx,ox,oy,ts,rng,0x5fa83d,Math.round(10*s*s),Math.max(1,s|0),0.75,1.18);
+      break; }
+    case 'grass_side': {
+      // unten Erde
+      noiseFill(ctx,ox,oy,ts,rng,0x7d5c38,0.16);
+      // oben Gras mit gezackter Kante
+      const baseLip=Math.round(ts*0.30);
+      for(let x=0;x<ts;x++){
+        const lip=baseLip + (rng()<0.5? (rng()*2*s|0) : -(rng()*2*s|0));
+        for(let y=0;y<lip;y++){ const f=1+(rng()*2-1)*0.16; px(ctx,ox,oy,x,y,shadeHex(0x5fa83d,f)); }
+        // ein paar herabhaengende Halme
+        if(rng()<0.25){ px(ctx,ox,oy,x,lip,shadeHex(0x4f8f31,1.0)); }
+      }
+      break; }
+    case 'sand': {
+      noiseFill(ctx,ox,oy,ts,rng,0xdfd6a4,0.07);
+      specks(ctx,ox,oy,ts,rng,0xdfd6a4,Math.round(8*s*s),1,0.82,1.08);
+      break; }
+    case 'gravel': {
+      noiseFill(ctx,ox,oy,ts,rng,0x87827c,0.2);
+      for(let i=0;i<Math.round(10*s*s);i++){ const x=(rng()*(ts-1))|0,y=(rng()*(ts-1))|0,f=rng()<0.5?0.7:1.18; rect(ctx,ox,oy,x,y,Math.max(1,s|0),Math.max(1,s|0),shadeHex(0x87827c,f)); }
+      break; }
+    case 'snow': {
+      noiseFill(ctx,ox,oy,ts,rng,0xeef3f8,0.05);
+      specks(ctx,ox,oy,ts,rng,0xdce8f5,Math.round(4*s*s),1,0.92,1.03);
+      break; }
+    case 'planks': {
+      const base=0x9a7842, plankH=Math.max(2,Math.round(ts/4));
+      for(let y=0;y<ts;y++){ const band=(y/plankH)|0; const bf=0.86+0.12*((band*37)%5)/5; for(let x=0;x<ts;x++){ const f=bf*(1+(rng()*2-1)*0.05); px(ctx,ox,oy,x,y,shadeHex(base,f)); } }
+      // dunkle Plankenfugen (horizontal)
+      for(let b=1;b*plankH<ts;b++){ for(let x=0;x<ts;x++) px(ctx,ox,oy,x,b*plankH-1,shadeHex(base,0.5)); }
+      // versetzte vertikale Stossfugen je Band
+      for(let b=0;b*plankH<ts;b++){ const jx=((b*7+3)%ts); for(let y=0;y<plankH-1;y++) px(ctx,ox,oy,jx,b*plankH+y,shadeHex(base,0.55)); }
+      break; }
+    case 'bark': {
+      const base=0x5f4a2e;
+      for(let x=0;x<ts;x++){ const cf=0.8+0.4*rng(); for(let y=0;y<ts;y++){ const f=cf*(1+(rng()*2-1)*0.08); px(ctx,ox,oy,x,y,shadeHex(base,f)); } }
+      // ein paar dunkle vertikale Rillen
+      for(let i=0;i<3*s;i++){ const x=(rng()*ts)|0; for(let y=0;y<ts;y++) if(rng()<0.85) px(ctx,ox,oy,x,y,shadeHex(base,0.6)); }
+      break; }
+    case 'log_top': {
+      const base=0xb9965f, cx=ts/2-0.5, cy=ts/2-0.5;
+      for(let y=0;y<ts;y++) for(let x=0;x<ts;x++){ const d=Math.max(Math.abs(x-cx),Math.abs(y-cy)); const ring=Math.sin(d*1.6)*0.5; const f=1+ring*0.18+(rng()*2-1)*0.05; px(ctx,ox,oy,x,y,shadeHex(base,f)); }
+      rect(ctx,ox,oy,Math.round(cx),Math.round(cy),Math.max(1,s|0),Math.max(1,s|0),shadeHex(base,0.7));
+      break; }
+    case 'leaves': {
+      noiseFill(ctx,ox,oy,ts,rng,0x3f7a2f,0.24);
+      // dunkle Loecher / helle Blaetter
+      for(let i=0;i<Math.round(8*s*s);i++){ const x=(rng()*ts)|0,y=(rng()*ts)|0; px(ctx,ox,oy,x,y,shadeHex(0x2c5a20,1.0)); }
+      for(let i=0;i<Math.round(6*s*s);i++){ const x=(rng()*ts)|0,y=(rng()*ts)|0; px(ctx,ox,oy,x,y,shadeHex(0x5aa23c,1.0)); }
+      break; }
+    case 'cobble': {
+      noiseFill(ctx,ox,oy,ts,rng,0x7e7e82,0.16);
+      // Moertelfugen
+      const midY=(ts/2)|0; for(let x=0;x<ts;x++) px(ctx,ox,oy,x,midY,shadeHex(0x7e7e82,0.5));
+      const jx1=(ts*0.33)|0, jx2=(ts*0.78)|0;
+      for(let y=0;y<midY;y++) px(ctx,ox,oy,jx1,y,shadeHex(0x7e7e82,0.5));
+      for(let y=midY;y<ts;y++) px(ctx,ox,oy,jx2,y,shadeHex(0x7e7e82,0.5));
+      // ein paar helle Steinkanten
+      specks(ctx,ox,oy,ts,rng,0x7e7e82,Math.round(5*s*s),Math.max(1,s|0),0.82,1.18);
+      break; }
+    case 'bricks': {
+      rect(ctx,ox,oy,0,0,ts,ts,shadeHex(0xc9bfa8,1.0)); // Moertel
+      const bh=Math.max(2,Math.round(ts/4)), bw=Math.max(3,Math.round(ts/2));
+      for(let row=0, y=0; y<ts; row++, y+=bh){ const off=(row%2)?-(bw/2|0):0; for(let x=off; x<ts; x+=bw){ rect(ctx,ox,oy,x+1,y+1,bw-1,bh-1,shadeHex(0x9c4a3a,0.9+0.2*((x*7+row)%3)/3)); } }
+      break; }
+    case 'bedrock': {
+      noiseFill(ctx,ox,oy,ts,rng,0x33333a,0.35);
+      for(let i=0;i<Math.round(9*s*s);i++){ const x=(rng()*(ts-1))|0,y=(rng()*(ts-1))|0; rect(ctx,ox,oy,x,y,Math.max(1,s|0),Math.max(1,s|0), rng()<0.5?'rgb(10,10,12)':shadeHex(0x55555f,1.0)); }
+      break; }
+    case 'coal_ore':    return ore(ctx,ox,oy,ts,rng,0x222226,0.5);
+    case 'copper_ore':  return ore(ctx,ox,oy,ts,rng,0xc0764a,0.55);
+    case 'iron_ore':    return ore(ctx,ox,oy,ts,rng,0xd8c0a8,0.6);
+    case 'gold_ore':    return ore(ctx,ox,oy,ts,rng,0xf2d24a,0.6);
+    case 'diamond_ore': return ore(ctx,ox,oy,ts,rng,0x6fdfe6,0.65);
+    case 'furnace_top': {
+      noiseFill(ctx,ox,oy,ts,rng,0x5c5c62,0.1);
+      const c=(ts*0.28)|0, sz=(ts*0.44)|0; rect(ctx,ox,oy,c,c,sz,sz,shadeHex(0x2a2a30,1.0));
+      rect(ctx,ox,oy,c,c,sz,1,shadeHex(0x7a7a82,1.0));
+      break; }
+    case 'furnace_side': {
+      // Steinziegel-Hintergrund
+      noiseFill(ctx,ox,oy,ts,rng,0x6e6e74,0.12);
+      const midY=(ts*0.5)|0; for(let x=0;x<ts;x++) px(ctx,ox,oy,x,midY,shadeHex(0x6e6e74,0.55));
+      // dunkle Ofenoeffnung unten mittig
+      const ow=(ts*0.5)|0, oh=(ts*0.34)|0, oxp=((ts-ow)/2)|0, oyp=ts-oh-Math.max(1,s|0);
+      rect(ctx,ox,oy,oxp,oyp,ow,oh,'rgb(20,18,22)');
+      rect(ctx,ox,oy,oxp,oyp,ow,Math.max(1,s|0),shadeHex(0x9a9aa2,1.0)); // heller Sims oben
+      rect(ctx,ox,oy,oxp+1,oyp+oh-Math.max(1,s|0),ow-2,Math.max(1,s|0),shadeHex(0xff8a3a,1.0)); // Glut-Schimmer
+      break; }
+    case 'crafting_top': {
+      noiseFill(ctx,ox,oy,ts,rng,0x9a7842,0.06);
+      // 3x3 Gitter
+      const g=shadeHex(0x6f5126,1.0); const step=ts/3;
+      for(let i=1;i<3;i++){ const p=Math.round(i*step); for(let x=0;x<ts;x++) px(ctx,ox,oy,x,p,g); for(let y=0;y<ts;y++) px(ctx,ox,oy,p,y,g); }
+      rect(ctx,ox,oy,0,0,ts,1,g); rect(ctx,ox,oy,0,ts-1,ts,1,g); rect(ctx,ox,oy,0,0,1,ts,g); rect(ctx,ox,oy,ts-1,0,1,ts,g);
+      break; }
+    case 'crafting_side': {
+      paintTile(ctx,'planks',ts,ox,oy); // gleiche Planken-Basis
+      // ein paar dunkle Werkzeug-Kerben
+      rect(ctx,ox,oy,(ts*0.2)|0,(ts*0.25)|0,Math.max(1,s|0),(ts*0.4)|0,shadeHex(0x6f5126,0.7));
+      rect(ctx,ox,oy,(ts*0.6)|0,(ts*0.35)|0,(ts*0.25)|0,Math.max(1,s|0),shadeHex(0x6f5126,0.7));
+      break; }
+    case 'water': {
+      const base=0x2f6fd8;
+      for(let y=0;y<ts;y++){ const wave=Math.sin(y*0.9)*0.08; for(let x=0;x<ts;x++){ const f=1+wave+(rng()*2-1)*0.05; ctx.fillStyle=rgbaHex(lerpHex(base, f>1?0x6fa0f0:0x224fb0, Math.abs(wave)*4+0.1*rng()),0.74); ctx.fillRect(ox+x,oy+y,1,1); } }
+      break; }
+    case 'glass': {
+      // Mitte fast klar
+      rect(ctx,ox,oy,0,0,ts,ts,rgbaHex(0xbfe0ee,0.10));
+      // Rahmen
+      const fr=rgbaHex(0xdff0f7,0.95);
+      rect(ctx,ox,oy,0,0,ts,1,fr); rect(ctx,ox,oy,0,ts-1,ts,1,fr); rect(ctx,ox,oy,0,0,1,ts,fr); rect(ctx,ox,oy,ts-1,0,1,ts,fr);
+      // Glanz-Diagonale
+      for(let i=0;i<ts;i++){ if(i<ts) px(ctx,ox,oy,i,(ts-1-i),rgbaHex(0xffffff,0.35)); }
+      break; }
+    default: { noiseFill(ctx,ox,oy,ts,rng,0x888d92,0.12); }
+  }
+}
+function ore(ctx,ox,oy,ts,rng,oreHex,bright){
+  const s=ts/16;
+  paintTile(ctx,'stone',ts,ox,oy); // Steinbasis
+  const clusters=3+((rng()*2)|0);
+  for(let c=0;c<clusters;c++){
+    const cx=2+((rng()*(ts-4))|0), cy=2+((rng()*(ts-4))|0), n=2+((rng()*3)|0);
+    for(let k=0;k<n;k++){ const dx=((rng()*3-1)*s)|0, dy=((rng()*3-1)*s)|0, x=Math.max(0,Math.min(ts-1,cx+dx)), y=Math.max(0,Math.min(ts-1,cy+dy)); const f=bright*(0.85+0.3*rng()); rect(ctx,ox,oy,x,y,Math.max(1,s|0),Math.max(1,s|0),shadeHex(oreHex,f)); }
+  }
+}
+
+
+// ---- Block -> Tile-Namen (top/side/bottom). String = alle Faces gleich. ----
+const TEX = {
+  [GRASS]:{top:'grass_top',side:'grass_side',bottom:'dirt'},
+  [DIRT]:'dirt', [STONE]:'stone', [SAND]:'sand', [WATER]:'water',
+  [WOOD]:'planks', [COBBLE]:'cobble', [GLASS]:'glass', [BRICKS]:'bricks',
+  [LOG]:{top:'log_top',side:'bark',bottom:'log_top'}, [LEAVES]:'leaves',
+  [SNOW]:'snow', [GRAVEL]:'gravel',
+  [CRAFTING_TABLE]:{top:'crafting_top',side:'crafting_side',bottom:'planks'},
+  [BEDROCK]:'bedrock', [COAL_ORE]:'coal_ore', [COPPER_ORE]:'copper_ore',
+  [IRON_ORE]:'iron_ore', [GOLD_ORE]:'gold_ore', [DIAMOND_ORE]:'diamond_ore',
+  [FURNACE]:{top:'furnace_top',side:'furnace_side',bottom:'stone'},
+};
+const ATLAS_N = Math.ceil(Math.sqrt(KIND_LIST.length));
+const KIND_INDEX = {}; KIND_LIST.forEach((k,i)=>{ KIND_INDEX[k]=i; });
+function buildAtlasTexture(ts){
+  const cv=document.createElement('canvas'); cv.width=cv.height=ATLAS_N*ts;
+  const ctx=cv.getContext('2d');
+  KIND_LIST.forEach((k,i)=>{ const col=i%ATLAS_N, row=(i/ATLAS_N)|0;
+    ctx.save(); ctx.beginPath(); ctx.rect(col*ts,row*ts,ts,ts); ctx.clip();
+    paintTile(ctx,k,ts,col*ts,row*ts); ctx.restore(); });
+  const tex=new THREE.CanvasTexture(cv);
+  tex.magFilter=THREE.NearestFilter; tex.minFilter=THREE.NearestFilter;
+  tex.generateMipmaps=false; tex.wrapS=tex.wrapT=THREE.ClampToEdgeWrapping; tex.flipY=false;
+  return tex;
+}
+const ATLAS = { 16:buildAtlasTexture(16), 32:buildAtlasTexture(32) };
+// UV fuer ein Tile. eps = halbe Texel-Einrueckung (16px-Basis) gegen Bleeding, aufloesungs-unabhaengig.
+const TILE_EPS = 0.5/16;
+function tileUV(idx, uFrac, vFrac){
+  const col=idx%ATLAS_N, row=(idx/ATLAS_N)|0;
+  const u=(col + TILE_EPS + uFrac*(1-2*TILE_EPS))/ATLAS_N;
+  const v=(row + TILE_EPS + (1-vFrac)*(1-2*TILE_EPS))/ATLAS_N; // flipY=false -> vFrac=1 ist Tile-Oberkante
+  return [u,v];
+}
+function blockTileIndex(id, faceType){
+  let t=TEX[id]; if(t===undefined) t='stone';
+  if(typeof t!=='string') t = t[faceType] || t.side || 'stone';
+  const i=KIND_INDEX[t]; return i===undefined?KIND_INDEX['stone']:i;
+}
+
 // =====================================================================
 //  CHUNK-MESHING (ein gemergtes Mesh pro Chunk, Face-Culling)
 // =====================================================================
@@ -619,7 +905,7 @@ function pushTorch(P,N,C,I, x,y,z){
   pushBox(P,N,C,I, cx-0.12,y+0.5,cz-0.12, cx+0.12,y+0.74,cz+0.12, 1.0,0.74,0.32);  // Flamme (hell)
 }
 function buildChunkGeometry(c){
-  const pos=[],nor=[],col=[],idx=[], wpos=[],wnor=[],wcol=[],widx=[], tpos=[],tnor=[],tcol=[],tidx=[];
+  const pos=[],nor=[],col=[],uv=[],idx=[], wpos=[],wnor=[],wcol=[],wuv=[],widx=[], tpos=[],tnor=[],tcol=[],tidx=[];
   const ox=c.cx*CHUNK_SIZE, oz=c.cz*CHUNK_SIZE;
   for(let y=Y_MIN;y<Y_MAX;y++) for(let z=0;z<CHUNK_SIZE;z++) for(let x=0;x<CHUNK_SIZE;x++){
     const id=c.data[((y-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x];
@@ -629,21 +915,28 @@ function buildChunkGeometry(c){
     for(const f of FACES){
       const nb=world.getBlock(wx+f.dir[0], y+f.dir[1], wz+f.dir[2]);
       if(!faceVisible(id, nb)) continue;
-      const P=trans?wpos:pos, N=trans?wnor:nor, C=trans?wcol:col, I=trans?widx:idx;
-      const ndx=P.length/3, shade=faceShade(f.dir), base=faceColor(id,f.dir);
-      const r=((base>>16)&255)/255*shade, g=((base>>8)&255)/255*shade, b=(base&255)/255*shade;
-      for(const cor of f.corners){ P.push(x+cor[0],y+cor[1],z+cor[2]); N.push(f.dir[0],f.dir[1],f.dir[2]); C.push(r,g,b); }
+      const P=trans?wpos:pos, N=trans?wnor:nor, C=trans?wcol:col, U=trans?wuv:uv, I=trans?widx:idx;
+      const ndx=P.length/3, shade=faceShade(f.dir);
+      const fType = f.dir[1]>0?'top':(f.dir[1]<0?'bottom':'side');
+      const tileIdx = blockTileIndex(id, fType);
+      for(const cor of f.corners){
+        P.push(x+cor[0],y+cor[1],z+cor[2]); N.push(f.dir[0],f.dir[1],f.dir[2]); C.push(shade,shade,shade);
+        let uF, vF;
+        if(f.dir[1]!==0){ uF=cor[0]; vF=cor[2]; } else { uF=(f.dir[0]!==0)?cor[2]:cor[0]; vF=cor[1]; }
+        const t=tileUV(tileIdx,uF,vF); U.push(t[0],t[1]);
+      }
       I.push(ndx,ndx+1,ndx+2,ndx+2,ndx+1,ndx+3);
     }
   }
-  return { pos,nor,col,idx,wpos,wnor,wcol,widx,tpos,tnor,tcol,tidx };
+  return { pos,nor,col,uv,idx,wpos,wnor,wcol,wuv,widx,tpos,tnor,tcol,tidx };
 }
-function makeMesh(P,N,C,I,material,cx,cz){
+function makeMesh(P,N,C,U,I,material,cx,cz){
   if(P.length===0) return null;
   const geo=new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(P,3));
   geo.setAttribute('normal',   new THREE.Float32BufferAttribute(N,3));
   geo.setAttribute('color',    new THREE.Float32BufferAttribute(C,3));
+  if(U) geo.setAttribute('uv', new THREE.Float32BufferAttribute(U,2));
   geo.setIndex(I); geo.computeBoundingSphere();
   const m=new THREE.Mesh(geo,material); m.position.set(cx*CHUNK_SIZE,0,cz*CHUNK_SIZE);
   return m;
@@ -652,9 +945,9 @@ function disposeMesh(m){ if(!m) return; scene.remove(m); m.geometry.dispose(); }
 function meshChunk(c){
   const g=buildChunkGeometry(c);
   disposeMesh(c.mesh); c.mesh=null; disposeMesh(c.waterMesh); c.waterMesh=null; disposeMesh(c.torchMesh); c.torchMesh=null;
-  c.mesh=makeMesh(g.pos,g.nor,g.col,g.idx,opaqueMat,c.cx,c.cz); if(c.mesh) scene.add(c.mesh);
-  c.waterMesh=makeMesh(g.wpos,g.wnor,g.wcol,g.widx,waterMat,c.cx,c.cz); if(c.waterMesh) scene.add(c.waterMesh);
-  c.torchMesh=makeMesh(g.tpos,g.tnor,g.tcol,g.tidx,torchMat,c.cx,c.cz); if(c.torchMesh) scene.add(c.torchMesh);
+  c.mesh=makeMesh(g.pos,g.nor,g.col,g.uv,g.idx,opaqueMat,c.cx,c.cz); if(c.mesh) scene.add(c.mesh);
+  c.waterMesh=makeMesh(g.wpos,g.wnor,g.wcol,g.wuv,g.widx,waterMat,c.cx,c.cz); if(c.waterMesh) scene.add(c.waterMesh);
+  c.torchMesh=makeMesh(g.tpos,g.tnor,g.tcol,null,g.tidx,torchMat,c.cx,c.cz); if(c.torchMesh) scene.add(c.torchMesh);
   c.dirty=false;
 }
 
@@ -671,12 +964,13 @@ camera.rotation.order='YXZ';
 
 const renderer=new THREE.WebGLRenderer({ antialias:!isTouch, powerPreference:'high-performance' });
 renderer.setSize(innerWidth,innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio,1)); // Cap 1: groesster Perf-Hebel (v.a. mobil)
+renderer.setPixelRatio(Math.min(devicePixelRatio, settings.renderScale)); // Cap aus Settings (Render-Scale): groesster Perf-Hebel
 document.getElementById('app').appendChild(renderer.domElement);
 const canvas=renderer.domElement;
 
-const opaqueMat=new THREE.MeshLambertMaterial({ vertexColors:true });
-const waterMat =new THREE.MeshLambertMaterial({ vertexColors:true, transparent:true, opacity:0.72, depthWrite:false, side:THREE.DoubleSide });
+const opaqueMat=new THREE.MeshLambertMaterial({ vertexColors:true, map:ATLAS[settings.blockRes] });
+const waterMat =new THREE.MeshLambertMaterial({ vertexColors:true, map:ATLAS[settings.blockRes], transparent:true, depthWrite:false, side:THREE.DoubleSide });
+function applyBlockRes(){ const t=ATLAS[settings.blockRes]; if(!t) return; opaqueMat.map=t; waterMat.map=t; opaqueMat.needsUpdate=true; waterMat.needsUpdate=true; }
 const torchMat =new THREE.MeshBasicMaterial({ vertexColors:true, side:THREE.DoubleSide }); // unbeleuchtet -> Fackeln leuchten immer
 const hemi=new THREE.HemisphereLight(0xbcd6f5,0x6b5a40,0.85); scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xffffff,0.45); sun.position.set(0.4,1.0,0.25); scene.add(sun);
@@ -842,7 +1136,7 @@ const joyVec={x:0,y:0};
 const overlay=document.getElementById('overlay');
 const nameInput=document.getElementById('nameInput');
 let playerName='';
-function isActive(){ return isTouch ? touchPlaying : locked; }
+function isActive(){ return (isTouch ? touchPlaying : locked) && !settingsOpen; }
 
 // ---- Desktop: Tastatur + Maus + Pointer Lock ----
 addEventListener('keydown', (e)=>{
@@ -850,7 +1144,8 @@ addEventListener('keydown', (e)=>{
   if(e.code==='F3'){ e.preventDefault(); debugEl.style.display = debugEl.style.display==='none'?'':'none'; }
   if(e.code.startsWith('Digit')){ const n=parseInt(e.code.slice(5),10)-1; if(n>=0&&n<HOTBAR_COUNT){ selectedSlot=n; renderHotbar(); } }
   if(e.code==='KeyE'){ e.preventDefault(); toggleInv(); }
-  if(e.code==='Escape' && invOpen){ closeInv(); }
+  if(e.code==='KeyO'){ e.preventDefault(); toggleSettings(); }
+  if(e.code==='Escape'){ if(invOpen) closeInv(); else if(settingsOpen) closeSettings(); }
 });
 addEventListener('keyup', (e)=>keys.delete(e.code));
 document.addEventListener('pointerlockchange', ()=>{ locked=document.pointerLockElement===canvas; if(!invOpen) overlay.classList.toggle('hidden',locked); if(!locked) keys.clear(); });
@@ -1000,6 +1295,62 @@ function closeInv(){
 }
 function toggleInv(){ if(!isActive() && !invOpen) return; invOpen?closeInv():openInv(); }
 btnItems.addEventListener('touchstart', (e)=>{ e.preventDefault(); toggleInv(); }, {passive:false});
+
+// ---- Settings-Menue Verdrahtung ----
+const btnSettings=document.getElementById('btnSettings');
+const settingsScreen=document.getElementById('settingsScreen');
+const setRD=document.getElementById('setRD'), setRDVal=document.getElementById('setRDVal');
+const setSD=document.getElementById('setSD'), setSDVal=document.getElementById('setSDVal');
+const setPresetEl=document.getElementById('setPreset'), setResEl=document.getElementById('setRes');
+const setCloseEl=document.getElementById('setClose');
+setRD.max = isTouch ? 6 : 12;   // Handy verkraftet keine 12 Chunks
+setSD.max = isTouch ? 6 : 12;
+
+function applyRenderDistance(){
+  UNLOAD_DISTANCE = RENDER_DISTANCE + 2;
+  if(scene.fog){ scene.fog.near=(RENDER_DISTANCE-1.5)*CHUNK_SIZE; scene.fog.far=RENDER_DISTANCE*CHUNK_SIZE+8; }
+  lastCX=null; lastCZ=null;   // erzwingt sofortige Neu-Berechnung der geladenen Chunks
+}
+function applyRenderScale(){
+  renderer.setPixelRatio(Math.min(devicePixelRatio, settings.renderScale));
+  renderer.setSize(innerWidth, innerHeight);
+}
+function markSegButtons(){
+  for(const b of setPresetEl.children) b.classList.toggle('active', b.dataset.preset===settings.preset);
+  for(const b of setResEl.children) b.classList.toggle('active', +b.dataset.res===settings.blockRes);
+}
+function syncSettingsUI(){
+  setRD.value=settings.renderDist; setRDVal.textContent=settings.renderDist;
+  setSD.value=settings.simDist;    setSDVal.textContent=settings.simDist;
+  markSegButtons();
+}
+function applyPreset(name){
+  const p=PRESETS[name]; if(!p) return;
+  settings.preset=name; settings.renderDist=p.renderDist; settings.simDist=p.simDist; settings.renderScale=p.renderScale;
+  RENDER_DISTANCE=settings.renderDist; SIM_DISTANCE=settings.simDist;
+  applyRenderDistance(); applyRenderScale(); syncSettingsUI(); saveSettings();
+}
+setRD.addEventListener('input', ()=>{
+  settings.renderDist=+setRD.value; RENDER_DISTANCE=settings.renderDist;
+  if(settings.simDist>settings.renderDist){ settings.simDist=settings.renderDist; SIM_DISTANCE=settings.simDist; }
+  settings.preset='eigene'; applyRenderDistance(); syncSettingsUI(); saveSettings();
+});
+setSD.addEventListener('input', ()=>{
+  settings.simDist=Math.min(+setSD.value, settings.renderDist); SIM_DISTANCE=settings.simDist;
+  settings.preset='eigene'; syncSettingsUI(); saveSettings();
+});
+setPresetEl.addEventListener('click', (e)=>{ const b=e.target.closest('button'); if(b) applyPreset(b.dataset.preset); });
+setResEl.addEventListener('click', (e)=>{ const b=e.target.closest('button'); if(!b) return; settings.blockRes=+b.dataset.res; applyBlockRes(); markSegButtons(); saveSettings(); });
+
+function openSettings(){ settingsOpen=true; settingsScreen.classList.add('open'); syncSettingsUI(); if(!isTouch) document.exitPointerLock(); }
+function closeSettings(){ settingsOpen=false; settingsScreen.classList.remove('open'); }
+function toggleSettings(){ settingsOpen ? closeSettings() : openSettings(); }
+btnSettings.addEventListener('click', (e)=>{ e.preventDefault(); toggleSettings(); });
+btnSettings.addEventListener('touchstart', (e)=>{ e.preventDefault(); e.stopPropagation(); toggleSettings(); }, {passive:false});
+setCloseEl.addEventListener('click', closeSettings);
+
+// gespeicherte Einstellungen beim Start anwenden
+applyRenderScale(); applyRenderDistance(); syncSettingsUI();
 
 // =====================================================================
 //  MULTIPLAYER (passt exakt zum WS-Protokoll des Servers)
@@ -1242,6 +1593,9 @@ function survivalUpdate(dt, now){
 function updateMobs(dt){
   for(const [id,m] of mobsMap){
     const p=m.group.position;
+    // Simulation Distance: weit entfernte Mobs ausblenden + nicht animieren (Perf-Hebel)
+    if(Math.max(Math.abs(m.tx-player.x), Math.abs(m.tz-player.z)) > SIM_DISTANCE*CHUNK_SIZE){ m.group.visible=false; continue; }
+    m.group.visible=true;
     const ndx=(m.tx-p.x)*0.2, ndz=(m.tz-p.z)*0.2;
     p.x+=ndx; p.z+=ndz;
     p.y = mobGroundY(p.x, p.z);
