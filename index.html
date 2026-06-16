@@ -21,6 +21,10 @@
   #crosshair::before, #crosshair::after { content: ""; position: absolute; background: #fff; box-shadow: 0 0 2px rgba(0,0,0,0.6); }
   #crosshair::before { left: 50%; top: 0; width: 2px; height: 100%; transform: translateX(-50%); }
   #crosshair::after  { top: 50%; left: 0; height: 2px; width: 100%; transform: translateY(-50%); }
+  #mineBar { position: absolute; left: 50%; top: calc(50% + 16px); transform: translateX(-50%); width: 50px; height: 5px; background: rgba(0,0,0,0.5); border-radius: 3px; display: none; overflow: hidden; z-index: 5; }
+  #mineFill { height: 100%; width: 0%; background: #e8e8e8; }
+  .slot, .islot { position: relative; }
+  .durbar { position: absolute; left: 4px; right: 4px; bottom: 3px; height: 3px; background: rgba(0,0,0,0.45); border-radius: 2px; overflow: hidden; }
 
   #hotbar { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; gap: 5px; padding: 5px; background: rgba(20,22,28,0.45); border-radius: 10px; backdrop-filter: blur(4px); pointer-events: auto; }
   .slot { width: 46px; height: 46px; border-radius: 7px; background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
@@ -54,15 +58,44 @@
   #overlay .controls b { color: #f2f6ff; }
   #overlay.hidden { display: none; }
 
-  #picker { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(8,10,16,0.62); z-index: 9; pointer-events: auto; padding: 16px; }
-  #picker.open { display: flex; }
-  #pickerInner { background: rgba(20,22,28,0.95); border-radius: 14px; padding: 14px; max-width: 92vw; max-height: 80vh; overflow: auto; }
-  #pickerInner h2 { font-family: ui-monospace, monospace; color: #e8f0ff; font-size: 13px; margin-bottom: 10px; text-align: center; letter-spacing: 1px; }
-  #pickerGrid { display: grid; grid-template-columns: repeat(5, 62px); gap: 7px; }
-  .pick { width: 62px; height: 62px; border-radius: 8px; background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.12); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; }
-  .pick .sw { width: 28px; height: 28px; border-radius: 4px; box-shadow: inset 0 -5px 0 rgba(0,0,0,0.22); }
-  .pick .nm { font-size: 9px; color: #cfd8ec; font-family: ui-monospace, monospace; }
-  .pick:active, .pick:hover { border-color: #fff; background: rgba(255,255,255,0.16); }
+  #invScreen { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(8,10,16,0.66); z-index: 9; pointer-events: auto; padding: 12px; }
+  #invScreen.open { display: flex; }
+  #invPanel { background: rgba(24,26,32,0.96); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 12px; max-width: 95vw; }
+  .invCraftRow { display: flex; align-items: center; justify-content: center; gap: 14px; }
+  .craftGrid { display: grid; grid-template-columns: repeat(3, 42px); grid-auto-rows: 42px; gap: 4px; }
+  .craftArrow { color: #cfd8ec; font-size: 22px; }
+  .invGrid { display: grid; grid-template-columns: repeat(9, 42px); grid-auto-rows: 42px; gap: 4px; }
+  .invHot { margin-top: 2px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.12); }
+  .islot { width: 42px; height: 42px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1); position: relative; cursor: pointer; }
+  .islot.out { border-color: rgba(120,200,120,0.55); }
+  .islot:active { border-color: #fff; }
+  .iswatch { position: absolute; inset: 6px; border-radius: 3px; box-shadow: inset 0 -4px 0 rgba(0,0,0,0.22); }
+  .icount { position: absolute; right: 2px; bottom: 0; font-size: 11px; color: #fff; text-shadow: 0 1px 2px #000; font-family: ui-monospace, monospace; }
+  #held { position: fixed; z-index: 12; width: 42px; height: 42px; transform: translate(-50%,-50%); pointer-events: none; display: none; }
+  #held .iswatch { inset: 4px; }
+  .slot .hcount { position: absolute; right: 3px; bottom: 1px; font-size: 11px; color: #fff; text-shadow: 0 1px 2px #000; }
+  .invFurnaceRow { display: flex; align-items: center; justify-content: center; gap: 14px; }
+  .fceCol { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .fceFlame { width: 16px; height: 16px; border-radius: 3px; background: #3a2a18; transition: background 0.2s; }
+  .fceFlame.lit { background: radial-gradient(circle at 50% 60%, #ffd24a, #ff7a1a 72%); box-shadow: 0 0 7px #ff9a3a; }
+  .fceArrowWrap { width: 64px; height: 8px; background: rgba(255,255,255,0.12); border-radius: 4px; overflow: hidden; }
+  .fceProg { width: 0%; height: 100%; background: #cfd8ec; }
+  .invHotRow { display: flex; align-items: center; gap: 12px; }
+  .islot.offhand { border-color: rgba(120,160,220,0.55); }
+  #invTitle { text-align: center; color: #cfd8ec; font-size: 12px; letter-spacing: 1.5px; }
+
+  #hurt { position: fixed; inset: 0; pointer-events: none; z-index: 4; background: radial-gradient(circle, rgba(170,0,0,0) 42%, rgba(170,0,0,0.6) 100%); opacity: 0; transition: opacity 0.08s; }
+  #vitals { position: fixed; left: 50%; bottom: 74px; transform: translateX(-50%); z-index: 5; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .vrow { display: flex; gap: 3px; }
+  .pip { width: 12px; height: 12px; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+  .pip.hp  { background: #4a2020; } .pip.hp.on  { background: #e23b3b; }
+  .pip.hg  { background: #4a3a20; } .pip.hg.on  { background: #d98a2b; }
+  .pip.air { background: #1e3a4a; } .pip.air.on { background: #5bc0f0; }
+  #airRow { display: none; } #airRow.show { display: flex; }
+  #death { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(60,10,10,0.72); backdrop-filter: blur(4px); z-index: 11; pointer-events: auto; text-align: center; color: #ffd8d8; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  #death.open { display: flex; }
+  #death h1 { font-size: 30px; letter-spacing: 2px; margin-bottom: 20px; }
+  #respawnBtn { font-size: 15px; padding: 12px 28px; border: 2px solid #ffd8d8; border-radius: 8px; cursor: pointer; display: inline-block; }
 </style>
 </head>
 <body>
@@ -70,6 +103,7 @@
 
 <div id="hud">
   <div id="crosshair"></div>
+  <div id="mineBar"><div id="mineFill"></div></div>
   <div id="debug"></div>
   <div id="hotbar"></div>
 </div>
@@ -80,7 +114,40 @@
 <div id="btnPlace" class="btn">SETZEN</div>
 <div id="btnItems" class="btn">ITEMS</div>
 
-<div id="picker"><div id="pickerInner"><h2>BLOECKE WAEHLEN</h2><div id="pickerGrid"></div></div></div>
+<div id="invScreen">
+  <div id="invPanel">
+    <div id="invTitle">INVENTAR</div>
+    <div id="craftRow" class="invCraftRow">
+      <div id="craftGridEl" class="craftGrid"></div>
+      <div class="craftArrow">&#10142;</div>
+      <div id="craftOutEl"></div>
+    </div>
+    <div id="furnaceRow" class="invFurnaceRow" style="display:none">
+      <div class="fceCol">
+        <div id="fceInEl"></div>
+        <div id="fceFlame" class="fceFlame"></div>
+        <div id="fceFuelEl"></div>
+      </div>
+      <div class="fceArrowWrap"><div id="fceProg" class="fceProg"></div></div>
+      <div id="fceOutEl"></div>
+    </div>
+    <div id="invMainEl" class="invGrid"></div>
+    <div class="invHotRow">
+      <div id="invHotEl" class="invGrid invHot"></div>
+      <div id="offhandEl" class="islot offhand" data-zone="off" data-idx="0"></div>
+    </div>
+  </div>
+  <div id="held"></div>
+</div>
+
+<div id="hurt"></div>
+<div id="vitals">
+  <div id="airRow" class="vrow"></div>
+  <div id="hpRow" class="vrow"></div>
+  <div id="hungerRow" class="vrow"></div>
+</div>
+
+<div id="death"><div><h1>DU BIST GESTORBEN</h1><div id="respawnBtn">Wiederbeleben</div></div></div>
 
 <div id="loading"></div>
 
@@ -113,10 +180,12 @@ const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 document.body.classList.toggle('touch', isTouch);
 
 const CHUNK_SIZE   = 16;
-const WORLD_HEIGHT = 64;
-const WATER_LEVEL  = 28;
-// Render-Distance adaptiv: Handy kleiner (schwaechere GPU), Desktop groesser.
-let RENDER_DISTANCE = isTouch ? 4 : 6;
+const Y_MIN = -64, Y_MAX = 320;          // echte Minecraft-Hoehe (Bedrock bis Bauhoehe)
+const WORLD_HEIGHT = Y_MAX - Y_MIN;      // Spannweite (384) = Array-Hoehe pro Chunk
+const WATER_LEVEL  = 62;
+// Render-Distance: bei der hohen Welt bewusst kleiner (sonst frisst Meshing/RAM die schwache GPU).
+// Laeuft's fluessig, kannst du die Desktop-Zahl hochdrehen.
+let RENDER_DISTANCE = isTouch ? 3 : 4;
 let UNLOAD_DISTANCE = RENDER_DISTANCE + 2;
 let SEED = 1337;                 // Default; wird vom Server-Seed ueberschrieben
 const CHUNK_BUDGET_MS = isTouch ? 5 : 6;
@@ -128,7 +197,9 @@ const WALK_SPEED = 4.7, GRAVITY = 26, JUMP_VELOCITY = 8.4, TERMINAL_VY = -42, RE
 //  BLOCK-REGISTRY (data-driven)
 // =====================================================================
 const AIR=0, GRASS=1, DIRT=2, STONE=3, SAND=4, WATER=5, WOOD=6;
-const COBBLE=7, GLASS=8, BRICKS=9, LOG=10, LEAVES=11, SNOW=12, GRAVEL=13;
+const COBBLE=7, GLASS=8, BRICKS=9, LOG=10, LEAVES=11, SNOW=12, GRAVEL=13, CRAFTING_TABLE=14;
+const BEDROCK=15, COAL_ORE=16, COPPER_ORE=17, IRON_ORE=18, GOLD_ORE=19, DIAMOND_ORE=20;
+const FURNACE=21, TORCH=22;
 const BLOCKS = {
   [AIR]:   { name:'Air',    solid:false, opaque:false },
   [GRASS]: { name:'Gras',   solid:true,  opaque:true,  top:0x5fa83d, side:0x6e7b3c, bottom:0x8a6a43 },
@@ -144,11 +215,201 @@ const BLOCKS = {
   [LEAVES]:{ name:'Laub',   solid:true,  opaque:true,  color:0x3f7a2f },
   [SNOW]:  { name:'Schnee', solid:true,  opaque:true,  color:0xeef3f8 },
   [GRAVEL]:{ name:'Kies',   solid:true,  opaque:true,  color:0x87827c },
+  [CRAFTING_TABLE]:{ name:'Werkbank', solid:true, opaque:true, top:0xb9965f, side:0x7a5a30, bottom:0x6f5126 },
+  [BEDROCK]:    { name:'Grundgestein', solid:true, opaque:true, color:0x33333a },
+  [COAL_ORE]:   { name:'Kohleerz',   solid:true, opaque:true, color:0x4a4d52 },
+  [COPPER_ORE]: { name:'Kupfererz',  solid:true, opaque:true, color:0x9c7257 },
+  [IRON_ORE]:   { name:'Eisenerz',   solid:true, opaque:true, color:0xb09583 },
+  [GOLD_ORE]:   { name:'Golderz',    solid:true, opaque:true, color:0xc6a43e },
+  [DIAMOND_ORE]:{ name:'Diamanterz', solid:true, opaque:true, color:0x52c7cf },
+  [FURNACE]:    { name:'Ofen',   solid:true,  opaque:true,  color:0x6e6e74, top:0x5c5c62 },
+  [TORCH]:      { name:'Fackel', solid:false, opaque:false, color:0xffb34d },
 };
 const isSolid  = (id) => BLOCKS[id] ? BLOCKS[id].solid : true;
 const isOpaque = (id) => BLOCKS[id] ? BLOCKS[id].opaque : true;
-const HOTBAR = [GRASS, DIRT, STONE, COBBLE, WOOD, GLASS, LOG, SAND];
+const HOTBAR_COUNT = 9;        // Hotbar = die ersten 9 Inventar-Slots
 let selectedSlot = 0;
+
+// ---- Items (nicht platzierbar) + Inventar-Daten (Survival) ----
+const STICK=100, BEEF=101, CHICKEN_RAW=102, MUTTON=103, SWORD_WOOD=104;
+const WOOD_PICKAXE=105, WOOD_AXE=106, WOOD_SHOVEL=107, STONE_PICKAXE=108, STONE_AXE=109, STONE_SHOVEL=110, STONE_SWORD=111;
+const COAL=112, RAW_COPPER=113, RAW_IRON=114, RAW_GOLD=115, DIAMOND=116;
+const IRON_INGOT=117, COPPER_INGOT=118, GOLD_INGOT=119;
+const COOKED_BEEF=120, COOKED_CHICKEN=121, COOKED_MUTTON=122;
+const IRON_PICKAXE=123, IRON_AXE=124, IRON_SHOVEL=125, IRON_SWORD=126;
+const GOLD_PICKAXE=127, GOLD_AXE=128, GOLD_SHOVEL=129, GOLD_SWORD=130;
+const DIAMOND_PICKAXE=131, DIAMOND_AXE=132, DIAMOND_SHOVEL=133, DIAMOND_SWORD=134;
+const ITEM = {
+  [STICK]:       { name:'Stock',        color:0x9a7842 },
+  [BEEF]:        { name:'Rohes Rind',   color:0xc06050 },
+  [CHICKEN_RAW]: { name:'Rohes Huhn',   color:0xe8b0a0 },
+  [MUTTON]:      { name:'Rohes Hammel', color:0xd08070 },
+  [SWORD_WOOD]:  { name:'Holzschwert',  color:0xb0a060 },
+  [COAL]:        { name:'Kohle',        color:0x303338 },
+  [RAW_COPPER]:  { name:'Rohkupfer',    color:0xc07850 },
+  [RAW_IRON]:    { name:'Roheisen',     color:0xd8b89a },
+  [RAW_GOLD]:    { name:'Rohgold',      color:0xd8b840 },
+  [DIAMOND]:     { name:'Diamant',      color:0x52c7cf },
+  [IRON_INGOT]:    { name:'Eisenbarren',  color:0xe6d8c8 },
+  [COPPER_INGOT]:  { name:'Kupferbarren', color:0xd98c5f },
+  [GOLD_INGOT]:    { name:'Goldbarren',   color:0xf2d24a },
+  [COOKED_BEEF]:   { name:'Steak',        color:0x8a4a28 },
+  [COOKED_CHICKEN]:{ name:'Brathuhn',     color:0xc88a4a },
+  [COOKED_MUTTON]: { name:'Hammelbraten', color:0x9a5030 },
+};
+function thing(id){ return BLOCKS[id] || ITEM[id] || TOOL[id]; }
+function thingColor(id){ const t=thing(id); return t ? (t.color??t.top??0x888888) : 0x888888; }
+const FOOD = { [BEEF]:3, [CHICKEN_RAW]:2, [MUTTON]:2, [COOKED_BEEF]:8, [COOKED_CHICKEN]:6, [COOKED_MUTTON]:6 }; // Hunger den es zurueckgibt
+function isFood(id){ return FOOD[id]!==undefined; }
+
+// Werkzeuge: cat (pick/axe/shovel/sword), tier, speed (Abbau-Tempo), dur (Haltbarkeit), dmg
+const TOOL = {
+  [SWORD_WOOD]:    {cat:'sword',  tier:1, speed:1,   dur:60,  dmg:6, name:'Holzschwert',    color:0xb0a060},
+  [STONE_SWORD]:   {cat:'sword',  tier:2, speed:1,   dur:132, dmg:7, name:'Steinschwert',   color:0x9aa0a6},
+  [WOOD_PICKAXE]:  {cat:'pick',   tier:1, speed:2.5, dur:60,         name:'Holzspitzhacke',  color:0xb0a060},
+  [STONE_PICKAXE]: {cat:'pick',   tier:2, speed:5,   dur:132,        name:'Steinspitzhacke', color:0x9aa0a6},
+  [WOOD_AXE]:      {cat:'axe',    tier:1, speed:2.5, dur:60,         name:'Holzaxt',         color:0xb0a060},
+  [STONE_AXE]:     {cat:'axe',    tier:2, speed:5,   dur:132,        name:'Steinaxt',        color:0x9aa0a6},
+  [WOOD_SHOVEL]:   {cat:'shovel', tier:1, speed:2.5, dur:60,         name:'Holzschaufel',    color:0xb0a060},
+  [STONE_SHOVEL]:  {cat:'shovel', tier:2, speed:5,   dur:132,        name:'Steinschaufel',   color:0x9aa0a6},
+  // Eisen (Tier 3 -> schaltet Gold/Diamant-Abbau frei)
+  [IRON_PICKAXE]:  {cat:'pick',   tier:3, speed:8,   dur:250,        name:'Eisenspitzhacke', color:0xe6d8c8},
+  [IRON_AXE]:      {cat:'axe',    tier:3, speed:8,   dur:250,        name:'Eisenaxt',        color:0xe6d8c8},
+  [IRON_SHOVEL]:   {cat:'shovel', tier:3, speed:8,   dur:250,        name:'Eisenschaufel',   color:0xe6d8c8},
+  [IRON_SWORD]:    {cat:'sword',  tier:3, speed:1,   dur:250, dmg:8, name:'Eisenschwert',    color:0xe6d8c8},
+  // Gold (Tier 2: sehr schnell, aber zerbrechlich, kann KEIN Gold/Diamant abbauen - wie echtes MC)
+  [GOLD_PICKAXE]:  {cat:'pick',   tier:2, speed:12,  dur:32,         name:'Goldspitzhacke',  color:0xf2d24a},
+  [GOLD_AXE]:      {cat:'axe',    tier:2, speed:12,  dur:32,         name:'Goldaxt',         color:0xf2d24a},
+  [GOLD_SHOVEL]:   {cat:'shovel', tier:2, speed:12,  dur:32,         name:'Goldschaufel',    color:0xf2d24a},
+  [GOLD_SWORD]:    {cat:'sword',  tier:2, speed:1,   dur:32,  dmg:6, name:'Goldschwert',     color:0xf2d24a},
+  // Diamant (Tier 4: Top, haltbar)
+  [DIAMOND_PICKAXE]:{cat:'pick',  tier:4, speed:14,  dur:1000,       name:'Diamantspitzhacke',color:0x52c7cf},
+  [DIAMOND_AXE]:    {cat:'axe',   tier:4, speed:14,  dur:1000,       name:'Diamantaxt',      color:0x52c7cf},
+  [DIAMOND_SHOVEL]: {cat:'shovel',tier:4, speed:14,  dur:1000,       name:'Diamantschaufel', color:0x52c7cf},
+  [DIAMOND_SWORD]:  {cat:'sword', tier:4, speed:1,   dur:1000, dmg:9,name:'Diamantschwert',  color:0x52c7cf},
+};
+function isTool(id){ return TOOL[id]!==undefined; }
+
+// Abbau-Info pro Block: hard (Sek. mit Hand), tool (passende Kategorie), needsTool (Drop nur mit richtigem Werkzeug)
+const BLOCK_MINE = {
+  [GRASS]:  {hard:0.6, tool:'shovel', needsTool:false},
+  [DIRT]:   {hard:0.5, tool:'shovel', needsTool:false},
+  [SAND]:   {hard:0.5, tool:'shovel', needsTool:false},
+  [GRAVEL]: {hard:0.6, tool:'shovel', needsTool:false},
+  [SNOW]:   {hard:0.4, tool:'shovel', needsTool:false},
+  [STONE]:  {hard:2.2, tool:'pick',   needsTool:true},
+  [COBBLE]: {hard:2.2, tool:'pick',   needsTool:true},
+  [BRICKS]: {hard:2.4, tool:'pick',   needsTool:true},
+  [CRAFTING_TABLE]: {hard:1.5, tool:'axe', needsTool:false},
+  [WOOD]:   {hard:1.5, tool:'axe',    needsTool:false},
+  [LOG]:    {hard:1.6, tool:'axe',    needsTool:false},
+  [LEAVES]: {hard:0.3, tool:null,     needsTool:false},
+  [GLASS]:  {hard:0.4, tool:null,     needsTool:false},
+  [COAL_ORE]:   {hard:3.0, tool:'pick', needsTool:true, minTier:1},
+  [COPPER_ORE]: {hard:3.0, tool:'pick', needsTool:true, minTier:2},
+  [IRON_ORE]:   {hard:3.0, tool:'pick', needsTool:true, minTier:2},
+  [GOLD_ORE]:   {hard:3.0, tool:'pick', needsTool:true, minTier:3},
+  [DIAMOND_ORE]:{hard:3.6, tool:'pick', needsTool:true, minTier:3},
+  [BEDROCK]:    {hard:1e9, tool:'pick', needsTool:true, minTier:99},
+  [FURNACE]:    {hard:3.5, tool:'pick', needsTool:true, minTier:1},
+  [TORCH]:      {hard:0.1, tool:null,   needsTool:false},
+};
+function mineInfo(id){ return BLOCK_MINE[id] || {hard:1, tool:null, needsTool:false}; }
+
+const STACK_MAX=64, SLOT_COUNT=36;        // 0-8 Hotbar, 9-35 Inventar
+const inv = new Array(SLOT_COUNT).fill(null);
+const craftGrid = new Array(9).fill(null);
+let held=null, craftOutput=null, invOpen=false, invMode='craft', furnaceKey=null, offhand=null;
+inv[0]={id:LOG,count:8}; inv[1]={id:DIRT,count:16}; inv[2]={id:COBBLE,count:8}; // Start-Kit
+
+function addItem(id,count){
+  if(id===AIR||count<=0) return count;
+  for(let i=0;i<SLOT_COUNT && count>0;i++){ const s=inv[i]; if(s && s.id===id && s.count<STACK_MAX){ const a=Math.min(STACK_MAX-s.count,count); s.count+=a; count-=a; } }
+  for(let i=0;i<SLOT_COUNT && count>0;i++){ if(!inv[i]){ const a=Math.min(STACK_MAX,count); inv[i]={id,count:a}; count-=a; } }
+  renderHotbar(); if(invOpen) renderInventory();
+  return count;
+}
+function dropFor(id){ if(id===GRASS) return DIRT; if(id===STONE) return COBBLE; if(id===COAL_ORE) return COAL; if(id===COPPER_ORE) return RAW_COPPER; if(id===IRON_ORE) return RAW_IRON; if(id===GOLD_ORE) return RAW_GOLD; if(id===DIAMOND_ORE) return DIAMOND; if(id===LEAVES||id===GLASS||id===BEDROCK) return AIR; return id; }
+
+// Crafting: shapeless (in:{...}, Position egal) ODER shaped (shape:[...], key:{...})
+const RECIPES = [
+  { in:{[LOG]:1},              out:{id:WOOD,           count:4} },
+  { shape:["X","X"],           key:{X:WOOD},          out:{id:STICK,          count:4} },
+  { shape:["XX","XX"],         key:{X:WOOD},          out:{id:CRAFTING_TABLE, count:1} },
+  // Holz-Werkzeuge (Form zaehlt)
+  { shape:["XXX",".S.",".S."], key:{X:WOOD,S:STICK}, out:{id:WOOD_PICKAXE, count:1} },
+  { shape:["XX","XS",".S"],    key:{X:WOOD,S:STICK}, out:{id:WOOD_AXE,     count:1} },
+  { shape:["X","S","S"],       key:{X:WOOD,S:STICK}, out:{id:WOOD_SHOVEL,  count:1} },
+  { shape:["X","X","S"],       key:{X:WOOD,S:STICK}, out:{id:SWORD_WOOD,   count:1} },
+  // Stein-Werkzeuge (Bruchstein + Stoecke)
+  { shape:["XXX",".S.",".S."], key:{X:COBBLE,S:STICK}, out:{id:STONE_PICKAXE, count:1} },
+  { shape:["XX","XS",".S"],    key:{X:COBBLE,S:STICK}, out:{id:STONE_AXE,     count:1} },
+  { shape:["X","S","S"],       key:{X:COBBLE,S:STICK}, out:{id:STONE_SHOVEL,  count:1} },
+  { shape:["X","X","S"],       key:{X:COBBLE,S:STICK}, out:{id:STONE_SWORD,   count:1} },
+  // Ofen (8 Bruchstein im Ring) + Fackeln (Kohle auf Stock)
+  { shape:["XXX","X.X","XXX"], key:{X:COBBLE},          out:{id:FURNACE, count:1} },
+  { shape:["C","S"],           key:{C:COAL,S:STICK},    out:{id:TORCH,   count:4} },
+  // Eisen-Werkzeuge (Eisenbarren + Stoecke)
+  { shape:["XXX",".S.",".S."], key:{X:IRON_INGOT,S:STICK}, out:{id:IRON_PICKAXE, count:1} },
+  { shape:["XX","XS",".S"],    key:{X:IRON_INGOT,S:STICK}, out:{id:IRON_AXE,     count:1} },
+  { shape:["X","S","S"],       key:{X:IRON_INGOT,S:STICK}, out:{id:IRON_SHOVEL,  count:1} },
+  { shape:["X","X","S"],       key:{X:IRON_INGOT,S:STICK}, out:{id:IRON_SWORD,   count:1} },
+  // Gold-Werkzeuge
+  { shape:["XXX",".S.",".S."], key:{X:GOLD_INGOT,S:STICK}, out:{id:GOLD_PICKAXE, count:1} },
+  { shape:["XX","XS",".S"],    key:{X:GOLD_INGOT,S:STICK}, out:{id:GOLD_AXE,     count:1} },
+  { shape:["X","S","S"],       key:{X:GOLD_INGOT,S:STICK}, out:{id:GOLD_SHOVEL,  count:1} },
+  { shape:["X","X","S"],       key:{X:GOLD_INGOT,S:STICK}, out:{id:GOLD_SWORD,   count:1} },
+  // Diamant-Werkzeuge (Diamant direkt, kein Schmelzen)
+  { shape:["XXX",".S.",".S."], key:{X:DIAMOND,S:STICK}, out:{id:DIAMOND_PICKAXE, count:1} },
+  { shape:["XX","XS",".S"],    key:{X:DIAMOND,S:STICK}, out:{id:DIAMOND_AXE,     count:1} },
+  { shape:["X","S","S"],       key:{X:DIAMOND,S:STICK}, out:{id:DIAMOND_SHOVEL,  count:1} },
+  { shape:["X","X","S"],       key:{X:DIAMOND,S:STICK}, out:{id:DIAMOND_SWORD,   count:1} },
+];
+function craftCounts(){ const c={}; for(const s of craftGrid){ if(s) c[s.id]=(c[s.id]||0)+s.count; } return c; }
+function gridIds(){ const a=[]; for(let r=0;r<3;r++){ a.push([]); for(let c=0;c<3;c++){ const s=craftGrid[r*3+c]; a[r].push(s?s.id:null); } } return a; }
+function trimGrid(g){ let r0=9,r1=-1,c0=9,c1=-1; for(let r=0;r<g.length;r++)for(let c=0;c<g[r].length;c++) if(g[r][c]!=null){ if(r<r0)r0=r; if(r>r1)r1=r; if(c<c0)c0=c; if(c>c1)c1=c; } if(r1<0) return null; const o=[]; for(let r=r0;r<=r1;r++){ const row=[]; for(let c=c0;c<=c1;c++) row.push(g[r][c]); o.push(row); } return o; }
+function shapeIds(rc){ return rc.shape.map(row=>row.split('').map(ch=>(ch==='.'||ch===' ')?null:rc.key[ch])); }
+function eqGrid(a,b){ if(!a||!b||a.length!==b.length) return false; for(let r=0;r<a.length;r++){ if(a[r].length!==b[r].length) return false; for(let c=0;c<a[r].length;c++) if(a[r][c]!==b[r][c]) return false; } return true; }
+function matchRecipe(){
+  const tg=trimGrid(gridIds());
+  for(const r of RECIPES){
+    if(r.shape){ if(tg && eqGrid(tg, trimGrid(shapeIds(r)))) return r; }
+    else { const c=craftCounts(), ids=Object.keys(c), rids=Object.keys(r.in); if(rids.length!==ids.length) continue; let ok=true; for(const k of rids){ if(!(c[k]>=r.in[k])){ ok=false; break; } } if(ok) return r; }
+  }
+  return null;
+}
+function recomputeCraft(){ const r=matchRecipe(); craftOutput = r ? {id:r.out.id, count:r.out.count} : null; }
+
+// ---- Schmelzen (Ofen) ----
+const SMELT = {
+  [RAW_IRON]:IRON_INGOT, [RAW_COPPER]:COPPER_INGOT, [RAW_GOLD]:GOLD_INGOT,
+  [SAND]:GLASS, [COBBLE]:STONE,
+  [BEEF]:COOKED_BEEF, [CHICKEN_RAW]:COOKED_CHICKEN, [MUTTON]:COOKED_MUTTON,
+};
+// Brennstoff -> Brenndauer in Sekunden (ein Schmelzvorgang = cookMax 6s). Etwas Puffer, damit die letzte
+// Schmelzung sicher fertig wird: Kohle=8 Items, Holz/Stamm/Werkbank=2, Stock=1.
+const FUEL = { [COAL]:50, [LOG]:16, [WOOD]:16, [CRAFTING_TABLE]:16, [STICK]:7 };
+const furnaces = new Map();   // "x_y_z" -> {slots:[in,fuel,out], cook, cookMax, burn, burnMax}
+function furnaceAt(key){ let f=furnaces.get(key); if(!f){ f={slots:[null,null,null], cook:0, cookMax:6, burn:0, burnMax:0}; furnaces.set(key,f); } return f; }
+function furnaceOutRoom(f, outId){ const o=f.slots[2]; return !o || (o.id===outId && o.count<STACK_MAX); }
+function tickFurnace(f, dt){
+  const inS=f.slots[0], fuelS=f.slots[1];
+  const canSmelt = inS && SMELT[inS.id]!==undefined && furnaceOutRoom(f, SMELT[inS.id]);
+  if(f.burn>0) f.burn-=dt;
+  if(f.burn<=0 && canSmelt && fuelS && FUEL[fuelS.id]!==undefined){
+    f.burnMax=FUEL[fuelS.id]; f.burn=f.burnMax;
+    fuelS.count--; if(fuelS.count<=0) f.slots[1]=null;
+  }
+  if(f.burn>0 && canSmelt){
+    f.cook+=dt;
+    if(f.cook>=f.cookMax-1e-6){
+      f.cook=0; const out=SMELT[inS.id];
+      inS.count--; if(inS.count<=0) f.slots[0]=null;
+      const o=f.slots[2]; if(!o) f.slots[2]={id:out,count:1}; else o.count++;
+    }
+  } else { f.cook=Math.max(0, f.cook-dt*2); }
+}
+function tickAllFurnaces(dt){ for(const f of furnaces.values()) tickFurnace(f, dt); if(invOpen && invMode==='furnace') renderInventory(); }
 
 // =====================================================================
 //  NOISE (seeded, reseedbar) + reine Welt-Generierung -> Worker-ready
@@ -177,36 +438,63 @@ function hash2(x,z){
   h = Math.imul(h ^ (h>>>13), 1274126177);
   return ((h ^ (h>>>16)) >>> 0) / 4294967296;
 }
+// 3D Value-Noise (Hoehlen + Erzadern), deterministisch via Seed
+function vhash3(x,y,z){ let h=(Math.imul(x|0,374761393)+Math.imul(y|0,668265263)+Math.imul(z|0,2246822519)+Math.imul(currentSeed|0,3266489917))|0; h=Math.imul(h^(h>>>13),1274126177); return ((h^(h>>>16))>>>0)/4294967296; }
+function noise3(x,y,z){
+  const xi=Math.floor(x),yi=Math.floor(y),zi=Math.floor(z);
+  const xf=x-xi,yf=y-yi,zf=z-zi;
+  const u=xf*xf*(3-2*xf), v=yf*yf*(3-2*yf), w=zf*zf*(3-2*zf);
+  const L=(a,b,t)=>a+(b-a)*t;
+  return L(L(L(vhash3(xi,yi,zi),vhash3(xi+1,yi,zi),u), L(vhash3(xi,yi+1,zi),vhash3(xi+1,yi+1,zi),u), v),
+           L(L(vhash3(xi,yi,zi+1),vhash3(xi+1,yi,zi+1),u), L(vhash3(xi,yi+1,zi+1),vhash3(xi+1,yi+1,zi+1),u), v), w);
+}
+// Erz an Welt-Koordinate? Erz-ID oder 0. Seltene/tiefe Erze zuerst -> gewinnen bei Ueberlappung.
+function oreAt(x,y,z){
+  if(y< -24 && noise3(x*0.17+11, y*0.17, z*0.17+11) > 0.88) return DIAMOND_ORE;
+  if(y<   8 && noise3(x*0.17+27, y*0.17, z*0.17+27) > 0.87) return GOLD_ORE;
+  if(y<  56 && noise3(x*0.16+43, y*0.16, z*0.16+43) > 0.83) return IRON_ORE;
+  if(y<  68 && noise3(x*0.16+61, y*0.16, z*0.16+61) > 0.85) return COPPER_ORE;
+  if(noise3(x*0.15+79, y*0.15, z*0.15+79) > 0.84) return COAL_ORE;
+  return 0;
+}
 // setzt einen Baum-Block, aber nur falls er in DIESEM Chunk liegt -> Baeume an
 // Chunk-Grenzen werden vom Nachbar-Chunk vervollstaendigt (deterministisch, MP-konsistent)
 function setTreeBlock(data, ox, oz, wx, wy, wz, id, onlyAir){
-  if(wy<0||wy>=WORLD_HEIGHT) return;
+  if(wy<Y_MIN||wy>=Y_MAX) return;
   const lx=wx-ox, lz=wz-oz;
   if(lx<0||lx>=CHUNK_SIZE||lz<0||lz>=CHUNK_SIZE) return;
-  const i=(wy*CHUNK_SIZE+lz)*CHUNK_SIZE+lx;
+  const i=((wy-Y_MIN)*CHUNK_SIZE+lz)*CHUNK_SIZE+lx;
   if(onlyAir && data[i]!==AIR) return;
   data[i]=id;
 }
 
 function terrainHeight(wx,wz){
-  let amp=1, freq=1/110, sum=0, val=0;
+  let amp=1, freq=1/120, sum=0, val=0;
   for(let o=0;o<4;o++){ val+=perlin(wx*freq,wz*freq)*amp; sum+=amp; amp*=0.5; freq*=2.1; }
   val/=sum;
-  return Math.max(1, Math.min(WORLD_HEIGHT-2, Math.floor((WATER_LEVEL+2)+val*16)));
+  return Math.max(WATER_LEVEL-14, Math.min(100, Math.floor((WATER_LEVEL+2)+val*20)));
 }
 function generateChunkData(cx,cz){
   const data=new Uint8Array(CHUNK_SIZE*WORLD_HEIGHT*CHUNK_SIZE);
   const ox=cx*CHUNK_SIZE, oz=cz*CHUNK_SIZE;
   for(let z=0;z<CHUNK_SIZE;z++) for(let x=0;x<CHUNK_SIZE;x++){
-    const h=terrainHeight(ox+x,oz+z), beach=h<=WATER_LEVEL+1, snowy=h>WATER_LEVEL+14;
-    for(let y=0;y<WORLD_HEIGHT;y++){
+    const wx=ox+x, wz=oz+z;
+    const h=terrainHeight(wx,wz), beach=h<=WATER_LEVEL+1, snowy=h>WATER_LEVEL+18;
+    for(let y=Y_MIN;y<Y_MAX;y++){
       let b=AIR;
-      if(y<=h){
+      if(y===Y_MIN){ b=BEDROCK; }
+      else if(y<=h){
         if(y===h) b = beach?SAND : (snowy?SNOW:GRASS);
         else if(y>=h-3) b = beach?SAND : DIRT;
         else b = STONE;
-      } else if(y<=WATER_LEVEL) b=WATER;
-      data[(y*CHUNK_SIZE+z)*CHUNK_SIZE+x]=b;
+        // Hoehlen ins Gestein schnitzen (nicht an Oberflaeche, nicht in Bedrock)
+        if(b===STONE && y>Y_MIN+2 && y<h-2){
+          if(noise3(wx*0.09, y*0.13, wz*0.09) > 0.78 || noise3(wx*0.05+50, y*0.08, wz*0.05+50) > 0.84){ b=AIR; }
+        }
+        // Erze nur falls noch Gestein
+        if(b===STONE){ const o=oreAt(wx,y,wz); if(o) b=o; }
+      } else if(y<=WATER_LEVEL){ b=WATER; }
+      data[((y-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=b;
     }
   }
   // Baeume: deterministisch, chunk-uebergreifend (Rand-Spalten mit-scannen, M=Kronenradius)
@@ -215,7 +503,7 @@ function generateChunkData(cx,cz){
     const wx=ox+tx, wz=oz+tz;
     if(hash2(wx,wz) > 0.012) continue;                 // Baum-Dichte
     const gh=terrainHeight(wx,wz);
-    if(gh<=WATER_LEVEL+1 || gh>WATER_LEVEL+14) continue; // nicht am Wasser, nicht auf Schnee
+    if(gh<=WATER_LEVEL+1 || gh>WATER_LEVEL+18) continue; // nicht am Wasser, nicht auf Schnee
     const trunk = 4 + ((hash2(wx+7,wz-7)*3)|0);        // 4..6 hoch
     const topY = gh + trunk;
     for(let i=1;i<=trunk;i++) setTreeBlock(data, ox, oz, wx, gh+i, wz, LOG, false);
@@ -240,13 +528,13 @@ function setOverride(wx,wy,wz,id){
   const cx=Math.floor(wx/CHUNK_SIZE), cz=Math.floor(wz/CHUNK_SIZE);
   const lx=wx-cx*CHUNK_SIZE, lz=wz-cz*CHUNK_SIZE, key=cx+','+cz;
   let m=overridesByChunk.get(key); if(!m){ m=new Map(); overridesByChunk.set(key,m); }
-  m.set((wy*CHUNK_SIZE+lz)*CHUNK_SIZE+lx, id);
+  m.set(((wy-Y_MIN)*CHUNK_SIZE+lz)*CHUNK_SIZE+lx, id);
 }
 
 // =====================================================================
 //  CHUNK + WORLD
 // =====================================================================
-class Chunk { constructor(cx,cz){ this.cx=cx; this.cz=cz; this.data=null; this.hasData=false; this.mesh=null; this.waterMesh=null; this.dirty=true; } }
+class Chunk { constructor(cx,cz){ this.cx=cx; this.cz=cz; this.data=null; this.hasData=false; this.mesh=null; this.waterMesh=null; this.torchMesh=null; this.dirty=true; } }
 
 const world = {
   chunks: new Map(),
@@ -266,22 +554,22 @@ const world = {
   },
 
   getBlock(wx,wy,wz){
-    if(wy<0||wy>=WORLD_HEIGHT) return AIR;
+    if(wy<Y_MIN||wy>=Y_MAX) return AIR;
     const cx=Math.floor(wx/CHUNK_SIZE), cz=Math.floor(wz/CHUNK_SIZE);
     const c=this.getChunk(cx,cz); if(!c||!c.hasData) return AIR;
     const lx=wx-cx*CHUNK_SIZE, lz=wz-cz*CHUNK_SIZE;
-    return c.data[(wy*CHUNK_SIZE+lz)*CHUNK_SIZE+lx];
+    return c.data[((wy-Y_MIN)*CHUNK_SIZE+lz)*CHUNK_SIZE+lx];
   },
 
   // fromNet=true -> Aenderung kam vom Server, NICHT zurueckschicken (kein Echo).
   setBlock(wx,wy,wz,id,fromNet){
-    if(wy<0||wy>=WORLD_HEIGHT) return;
+    if(wy<Y_MIN||wy>=Y_MAX) return;
     if(id!==AIR && !BLOCKS[id]) id=STONE; // unbekannte ID (z.B. alter Save) absichern
     setOverride(wx,wy,wz,id);
     const cx=Math.floor(wx/CHUNK_SIZE), cz=Math.floor(wz/CHUNK_SIZE);
     const c=this.ensureChunkData(cx,cz);
     const lx=wx-cx*CHUNK_SIZE, lz=wz-cz*CHUNK_SIZE;
-    c.data[(wy*CHUNK_SIZE+lz)*CHUNK_SIZE+lx]=id;
+    c.data[((wy-Y_MIN)*CHUNK_SIZE+lz)*CHUNK_SIZE+lx]=id;
     meshChunk(c);
     if(lx===0)              this._remesh(cx-1,cz);
     if(lx===CHUNK_SIZE-1)   this._remesh(cx+1,cz);
@@ -293,7 +581,7 @@ const world = {
 };
 
 function clearAllChunks(){
-  for(const [,c] of world.chunks){ disposeMesh(c.mesh); disposeMesh(c.waterMesh); }
+  for(const [,c] of world.chunks){ disposeMesh(c.mesh); disposeMesh(c.waterMesh); disposeMesh(c.torchMesh); }
   world.chunks.clear();
   lastCX=null; lastCZ=null; // erzwingt Neuaufbau in updateWorld
 }
@@ -320,12 +608,23 @@ function faceVisible(self, nb){
   return true;
 }
 
+function pushBox(P,N,C,I, x0,y0,z0, x1,y1,z1, r,g,b){
+  const v=[[x0,y0,z0],[x1,y0,z0],[x1,y0,z1],[x0,y0,z1],[x0,y1,z0],[x1,y1,z0],[x1,y1,z1],[x0,y1,z1]];
+  const F=[[0,1,2,3,0,-1,0],[4,7,6,5,0,1,0],[0,3,7,4,-1,0,0],[1,5,6,2,1,0,0],[0,4,5,1,0,0,-1],[3,2,6,7,0,0,1]];
+  for(const f of F){ const base=P.length/3; for(let k=0;k<4;k++){ const vv=v[f[k]]; P.push(vv[0],vv[1],vv[2]); N.push(f[4],f[5],f[6]); C.push(r,g,b); } I.push(base,base+1,base+2,base,base+2,base+3); }
+}
+function pushTorch(P,N,C,I, x,y,z){
+  const cx=x+0.5, cz=z+0.5;
+  pushBox(P,N,C,I, cx-0.08,y+0.0,cz-0.08, cx+0.08,y+0.55,cz+0.08, 0.45,0.30,0.16); // Stiel
+  pushBox(P,N,C,I, cx-0.12,y+0.5,cz-0.12, cx+0.12,y+0.74,cz+0.12, 1.0,0.74,0.32);  // Flamme (hell)
+}
 function buildChunkGeometry(c){
-  const pos=[],nor=[],col=[],idx=[], wpos=[],wnor=[],wcol=[],widx=[];
+  const pos=[],nor=[],col=[],idx=[], wpos=[],wnor=[],wcol=[],widx=[], tpos=[],tnor=[],tcol=[],tidx=[];
   const ox=c.cx*CHUNK_SIZE, oz=c.cz*CHUNK_SIZE;
-  for(let y=0;y<WORLD_HEIGHT;y++) for(let z=0;z<CHUNK_SIZE;z++) for(let x=0;x<CHUNK_SIZE;x++){
-    const id=c.data[(y*CHUNK_SIZE+z)*CHUNK_SIZE+x];
+  for(let y=Y_MIN;y<Y_MAX;y++) for(let z=0;z<CHUNK_SIZE;z++) for(let x=0;x<CHUNK_SIZE;x++){
+    const id=c.data[((y-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x];
     if(id===AIR) continue;
+    if(id===TORCH){ pushTorch(tpos,tnor,tcol,tidx, x, y, z); continue; }
     const trans = BLOCKS[id].transparent===true, wx=ox+x, wz=oz+z;
     for(const f of FACES){
       const nb=world.getBlock(wx+f.dir[0], y+f.dir[1], wz+f.dir[2]);
@@ -337,7 +636,7 @@ function buildChunkGeometry(c){
       I.push(ndx,ndx+1,ndx+2,ndx+2,ndx+1,ndx+3);
     }
   }
-  return { pos,nor,col,idx,wpos,wnor,wcol,widx };
+  return { pos,nor,col,idx,wpos,wnor,wcol,widx,tpos,tnor,tcol,tidx };
 }
 function makeMesh(P,N,C,I,material,cx,cz){
   if(P.length===0) return null;
@@ -352,9 +651,10 @@ function makeMesh(P,N,C,I,material,cx,cz){
 function disposeMesh(m){ if(!m) return; scene.remove(m); m.geometry.dispose(); }
 function meshChunk(c){
   const g=buildChunkGeometry(c);
-  disposeMesh(c.mesh); c.mesh=null; disposeMesh(c.waterMesh); c.waterMesh=null;
+  disposeMesh(c.mesh); c.mesh=null; disposeMesh(c.waterMesh); c.waterMesh=null; disposeMesh(c.torchMesh); c.torchMesh=null;
   c.mesh=makeMesh(g.pos,g.nor,g.col,g.idx,opaqueMat,c.cx,c.cz); if(c.mesh) scene.add(c.mesh);
   c.waterMesh=makeMesh(g.wpos,g.wnor,g.wcol,g.widx,waterMat,c.cx,c.cz); if(c.waterMesh) scene.add(c.waterMesh);
+  c.torchMesh=makeMesh(g.tpos,g.tnor,g.tcol,g.tidx,torchMat,c.cx,c.cz); if(c.torchMesh) scene.add(c.torchMesh);
   c.dirty=false;
 }
 
@@ -377,8 +677,15 @@ const canvas=renderer.domElement;
 
 const opaqueMat=new THREE.MeshLambertMaterial({ vertexColors:true });
 const waterMat =new THREE.MeshLambertMaterial({ vertexColors:true, transparent:true, opacity:0.72, depthWrite:false, side:THREE.DoubleSide });
+const torchMat =new THREE.MeshBasicMaterial({ vertexColors:true, side:THREE.DoubleSide }); // unbeleuchtet -> Fackeln leuchten immer
 const hemi=new THREE.HemisphereLight(0xbcd6f5,0x6b5a40,0.85); scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xffffff,0.45); sun.position.set(0.4,1.0,0.25); scene.add(sun);
+const torchLight=new THREE.PointLight(0xffb84d, 0.0, 16, 1.0); scene.add(torchLight); // Fackel in Hand/Offhand -> Licht das mitlaeuft
+function holdingTorch(){ return (offhand && offhand.id===TORCH) || (inv[selectedSlot] && inv[selectedSlot].id===TORCH); }
+function updateTorchGlow(){
+  if(holdingTorch()){ torchLight.position.set(player.x, player.y+1.2, player.z); torchLight.intensity=1.6; }
+  else torchLight.intensity=0;
+}
 
 addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
 
@@ -402,7 +709,7 @@ function updateWorld(pcx,pcz){
     lastCX=pcx; lastCZ=pcz;
     for(const [k,c] of world.chunks){
       if(Math.max(Math.abs(c.cx-pcx),Math.abs(c.cz-pcz))>UNLOAD_DISTANCE){
-        disposeMesh(c.mesh); disposeMesh(c.waterMesh); world.chunks.delete(k);
+        disposeMesh(c.mesh); disposeMesh(c.waterMesh); disposeMesh(c.torchMesh); world.chunks.delete(k);
       }
     }
     chunkQueue=[];
@@ -429,7 +736,7 @@ function updateWorld(pcx,pcz){
 const player={ x:8.5, y:0, z:8.5, vx:0, vy:0, vz:0, onGround:false };
 let yaw=0, pitch=0;
 for(let dz=-1;dz<=1;dz++) for(let dx=-1;dx<=1;dx++) world.ensureChunkData(dx,dz);
-player.y=terrainHeight(8,8)+2;
+player.y=Math.max(terrainHeight(8,8),WATER_LEVEL)+2;
 
 function moveAxis(axis,delta){
   const steps=Math.max(1,Math.ceil(Math.abs(delta)/0.4)), s=delta/steps;
@@ -457,14 +764,23 @@ function updatePlayer(dt){
   let dirZ=-Math.cos(yaw)*fwd-Math.sin(yaw)*str;
   const len=Math.hypot(dirX,dirZ);
   if(len>1){ dirX/=len; dirZ/=len; } // >1 kappen, <1 lassen (analoger Joystick)
-  player.vx=dirX*WALK_SPEED; player.vz=dirZ*WALK_SPEED;
+  const joyMag=Math.hypot(joyVec.x,joyVec.y);
+  const wantSprint=(!isTouch && keys.has('ShiftLeft')) || (isTouch && joyMag>0.85);
+  sprinting = wantSprint && len>0.1 && !(net.connected && hunger<=3); // KEIN Fly, nur Sprint
+  const speed = sprinting ? WALK_SPEED*1.4 : WALK_SPEED;
+  player.vx=dirX*speed; player.vz=dirZ*speed;
+  const tFov = sprinting?80:72;
+  if(Math.abs(camera.fov-tFov)>0.1){ camera.fov+=(tFov-camera.fov)*0.2; camera.updateProjectionMatrix(); }
 
   player.vy-=GRAVITY*dt;
   if((keys.has('Space')||jumpHeld)&&player.onGround){ player.vy=JUMP_VELOCITY; player.onGround=false; }
   if(player.vy<TERMINAL_VY) player.vy=TERMINAL_VY;
 
   player.onGround=false;
-  moveAxis(0,player.vx*dt); moveAxis(2,player.vz*dt); moveAxis(1,player.vy*dt);
+  moveAxis(0,player.vx*dt); moveAxis(2,player.vz*dt);
+  const impactVy=player.vy;
+  moveAxis(1,player.vy*dt);
+  if(player.onGround && impactVy<-16){ const dmg=Math.floor((-impactVy-16)/3); if(dmg>0) damagePlayer(dmg); }
 
   camera.position.set(player.x,player.y+EYE_HEIGHT,player.z);
   camera.rotation.set(pitch,yaw,0);
@@ -483,7 +799,7 @@ function raycast(){
   let tmz=dir.z>0?(Math.floor(o.z)+1-o.z)*tdz:(o.z-Math.floor(o.z))*tdz;
   let nx=0,ny=0,nz=0,t=0;
   while(t<=REACH){
-    if(isSolid(world.getBlock(x,y,z))) return {x,y,z,nx,ny,nz};
+    const _tb=world.getBlock(x,y,z); if(isSolid(_tb)||_tb===TORCH) return {x,y,z,nx,ny,nz,t};
     if(tmx<tmy&&tmx<tmz){ x+=sx; t=tmx; tmx+=tdx; nx=-sx;ny=0;nz=0; }
     else if(tmy<tmz){ y+=sy; t=tmy; tmy+=tdy; nx=0;ny=-sy;nz=0; }
     else { z+=sz; t=tmz; tmz+=tdz; nx=0;ny=0;nz=-sz; }
@@ -498,14 +814,30 @@ function canPlaceAt(x,y,z){
   const oz=player.z+PLAYER_HALF>z&&player.z-PLAYER_HALF<z+1;
   return !(ox&&oy&&oz);
 }
-function doBreak(){ if(!isActive())return; const h=raycast(); if(h) world.setBlock(h.x,h.y,h.z,AIR); }
-function doPlace(){ if(!isActive())return; const h=raycast(); if(!h)return; const px=h.x+h.nx,py=h.y+h.ny,pz=h.z+h.nz; if(canPlaceAt(px,py,pz)) world.setBlock(px,py,pz,HOTBAR[selectedSlot]); }
+function startBreak(){
+  if(!isActive()||dead||invOpen){ breakHeld=false; return; }
+  const block=raycast();
+  const hit=mobInView(block ? block.t : REACH);   // Mob naeher als Block -> ein Schlag
+  if(hit){ attackMob(hit.id); breakHeld=false; return; }
+  breakHeld=true;                                  // sonst: gedrueckt halten zum Abbauen
+}
+function doPlace(){
+  if(!isActive()||dead||invOpen) return;
+  const h=raycast(); if(!h) return;
+  if(world.getBlock(h.x,h.y,h.z)===FURNACE){ openFurnace(h.x+'_'+h.y+'_'+h.z); return; }
+  const s=inv[selectedSlot]; if(!s) return;
+  if(isFood(s.id)){ eat(); return; }
+  if(!BLOCKS[s.id]) return;                  // nicht platzierbar (Stock, Schwert)
+  const px=h.x+h.nx,py=h.y+h.ny,pz=h.z+h.nz;
+  if(canPlaceAt(px,py,pz)){ world.setBlock(px,py,pz,s.id); consumeSelected(1); }
+}
+function consumeSelected(n){ const s=inv[selectedSlot]; if(!s) return; s.count-=n; if(s.count<=0) inv[selectedSlot]=null; renderHotbar(); if(invOpen) renderInventory(); }
 
 // =====================================================================
 //  INPUT
 // =====================================================================
 const keys=new Set();
-let locked=false, touchPlaying=false, jumpHeld=false, pickerOpen=false;
+let locked=false, touchPlaying=false, jumpHeld=false, sprinting=false, breakHeld=false;
 const joyVec={x:0,y:0};
 const overlay=document.getElementById('overlay');
 const nameInput=document.getElementById('nameInput');
@@ -516,16 +848,17 @@ function isActive(){ return isTouch ? touchPlaying : locked; }
 addEventListener('keydown', (e)=>{
   keys.add(e.code);
   if(e.code==='F3'){ e.preventDefault(); debugEl.style.display = debugEl.style.display==='none'?'':'none'; }
-  if(e.code.startsWith('Digit')){ const n=parseInt(e.code.slice(5),10)-1; if(n>=0&&n<HOTBAR.length){ selectedSlot=n; renderHotbar(); } }
-  if(e.code==='KeyE'){ e.preventDefault(); togglePicker(); }
-  if(e.code==='Escape' && pickerOpen){ closePicker(); }
+  if(e.code.startsWith('Digit')){ const n=parseInt(e.code.slice(5),10)-1; if(n>=0&&n<HOTBAR_COUNT){ selectedSlot=n; renderHotbar(); } }
+  if(e.code==='KeyE'){ e.preventDefault(); toggleInv(); }
+  if(e.code==='Escape' && invOpen){ closeInv(); }
 });
 addEventListener('keyup', (e)=>keys.delete(e.code));
-document.addEventListener('pointerlockchange', ()=>{ locked=document.pointerLockElement===canvas; if(!pickerOpen) overlay.classList.toggle('hidden',locked); if(!locked) keys.clear(); });
+document.addEventListener('pointerlockchange', ()=>{ locked=document.pointerLockElement===canvas; if(!invOpen) overlay.classList.toggle('hidden',locked); if(!locked) keys.clear(); });
 document.addEventListener('mousemove', (e)=>{ if(!locked)return; yaw-=e.movementX*0.0024; pitch-=e.movementY*0.0024; const l=Math.PI/2-0.01; pitch=Math.max(-l,Math.min(l,pitch)); });
 canvas.addEventListener('contextmenu', e=>e.preventDefault());
-canvas.addEventListener('mousedown', (e)=>{ if(!locked)return; if(e.button===0) doBreak(); else if(e.button===2) doPlace(); });
-addEventListener('wheel', (e)=>{ if(!locked)return; selectedSlot=(selectedSlot+(e.deltaY>0?1:-1)+HOTBAR.length)%HOTBAR.length; renderHotbar(); }, {passive:true});
+canvas.addEventListener('mousedown', (e)=>{ if(!locked)return; if(e.button===0) startBreak(); else if(e.button===2) doPlace(); });
+document.addEventListener('mouseup', (e)=>{ if(e.button===0) breakHeld=false; });
+addEventListener('wheel', (e)=>{ if(!locked)return; selectedSlot=(selectedSlot+(e.deltaY>0?1:-1)+HOTBAR_COUNT)%HOTBAR_COUNT; renderHotbar(); }, {passive:true});
 
 // ---- Start ----
 function startGame(){
@@ -556,7 +889,8 @@ canvas.addEventListener('touchend', lookEnd); canvas.addEventListener('touchcanc
 const btnJump=document.getElementById('btnJump'), btnBreak=document.getElementById('btnBreak'), btnPlace=document.getElementById('btnPlace');
 btnJump.addEventListener('touchstart', (e)=>{ e.preventDefault(); jumpHeld=true; }, {passive:false});
 btnJump.addEventListener('touchend', (e)=>{ e.preventDefault(); jumpHeld=false; }, {passive:false});
-btnBreak.addEventListener('touchstart', (e)=>{ e.preventDefault(); doBreak(); }, {passive:false});
+btnBreak.addEventListener('touchstart', (e)=>{ e.preventDefault(); startBreak(); }, {passive:false});
+btnBreak.addEventListener('touchend', (e)=>{ e.preventDefault(); breakHeld=false; }, {passive:false});
 btnPlace.addEventListener('touchstart', (e)=>{ e.preventDefault(); doPlace(); }, {passive:false});
 
 // =====================================================================
@@ -565,38 +899,107 @@ btnPlace.addEventListener('touchstart', (e)=>{ e.preventDefault(); doPlace(); },
 const hotbarEl=document.getElementById('hotbar'), debugEl=document.getElementById('debug'), loadingEl=document.getElementById('loading');
 const ctrlHint=document.getElementById('ctrlHint');
 ctrlHint.innerHTML = isTouch
-  ? '<b>Joystick</b> Bewegen &nbsp; <b>Rechts wischen</b> Umsehen<br><b>ABBAU / SETZEN</b> Bloecke &nbsp; <b>ITEMS</b> Blockauswahl'
-  : '<b>WASD</b> Bewegen &nbsp; <b>Maus</b> Umsehen &nbsp; <b>Leer</b> Springen<br><b>Links/Rechts</b> Abbauen/Setzen &nbsp; <b>1-8/Rad</b> Slot &nbsp; <b>E</b> Bloecke';
+  ? '<b>Joystick</b> Bewegen (voll=Sprint) &nbsp; <b>Rechts wischen</b> Umsehen<br><b>ABBAU halten</b> Abbauen (tippen=Schlagen) &nbsp; <b>SETZEN</b> Setzen/Essen &nbsp; <b>ITEMS</b> Inventar'
+  : '<b>WASD</b> Bewegen &nbsp; <b>Shift</b> Sprint &nbsp; <b>Leer</b> Springen<br><b>Links halten</b> Abbauen &nbsp; <b>Rechts</b> Setzen/Essen &nbsp; <b>1-9/Rad</b> Slot &nbsp; <b>E</b> Inventar';
 function hex(n){ return '#'+n.toString(16).padStart(6,'0'); }
 function renderHotbar(){
   hotbarEl.innerHTML='';
-  HOTBAR.forEach((id,i)=>{
+  for(let i=0;i<HOTBAR_COUNT;i++){
+    const s=inv[i];
     const slot=document.createElement('div');
     slot.className='slot'+(i===selectedSlot?' active':'');
-    slot.innerHTML='<span class="num">'+(i+1)+'</span><span class="swatch" style="background:'+hex(BLOCKS[id].color??BLOCKS[id].top)+'"></span>';
+    slot.innerHTML='<span class="num">'+(i+1)+'</span>'+(s?('<span class="swatch" style="background:'+hex(thingColor(s.id))+'"></span>'+(s.count>1?'<span class="hcount">'+s.count+'</span>':'')+durBar(s)):'');
     slot.addEventListener('click', ()=>{ selectedSlot=i; renderHotbar(); });
     hotbarEl.appendChild(slot);
-  });
+  }
 }
 renderHotbar();
 
-// ---- Block-Picker (kreativ: jeder Block -> in den aktiven Hotbar-Slot) ----
-const pickerEl=document.getElementById('picker'), pickerGrid=document.getElementById('pickerGrid'), btnItems=document.getElementById('btnItems');
-function buildPicker(){
-  pickerGrid.innerHTML='';
-  for(const id of Object.keys(BLOCKS).map(Number)){
-    if(id===AIR) continue;
-    const d=document.createElement('div'); d.className='pick';
-    d.innerHTML='<div class="sw" style="background:'+hex(BLOCKS[id].color??BLOCKS[id].top)+'"></div><div class="nm">'+BLOCKS[id].name+'</div>';
-    d.addEventListener('click', ()=>{ HOTBAR[selectedSlot]=id; renderHotbar(); closePicker(); });
-    pickerGrid.appendChild(d);
+// ---- Inventar + Crafting (Survival) ----
+const invScreen=document.getElementById('invScreen'), invPanel=document.getElementById('invPanel');
+const craftGridEl=document.getElementById('craftGridEl'), craftOutEl=document.getElementById('craftOutEl');
+const invMainEl=document.getElementById('invMainEl'), invHotEl=document.getElementById('invHotEl');
+const heldEl=document.getElementById('held'), btnItems=document.getElementById('btnItems');
+const craftRow=document.getElementById('craftRow'), furnaceRow=document.getElementById('furnaceRow'), invTitle=document.getElementById('invTitle');
+const fceInEl=document.getElementById('fceInEl'), fceFuelEl=document.getElementById('fceFuelEl'), fceOutEl=document.getElementById('fceOutEl'), fceFlame=document.getElementById('fceFlame'), fceProg=document.getElementById('fceProg'), offhandEl=document.getElementById('offhandEl');
+const pointer={x:innerWidth/2, y:innerHeight/2};
+function setPointer(e){ if(e){ pointer.x=e.clientX; pointer.y=e.clientY; } }
+function durBar(s){ if(!s||!isTool(s.id)||s.dur==null) return ''; const f=Math.max(0,s.dur/TOOL[s.id].dur); const col=f>0.5?'#5fd35f':(f>0.25?'#e0c040':'#e24b4b'); return '<div class="durbar"><div style="width:'+Math.round(f*100)+'%;height:100%;background:'+col+'"></div></div>'; }
+function slotInner(s){ return s?('<div class="iswatch" style="background:'+hex(thingColor(s.id))+'"></div>'+(s.count>1?'<span class="icount">'+s.count+'</span>':'')+durBar(s)):''; }
+function slotDiv(zone,idx,s){ return '<div class="islot" data-zone="'+zone+'" data-idx="'+idx+'">'+slotInner(s)+'</div>'; }
+function renderHeld(){ if(held){ heldEl.style.display='block'; heldEl.style.left=pointer.x+'px'; heldEl.style.top=pointer.y+'px'; heldEl.innerHTML=slotInner(held); } else heldEl.style.display='none'; }
+function renderInventory(){
+  offhandEl.innerHTML = slotInner(offhand);
+  let mn=''; for(let i=9;i<SLOT_COUNT;i++) mn+=slotDiv('inv',i,inv[i]); invMainEl.innerHTML=mn;
+  let hb=''; for(let i=0;i<HOTBAR_COUNT;i++) hb+=slotDiv('inv',i,inv[i]); invHotEl.innerHTML=hb;
+  if(invMode==='furnace'){
+    craftRow.style.display='none'; furnaceRow.style.display='flex'; invTitle.textContent='OFEN';
+    const f=furnaces.get(furnaceKey);
+    fceInEl.innerHTML  ='<div class="islot" data-zone="fce" data-idx="0">'+slotInner(f?f.slots[0]:null)+'</div>';
+    fceFuelEl.innerHTML='<div class="islot" data-zone="fce" data-idx="1">'+slotInner(f?f.slots[1]:null)+'</div>';
+    fceOutEl.innerHTML ='<div class="islot out" data-zone="fce" data-idx="2">'+slotInner(f?f.slots[2]:null)+'</div>';
+    fceFlame.classList.toggle('lit', !!(f && f.burn>0));
+    fceProg.style.width = (f ? Math.round(Math.min(1,f.cook/f.cookMax)*100) : 0)+'%';
+  } else {
+    craftRow.style.display='flex'; furnaceRow.style.display='none'; invTitle.textContent='INVENTAR';
+    let cg=''; for(let i=0;i<9;i++) cg+=slotDiv('craft',i,craftGrid[i]); craftGridEl.innerHTML=cg;
+    craftOutEl.innerHTML='<div class="islot out" data-zone="out" data-idx="0">'+slotInner(craftOutput)+'</div>';
   }
+  renderHeld();
 }
-buildPicker();
-function openPicker(){ pickerOpen=true; pickerEl.classList.add('open'); if(!isTouch) document.exitPointerLock(); }
-function closePicker(){ pickerOpen=false; pickerEl.classList.remove('open'); if(!isTouch) canvas.requestPointerLock(); }
-function togglePicker(){ if(!isActive() && !pickerOpen) return; pickerOpen ? closePicker() : openPicker(); }
-btnItems.addEventListener('touchstart', (e)=>{ e.preventDefault(); togglePicker(); }, {passive:false});
+function slotClick(arr,idx){
+  const cur=arr[idx];
+  if(held===null){ if(cur){ held=cur; arr[idx]=null; } }
+  else if(!cur){ arr[idx]=held; held=null; }
+  else if(cur.id===held.id && !isTool(cur.id)){ const sp=STACK_MAX-cur.count, mv=Math.min(sp,held.count); cur.count+=mv; held.count-=mv; if(held.count<=0) held=null; }
+  else { arr[idx]=held; held=cur; }
+  if(arr===craftGrid) recomputeCraft();
+  renderInventory();
+}
+function takeCraftOutput(){
+  const r=matchRecipe(); if(!r) return;
+  if(r.shape){ for(let i=0;i<9;i++){ if(craftGrid[i]){ craftGrid[i].count--; if(craftGrid[i].count<=0) craftGrid[i]=null; } } }
+  else { const need={...r.in}; for(let i=0;i<9;i++){ const s=craftGrid[i]; if(!s) continue; if(need[s.id]){ const tk=Math.min(s.count,need[s.id]); s.count-=tk; need[s.id]-=tk; if(s.count<=0) craftGrid[i]=null; } } }
+  if(isTool(r.out.id)) addToolItem(r.out.id); else addItem(r.out.id, r.out.count);
+  recomputeCraft(); renderInventory();
+}
+function handleSlot(zone,idx){
+  if(zone==='out'){ takeCraftOutput(); return; }
+  if(zone==='off'){ offhandClick(); return; }
+  if(zone==='fce'){ furnaceSlotClick(idx); return; }
+  slotClick(zone==='craft'?craftGrid:inv, idx);
+}
+function offhandClick(){
+  if(held===null){ if(offhand){ held=offhand; offhand=null; } }
+  else if(!offhand){ offhand=held; held=null; }
+  else if(offhand.id===held.id && !isTool(offhand.id)){ const sp=STACK_MAX-offhand.count, mv=Math.min(sp,held.count); offhand.count+=mv; held.count-=mv; if(held.count<=0) held=null; }
+  else { const t=offhand; offhand=held; held=t; }
+  renderInventory(); renderHotbar();
+}
+function furnaceSlotClick(idx){
+  const f=furnaceAt(furnaceKey);
+  if(idx===2){ const o=f.slots[2]; if(!o) return;   // Output nur entnehmen
+    if(held===null){ held=o; f.slots[2]=null; }
+    else if(held.id===o.id && !isTool(o.id)){ const sp=STACK_MAX-held.count, mv=Math.min(sp,o.count); held.count+=mv; o.count-=mv; if(o.count<=0) f.slots[2]=null; }
+    renderInventory(); return;
+  }
+  slotClick(f.slots, idx);
+}
+invPanel.addEventListener('click', (e)=>{ const el=e.target.closest('.islot'); if(!el) return; setPointer(e); handleSlot(el.dataset.zone, +el.dataset.idx); });
+invPanel.addEventListener('touchstart', (e)=>{ const el=e.target.closest('.islot'); if(!el) return; e.preventDefault(); setPointer(e.changedTouches[0]); handleSlot(el.dataset.zone, +el.dataset.idx); }, {passive:false});
+document.addEventListener('mousemove', (e)=>{ if(invOpen && held){ setPointer(e); renderHeld(); } });
+function openInv(){ invMode='craft'; invOpen=true; invScreen.classList.add('open'); recomputeCraft(); renderInventory(); if(!isTouch) document.exitPointerLock(); }
+function openFurnace(key){ furnaceAt(key); furnaceKey=key; invMode='furnace'; invOpen=true; invScreen.classList.add('open'); renderInventory(); if(!isTouch) document.exitPointerLock(); }
+function closeInv(){
+  invOpen=false; invScreen.classList.remove('open');
+  if(invMode==='craft'){ for(let i=0;i<9;i++){ if(craftGrid[i]){ addItem(craftGrid[i].id, craftGrid[i].count); craftGrid[i]=null; } } } // Werkbank leeren
+  if(held){ addItem(held.id, held.count); held=null; }
+  invMode='craft'; furnaceKey=null;
+  recomputeCraft(); renderHotbar();
+  if(!isTouch) canvas.requestPointerLock();
+}
+function toggleInv(){ if(!isActive() && !invOpen) return; invOpen?closeInv():openInv(); }
+btnItems.addEventListener('touchstart', (e)=>{ e.preventDefault(); toggleInv(); }, {passive:false});
 
 // =====================================================================
 //  MULTIPLAYER (passt exakt zum WS-Protokoll des Servers)
@@ -632,6 +1035,8 @@ function onWelcome(m){
   for(let dz=-1;dz<=1;dz++) for(let dx=-1;dx<=1;dx++) world.ensureChunkData(pcx+dx,pcz+dz); // Kollision sofort sichern
   for(const id of [...avatars.keys()]) removeAvatar(id);
   if(Array.isArray(m.players)) for(const p of m.players) addAvatar(p);
+  clearMobs();
+  if(Array.isArray(m.mobs)) for(const mob of m.mobs) addMob(mob);
   if(playerName) net.sendStat({name:playerName});
 }
 
@@ -661,13 +1066,243 @@ const net={
       case 'leave':   removeAvatar(m.id); break;
       case 'move':    moveAvatar(m.id,m.x,m.y,m.z,m.ry); break;
       case 'stat':    statAvatar(m.id,m); break;
-      case 'block':   world.setBlock(m.x,m.y,m.z,m.id,true); break;
-      case 'tick':    if(typeof m.time==='number') dayTime=m.time; break; // Tageszeit vom Server
-      // mobspawn/mobdead/mobhp: Mobs kommen mit Batch Survival
+      case 'block':    world.setBlock(m.x,m.y,m.z,m.id,true); break;
+      case 'mobspawn': addMob(m.mob); break;
+      case 'mobdead':  onMobDead(m.mobId); break;
+      case 'mobhp':    break; // HP fuehrt der Server, Client muss nichts tun
+      case 'tick':     if(typeof m.time==='number') dayTime=m.time; updateMobsFromTick(m.mobs); break;
     }
   }
 };
 net.connect();
+
+// =====================================================================
+//  SURVIVAL + MOBS
+//  Mobs spawnt + bewegt der Server (cow/sheep/chicken/zombie/skeleton).
+//  Der Client rendert sie, macht Nahkampf und Schaden. Leben/Hunger lokal.
+// =====================================================================
+const HEALTH_MAX=10, HUNGER_MAX=10, AIR_MAX=10;
+let health=HEALTH_MAX, hunger=HUNGER_MAX, air=AIR_MAX, dead=false, hurtT=0;
+let lastDrown=0, lastStatSent=0, lastH=-1, lastHu=-1;
+
+const hurtEl=document.getElementById('hurt'), hpRow=document.getElementById('hpRow'), hungerRow=document.getElementById('hungerRow'), airRow=document.getElementById('airRow');
+const deathEl=document.getElementById('death'), respawnBtn=document.getElementById('respawnBtn');
+
+// ---- Mob-Modelle (detaillierter, mit animierbaren Beinen/Armen) ----
+function boxMesh(w,h,d,color,x,y,z){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshLambertMaterial({color})); m.position.set(x,y,z); return m; }
+function legPivot(w,h,d,color,x,hipY,z){ const piv=new THREE.Group(); piv.position.set(x,hipY,z); const leg=new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshLambertMaterial({color})); leg.position.y=-h/2; piv.add(leg); return piv; }
+const MOB_DEF = {
+  cow:     { hostile:false, hw:0.5,  hh:0.95 },
+  sheep:   { hostile:false, hw:0.5,  hh:0.9  },
+  chicken: { hostile:false, hw:0.3,  hh:0.6  },
+  zombie:  { hostile:true,  hw:0.35, hh:0.95 },
+  skeleton:{ hostile:true,  hw:0.35, hh:0.95 },
+};
+function makeMobModel(kind){
+  const g=new THREE.Group(); const legs=[], arms=[];
+  if(kind==='zombie' || kind==='skeleton'){
+    const skin = kind==='zombie'?0x4a8f4a:0xe6e6de;
+    const cloth= kind==='zombie'?0x3a5a7a:0xcfcfc6;
+    g.add(boxMesh(0.5,0.65,0.28, cloth, 0,1.0,0));            // Rumpf
+    g.add(boxMesh(0.46,0.46,0.46, skin, 0,1.58,0));          // Kopf
+    g.add(boxMesh(0.12,0.1,0.02, 0x101014, -0.1,1.62,0.24)); // Augen
+    g.add(boxMesh(0.12,0.1,0.02, 0x101014,  0.1,1.62,0.24));
+    const aL=legPivot(0.15,0.6,0.15, skin, -0.33,1.3,0.04); aL.rotation.x=-1.3; // Arme vor (Zombie)
+    const aR=legPivot(0.15,0.6,0.15, skin,  0.33,1.3,0.04); aR.rotation.x=-1.3;
+    g.add(aL); g.add(aR); arms.push(aL,aR);
+    const lL=legPivot(0.17,0.7,0.17, cloth, -0.13,0.7,0);
+    const lR=legPivot(0.17,0.7,0.17, cloth,  0.13,0.7,0);
+    g.add(lL); g.add(lR); legs.push(lL,lR);
+  } else if(kind==='chicken'){
+    g.add(boxMesh(0.34,0.36,0.46, 0xf2f2ec, 0,0.5,0));        // Koerper
+    g.add(boxMesh(0.26,0.28,0.26, 0xf6f6f0, 0,0.82,0.16));    // Kopf
+    g.add(boxMesh(0.1,0.08,0.12, 0xe0a020, 0,0.8,0.36));      // Schnabel
+    g.add(boxMesh(0.1,0.12,0.04, 0xd23b3b, 0,0.96,0.12));     // Kamm
+    g.add(boxMesh(0.06,0.3,0.34, 0xeaeae4, -0.2,0.52,0));     // Fluegel
+    g.add(boxMesh(0.06,0.3,0.34, 0xeaeae4,  0.2,0.52,0));
+    const lL=legPivot(0.06,0.25,0.06, 0xe0a020, -0.09,0.3,0);
+    const lR=legPivot(0.06,0.25,0.06, 0xe0a020,  0.09,0.3,0);
+    g.add(lL); g.add(lR); legs.push(lL,lR);
+  } else {
+    const body = kind==='sheep'?0xe8e8e0:0x5a4632;
+    const head = kind==='sheep'?0xd8c8b0:0x4a3826;
+    g.add(boxMesh(0.72,0.72,1.18, body, 0,0.92,0));           // Koerper
+    g.add(boxMesh(0.46,0.46,0.46, head, 0,1.02,0.74));        // Kopf
+    if(kind==='cow'){ g.add(boxMesh(0.5,0.28,0.3, 0xd9bfae, 0,0.88,0.86)); g.add(boxMesh(0.36,0.16,0.24, 0xe8a0b0, 0,0.52,-0.45)); } // Schnauze + Euter
+    g.add(boxMesh(0.12,0.18,0.06, head, -0.2,1.2,0.74)); g.add(boxMesh(0.12,0.18,0.06, head, 0.2,1.2,0.74)); // Ohren
+    const off=0.42;
+    const l1=legPivot(0.2,0.62,0.2, head, -0.24,0.62, off), l2=legPivot(0.2,0.62,0.2, head, 0.24,0.62, off);
+    const l3=legPivot(0.2,0.62,0.2, head, -0.24,0.62,-off), l4=legPivot(0.2,0.62,0.2, head, 0.24,0.62,-off);
+    g.add(l1); g.add(l2); g.add(l3); g.add(l4); legs.push(l1,l2,l3,l4);
+  }
+  return { group:g, legs, arms };
+}
+
+// ---- Mob-Verwaltung ----
+const mobsMap = new Map(); // id -> {group, kind, hostile, hw, hh, tx, tz, dir, lastAttack}
+function mobGroundY(x,z){ return Math.max(terrainHeight(Math.floor(x), Math.floor(z)), WATER_LEVEL) + 1; }
+function addMob(mob){
+  if(!mob || mobsMap.has(mob.id)) return;
+  const def = MOB_DEF[mob.kind] || MOB_DEF.cow;
+  const mdl = makeMobModel(mob.kind);
+  mdl.group.position.set(mob.x, mobGroundY(mob.x,mob.z), mob.z);
+  scene.add(mdl.group);
+  mobsMap.set(mob.id, { group:mdl.group, legs:mdl.legs, arms:mdl.arms, phase:0, kind:mob.kind, hostile:def.hostile, hw:def.hw, hh:def.hh, tx:mob.x, tz:mob.z, dir:mob.dir||0, lastAttack:0 });
+}
+function removeMob(id){ const m=mobsMap.get(id); if(!m) return; scene.remove(m.group); m.group.traverse(o=>{ if(o.geometry) o.geometry.dispose(); if(o.material) o.material.dispose(); }); mobsMap.delete(id); }
+function clearMobs(){ for(const id of [...mobsMap.keys()]) removeMob(id); }
+function updateMobsFromTick(list){ if(!Array.isArray(list)) return; for(const e of list){ const m=mobsMap.get(e[0]); if(!m) continue; m.tx=e[1]; m.tz=e[2]; m.dir=e[3]; } }
+
+const myHits = new Map(); // mobId -> Zeitpunkt (wer zuletzt traf -> kriegt Drop beim Kill)
+const MOB_DROP = { cow:BEEF, sheep:MUTTON, chicken:CHICKEN_RAW };
+let lastAtk=0, lastEat=0;
+function attackMob(id){
+  const now=performance.now(); if(now-lastAtk<500) return;     // Angriffs-Cooldown
+  lastAtk=now;
+  const sel=inv[selectedSlot];
+  let dmg=3; if(sel && isTool(sel.id)){ const td=TOOL[sel.id]; dmg = td.dmg || (td.cat==='axe'?4:3); }  // Schwert/Axt mehr Schaden
+  net.send({t:'mobhit', mobId:id, dmg});
+  myHits.set(id, now);
+  if(sel && isTool(sel.id)) damageTool();                      // Werkzeug nutzt sich ab
+}
+function eat(){
+  const s=inv[selectedSlot]; if(!s||!isFood(s.id)) return;
+  const now=performance.now();
+  if(now-lastEat<1000 || hunger>=HUNGER_MAX) return;          // Ess-Cooldown, nicht wenn voll
+  lastEat=now; hunger=Math.min(HUNGER_MAX, hunger+FOOD[s.id]); consumeSelected(1);
+}
+function onMobDead(id){
+  const m=mobsMap.get(id), t=myHits.get(id);
+  if(m && t && performance.now()-t<4000){ const d=MOB_DROP[m.kind]; if(d) addItem(d, 1 + (Math.random()<0.5?1:0)); }
+  myHits.delete(id);
+  removeMob(id);
+}
+
+// ---- Kampf: Strahl gegen Mob-AABB ----
+const _fwd = new THREE.Vector3();
+function rayAABB(o,d,mn,mx,maxT){
+  let t0=0, t1=maxT;
+  for(let i=0;i<3;i++){
+    const oi=o.getComponent(i), di=d.getComponent(i);
+    if(Math.abs(di)<1e-8){ if(oi<mn[i]||oi>mx[i]) return null; }
+    else{ let ta=(mn[i]-oi)/di, tb=(mx[i]-oi)/di; if(ta>tb){const s=ta;ta=tb;tb=s;} if(ta>t0)t0=ta; if(tb<t1)t1=tb; if(t0>t1) return null; }
+  }
+  return t0;
+}
+function mobInView(maxT){
+  const o=camera.position; _fwd.set(0,0,-1).applyQuaternion(camera.quaternion);
+  let best=null, bestT=maxT;
+  for(const [id,m] of mobsMap){
+    const p=m.group.position;
+    const mn=[p.x-m.hw, p.y, p.z-m.hw], mx=[p.x+m.hw, p.y+m.hh*2, p.z+m.hw];
+    const t=rayAABB(o,_fwd,mn,mx,bestT);
+    if(t!==null && t<bestT){ bestT=t; best=id; }
+  }
+  return best===null ? null : {id:best, t:bestT};
+}
+
+// ---- Schaden / Tod / Respawn ----
+function damagePlayer(amount){
+  if(dead) return;
+  health -= amount; hurtT=0.35;
+  if(health<=0){ health=0; die(); }
+}
+function die(){ dead=true; invOpen=false; invScreen.classList.remove('open'); deathEl.classList.add('open'); if(!isTouch) document.exitPointerLock(); }
+function respawn(){
+  dead=false; deathEl.classList.remove('open');
+  health=HEALTH_MAX; hunger=HUNGER_MAX; air=AIR_MAX;
+  player.x=8.5; player.z=8.5; player.vx=player.vy=player.vz=0;
+  for(let dz=-1;dz<=1;dz++) for(let dx=-1;dx<=1;dx++) world.ensureChunkData(dx,dz);
+  player.y=Math.max(terrainHeight(8,8),WATER_LEVEL)+2;
+  if(!isTouch) canvas.requestPointerLock();
+}
+respawnBtn.addEventListener('click', respawn);
+respawnBtn.addEventListener('touchstart', (e)=>{ e.preventDefault(); respawn(); }, {passive:false});
+
+// ---- Survival pro Frame ----
+function survivalUpdate(dt, now){
+  if(dead) return;
+  if(net.connected){ hunger = Math.max(0, hunger - dt*0.015); if(sprinting) hunger=Math.max(0,hunger-dt*0.05); } // Hunger nur im MP
+  if(hunger>6 && health<HEALTH_MAX){ health=Math.min(HEALTH_MAX, health+dt*0.4); if(net.connected) hunger=Math.max(0,hunger-dt*0.05); }
+  else if(net.connected && hunger<=0 && health>0){ health=Math.max(0, health-dt*0.2); if(health<=0) die(); }
+  const eb = world.getBlock(Math.floor(player.x), Math.floor(player.y+EYE_HEIGHT), Math.floor(player.z));
+  if(eb===WATER){ air=Math.max(0,air-dt); if(air<=0 && now-lastDrown>1000){ lastDrown=now; damagePlayer(1); } }
+  else air=AIR_MAX;
+  for(const [id,m] of mobsMap){
+    if(!m.hostile) continue;
+    const p=m.group.position, dd=Math.hypot(p.x-player.x, p.z-player.z);
+    if(dd<1.6 && Math.abs(p.y-player.y)<2 && now-m.lastAttack>1000){ m.lastAttack=now; damagePlayer(2); }
+  }
+  if(hurtT>0) hurtT=Math.max(0,hurtT-dt);
+  if(net.connected && now-lastStatSent>400){
+    const hr=Math.round(health), hu=Math.round(hunger);
+    if(hr!==lastH || hu!==lastHu){ net.sendStat({health:hr, hunger:hu}); lastH=hr; lastHu=hu; lastStatSent=now; }
+  }
+}
+function updateMobs(dt){
+  for(const [id,m] of mobsMap){
+    const p=m.group.position;
+    const ndx=(m.tx-p.x)*0.2, ndz=(m.tz-p.z)*0.2;
+    p.x+=ndx; p.z+=ndz;
+    p.y = mobGroundY(p.x, p.z);
+    m.group.rotation.y = m.dir;
+    // Lauf-Animation: Beine schwingen gegenphasig, Staerke nach Tempo
+    const moved=Math.hypot(ndx,ndz);
+    m.phase += moved*6;
+    const sw=Math.sin(m.phase)*Math.min(0.6, moved*18);
+    if(m.legs.length>=4){ m.legs[0].rotation.x=sw; m.legs[1].rotation.x=-sw; m.legs[2].rotation.x=-sw; m.legs[3].rotation.x=sw; }
+    else if(m.legs.length>=2){ m.legs[0].rotation.x=sw; m.legs[1].rotation.x=-sw; }
+    if(m.arms.length>=2){ m.arms[0].rotation.x=-1.3+sw*0.5; m.arms[1].rotation.x=-1.3-sw*0.5; }
+  }
+}
+
+// ---- Vitals-HUD ----
+function pips(n,cls){ let s=''; for(let i=0;i<10;i++) s+='<div class="pip '+cls+(i<n?' on':'')+'"></div>'; return s; }
+let _vitSig='';
+function renderVitals(){
+  const hr=Math.round(health), hu=Math.round(hunger), ar=Math.ceil(air), showAir=ar<AIR_MAX;
+  const sig=hr+'/'+hu+'/'+(showAir?ar:'-');
+  if(sig!==_vitSig){
+    _vitSig=sig;
+    hpRow.innerHTML=pips(hr,'hp'); hungerRow.innerHTML=pips(hu,'hg');
+    airRow.classList.toggle('show', showAir);
+    if(showAir) airRow.innerHTML=pips(ar,'air');
+  }
+  hurtEl.style.opacity = hurtT>0 ? (hurtT/0.35*0.8).toFixed(2) : '0';
+}
+
+// =====================================================================
+//  MINING + WERKZEUGE
+// =====================================================================
+const mineBar=document.getElementById('mineBar'), mineFill=document.getElementById('mineFill');
+const highlightMesh=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1.004,1.004,1.004)), new THREE.LineBasicMaterial({color:0x000000, transparent:true, opacity:0.5}));
+highlightMesh.visible=false; scene.add(highlightMesh);
+const mining={x:null,y:null,z:null,progress:0};
+function addToolItem(id){ for(let i=0;i<SLOT_COUNT;i++){ if(!inv[i]){ inv[i]={id,count:1,dur:TOOL[id].dur}; renderHotbar(); if(invOpen) renderInventory(); return; } } }
+function damageTool(){ const t=inv[selectedSlot]; if(!t||!isTool(t.id)) return; t.dur--; if(t.dur<=0) inv[selectedSlot]=null; renderHotbar(); if(invOpen) renderInventory(); }
+function breakBlock(x,y,z,bid,info,tool){
+  if(bid===FURNACE){ const fk=x+'_'+y+'_'+z, f=furnaces.get(fk); if(f){ for(const s of f.slots){ if(s) addItem(s.id,s.count); } furnaces.delete(fk); } }
+  world.setBlock(x,y,z,AIR);
+  const okTool = !info.needsTool || (tool && isTool(tool.id) && TOOL[tool.id].cat===info.tool && TOOL[tool.id].tier >= (info.minTier||1));
+  if(okTool){ const dr=dropFor(bid); if(dr!==AIR) addItem(dr,1); }
+  if(tool && isTool(tool.id)) damageTool();
+}
+function updateAim(dt){
+  if(!isActive() || dead || invOpen){ highlightMesh.visible=false; mineBar.style.display='none'; mining.x=null; return; }
+  const b=raycast();
+  if(!b){ highlightMesh.visible=false; mineBar.style.display='none'; mining.x=null; return; }
+  highlightMesh.visible=true; highlightMesh.position.set(b.x+0.5,b.y+0.5,b.z+0.5);
+  if(breakHeld){
+    if(mining.x!==b.x||mining.y!==b.y||mining.z!==b.z){ mining.x=b.x; mining.y=b.y; mining.z=b.z; mining.progress=0; }
+    const bid=world.getBlock(b.x,b.y,b.z);
+    const info=mineInfo(bid);
+    const tool=inv[selectedSlot];
+    const sp=(tool && isTool(tool.id) && TOOL[tool.id].cat===info.tool)?TOOL[tool.id].speed:1;
+    mining.progress += dt*sp/Math.max(0.05,info.hard);
+    if(mining.progress>=1){ breakBlock(b.x,b.y,b.z,bid,info,tool); mining.progress=0; mining.x=null; }
+    mineBar.style.display='block'; mineFill.style.width=Math.min(100,mining.progress*100)+'%';
+  } else { mineBar.style.display='none'; mining.progress=0; }
+}
 
 // =====================================================================
 //  MAIN LOOP
@@ -677,13 +1312,20 @@ let lastSent=0, lsx=null,lsy=null,lsz=null,lsr=null;
 
 function frame(now){
   let dt=(now-last)/1000; last=now; if(dt>0.05) dt=0.05;
-  if(isActive()) updatePlayer(dt);
+  if(isActive() && !dead) updatePlayer(dt);
 
   dayTime = (dayTime + dt/600) % 1; // lokaler Tag-Zyklus (~10 min), Server-Tick snappt drauf
   applyDayNight();
 
   const pcx=Math.floor(player.x/CHUNK_SIZE), pcz=Math.floor(player.z/CHUNK_SIZE);
   updateWorld(pcx,pcz);
+
+  survivalUpdate(dt, now);
+  updateMobs(dt);
+  updateAim(dt);
+  tickAllFurnaces(dt);
+  updateTorchGlow();
+  renderVitals();
 
   // eigene Position throttled (~10x/s) an Server, nur bei Aenderung
   if(net.connected && now-lastSent>100){
