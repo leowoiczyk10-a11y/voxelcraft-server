@@ -113,6 +113,8 @@
   .setSeg button.active { background: #2f6fd0; border-color: #4a9eff; color: #fff; }
   #setClose { margin-top: 6px; text-align: center; padding: 11px; border-radius: 9px; background: #2f6fd0; color: #fff; font-weight: 700; cursor: pointer; letter-spacing: 0.5px; }
   #setClose:hover { background: #3a7de0; }
+  .invToggleBtn { margin:0 auto 8px; width:fit-content; padding:5px 12px; border-radius:7px; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.06); color:#cdd9f0; font-size:12px; font-weight:600; cursor:pointer; user-select:none; -webkit-user-select:none; }
+  .invToggleBtn.on { background:#2f6fd0; border-color:#4a9eff; color:#fff; }
 </style>
 </head>
 <body>
@@ -135,6 +137,7 @@
 <div id="invScreen">
   <div id="invPanel">
     <div id="invTitle">INVENTAR</div>
+    <div id="splitToggle" class="invToggleBtn">Einzeln: aus</div>
     <div id="craftRow" class="invCraftRow">
       <div id="craftGridEl" class="craftGrid"></div>
       <div class="craftArrow">&#10142;</div>
@@ -240,7 +243,7 @@ const WATER_LEVEL  = 62;
 const PRESETS = {
   niedrig: { renderDist:3, simDist:2, renderScale:0.7 },
   mittel:  { renderDist:5, simDist:3, renderScale:1.0 },
-  hoch:    { renderDist:8, simDist:5, renderScale:1.0 },
+  hoch:    { renderDist:10, simDist:6, renderScale:1.0 },
 };
 const SETTINGS_KEY = 'voxelcraft_settings_v1';
 const DEFAULT_PRESET = isTouch ? 'niedrig' : 'mittel';
@@ -384,6 +387,7 @@ const STACK_MAX=64, SLOT_COUNT=36;        // 0-8 Hotbar, 9-35 Inventar
 const inv = new Array(SLOT_COUNT).fill(null);
 const craftGrid = new Array(9).fill(null);
 let held=null, craftOutput=null, invOpen=false, invMode='craft', furnaceKey=null, offhand=null;
+let craftN=2, splitMode=false;   // craftN: 2 = Inventar-Crafting, 3 = Werkbank. splitMode: Einzeln-Modus (Touch)
 inv[0]={id:LOG,count:8}; inv[1]={id:DIRT,count:16}; inv[2]={id:COBBLE,count:8}; // Start-Kit
 
 function addItem(id,count){
@@ -429,8 +433,8 @@ const RECIPES = [
   { shape:["X","S","S"],       key:{X:DIAMOND,S:STICK}, out:{id:DIAMOND_SHOVEL,  count:1} },
   { shape:["X","X","S"],       key:{X:DIAMOND,S:STICK}, out:{id:DIAMOND_SWORD,   count:1} },
 ];
-function craftCounts(){ const c={}; for(const s of craftGrid){ if(s) c[s.id]=(c[s.id]||0)+s.count; } return c; }
-function gridIds(){ const a=[]; for(let r=0;r<3;r++){ a.push([]); for(let c=0;c<3;c++){ const s=craftGrid[r*3+c]; a[r].push(s?s.id:null); } } return a; }
+function craftCounts(){ const c={}; for(let i=0;i<craftN*craftN;i++){ const s=craftGrid[i]; if(s) c[s.id]=(c[s.id]||0)+s.count; } return c; }
+function gridIds(){ const a=[]; for(let r=0;r<craftN;r++){ a.push([]); for(let c=0;c<craftN;c++){ const s=craftGrid[r*craftN+c]; a[r].push(s?s.id:null); } } return a; }
 function trimGrid(g){ let r0=9,r1=-1,c0=9,c1=-1; for(let r=0;r<g.length;r++)for(let c=0;c<g[r].length;c++) if(g[r][c]!=null){ if(r<r0)r0=r; if(r>r1)r1=r; if(c<c0)c0=c; if(c>c1)c1=c; } if(r1<0) return null; const o=[]; for(let r=r0;r<=r1;r++){ const row=[]; for(let c=c0;c<=c1;c++) row.push(g[r][c]); o.push(row); } return o; }
 function shapeIds(rc){ return rc.shape.map(row=>row.split('').map(ch=>(ch==='.'||ch===' ')?null:rc.key[ch])); }
 function eqGrid(a,b){ if(!a||!b||a.length!==b.length) return false; for(let r=0;r<a.length;r++){ if(a[r].length!==b[r].length) return false; for(let c=0;c<a[r].length;c++) if(a[r][c]!==b[r][c]) return false; } return true; }
@@ -858,6 +862,16 @@ function buildAtlasTexture(ts){
   return tex;
 }
 const ATLAS = { 16:buildAtlasTexture(16), 32:buildAtlasTexture(32) };
+// ---- Inventar-Icons: kleine Textur pro Block (Oberseite), als data-URL gecached ----
+const _iconCache={};
+function blockIconURL(id){
+  if(_iconCache[id]) return _iconCache[id];
+  const t=TEX[id]; let kind=(typeof t==='string')?t:(t&&(t.top||t.side)); if(!kind) kind='stone';
+  const sz=32, cv=document.createElement('canvas'); cv.width=cv.height=sz; const ctx=cv.getContext('2d');
+  ctx.save(); ctx.beginPath(); ctx.rect(0,0,sz,sz); ctx.clip(); paintTile(ctx,kind,sz,0,0); ctx.restore();
+  const url=cv.toDataURL(); _iconCache[id]=url; return url;
+}
+function swatchStyle(id){ return (TEX[id]!==undefined) ? ('background-image:url('+blockIconURL(id)+');background-size:cover;image-rendering:pixelated') : ('background:'+hex(thingColor(id))); }
 // UV fuer ein Tile. eps = halbe Texel-Einrueckung (16px-Basis) gegen Bleeding, aufloesungs-unabhaengig.
 const TILE_EPS = 0.5/16;
 function tileUV(idx, uFrac, vFrac){
@@ -1118,7 +1132,9 @@ function startBreak(){
 function doPlace(){
   if(!isActive()||dead||invOpen) return;
   const h=raycast(); if(!h) return;
-  if(world.getBlock(h.x,h.y,h.z)===FURNACE){ openFurnace(h.x+'_'+h.y+'_'+h.z); return; }
+  const tb=world.getBlock(h.x,h.y,h.z);
+  if(tb===FURNACE){ openFurnace(h.x+'_'+h.y+'_'+h.z); return; }
+  if(tb===CRAFTING_TABLE){ openTable(); return; }
   const s=inv[selectedSlot]; if(!s) return;
   if(isFood(s.id)){ eat(); return; }
   if(!BLOCKS[s.id]) return;                  // nicht platzierbar (Stock, Schwert)
@@ -1159,11 +1175,19 @@ addEventListener('wheel', (e)=>{ if(!locked)return; selectedSlot=(selectedSlot+(
 function startGame(){
   playerName=(nameInput.value||'').trim().slice(0,16);
   overlay.classList.add('hidden');
+  const _sp=loadPos(); if(_sp){ player.x=_sp.x; player.y=_sp.y; player.z=_sp.z; player.vx=player.vy=player.vz=0; if(typeof _sp.yaw==='number') camera.rotation.y=_sp.yaw; if(typeof _sp.pitch==='number') camera.rotation.x=_sp.pitch; }
   if(isTouch) touchPlaying=true; else canvas.requestPointerLock();
   if(net.connected&&playerName) net.sendStat({name:playerName});
 }
 overlay.addEventListener('click', (e)=>{ if(e.target===nameInput) return; startGame(); });
 nameInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); startGame(); } });
+
+// ---- Position speichern (lokal, pro Geraet) ----
+const POS_KEY='voxelcraft_pos_v1';
+function savePos(){ try{ localStorage.setItem(POS_KEY, JSON.stringify({x:player.x,y:player.y,z:player.z,yaw:camera.rotation.y,pitch:camera.rotation.x})); }catch(_){} }
+function loadPos(){ try{ const r=localStorage.getItem(POS_KEY); return r?JSON.parse(r):null; }catch(_){ return null; } }
+setInterval(()=>{ if(overlay.classList.contains('hidden') && !dead) savePos(); }, 3000);
+addEventListener('beforeunload', savePos);
 
 // ---- Touch: Joystick ----
 const joy=document.getElementById('joy'), knob=document.getElementById('joyKnob');
@@ -1203,7 +1227,7 @@ function renderHotbar(){
     const s=inv[i];
     const slot=document.createElement('div');
     slot.className='slot'+(i===selectedSlot?' active':'');
-    slot.innerHTML='<span class="num">'+(i+1)+'</span>'+(s?('<span class="swatch" style="background:'+hex(thingColor(s.id))+'"></span>'+(s.count>1?'<span class="hcount">'+s.count+'</span>':'')+durBar(s)):'');
+    slot.innerHTML='<span class="num">'+(i+1)+'</span>'+(s?('<span class="swatch" style="'+swatchStyle(s.id)+'"></span>'+(s.count>1?'<span class="hcount">'+s.count+'</span>':'')+durBar(s)):'');
     slot.addEventListener('click', ()=>{ selectedSlot=i; renderHotbar(); });
     hotbarEl.appendChild(slot);
   }
@@ -1220,7 +1244,7 @@ const fceInEl=document.getElementById('fceInEl'), fceFuelEl=document.getElementB
 const pointer={x:innerWidth/2, y:innerHeight/2};
 function setPointer(e){ if(e){ pointer.x=e.clientX; pointer.y=e.clientY; } }
 function durBar(s){ if(!s||!isTool(s.id)||s.dur==null) return ''; const f=Math.max(0,s.dur/TOOL[s.id].dur); const col=f>0.5?'#5fd35f':(f>0.25?'#e0c040':'#e24b4b'); return '<div class="durbar"><div style="width:'+Math.round(f*100)+'%;height:100%;background:'+col+'"></div></div>'; }
-function slotInner(s){ return s?('<div class="iswatch" style="background:'+hex(thingColor(s.id))+'"></div>'+(s.count>1?'<span class="icount">'+s.count+'</span>':'')+durBar(s)):''; }
+function slotInner(s){ return s?('<div class="iswatch" style="'+swatchStyle(s.id)+'"></div>'+(s.count>1?'<span class="icount">'+s.count+'</span>':'')+durBar(s)):''; }
 function slotDiv(zone,idx,s){ return '<div class="islot" data-zone="'+zone+'" data-idx="'+idx+'">'+slotInner(s)+'</div>'; }
 function renderHeld(){ if(held){ heldEl.style.display='block'; heldEl.style.left=pointer.x+'px'; heldEl.style.top=pointer.y+'px'; heldEl.innerHTML=slotInner(held); } else heldEl.style.display='none'; }
 function renderInventory(){
@@ -1236,8 +1260,9 @@ function renderInventory(){
     fceFlame.classList.toggle('lit', !!(f && f.burn>0));
     fceProg.style.width = (f ? Math.round(Math.min(1,f.cook/f.cookMax)*100) : 0)+'%';
   } else {
-    craftRow.style.display='flex'; furnaceRow.style.display='none'; invTitle.textContent='INVENTAR';
-    let cg=''; for(let i=0;i<9;i++) cg+=slotDiv('craft',i,craftGrid[i]); craftGridEl.innerHTML=cg;
+    craftRow.style.display='flex'; furnaceRow.style.display='none'; invTitle.textContent = craftN===3?'WERKBANK':'INVENTAR';
+    craftGridEl.style.gridTemplateColumns='repeat('+craftN+', 42px)';
+    let cg=''; for(let i=0;i<craftN*craftN;i++) cg+=slotDiv('craft',i,craftGrid[i]); craftGridEl.innerHTML=cg;
     craftOutEl.innerHTML='<div class="islot out" data-zone="out" data-idx="0">'+slotInner(craftOutput)+'</div>';
   }
   renderHeld();
@@ -1251,18 +1276,32 @@ function slotClick(arr,idx){
   if(arr===craftGrid) recomputeCraft();
   renderInventory();
 }
+function splitClick(arr,idx){
+  const cur=arr[idx];
+  if(held===null){
+    if(cur && !isTool(cur.id) && cur.count>1){ const take=Math.ceil(cur.count/2); held={id:cur.id,count:take}; cur.count-=take; if(cur.count<=0) arr[idx]=null; }
+    else if(cur){ held=cur; arr[idx]=null; }                       // einzelnes Item/Tool: ganz nehmen
+  } else {
+    if(!cur){ arr[idx]={id:held.id,count:1}; held.count--; if(held.count<=0) held=null; }   // einen ablegen
+    else if(cur.id===held.id && !isTool(cur.id) && cur.count<STACK_MAX){ cur.count++; held.count--; if(held.count<=0) held=null; }
+    // anderes Item beim Splitten: nichts (kein versehentlicher Tausch)
+  }
+  if(arr===craftGrid) recomputeCraft();
+  renderInventory();
+}
 function takeCraftOutput(){
   const r=matchRecipe(); if(!r) return;
-  if(r.shape){ for(let i=0;i<9;i++){ if(craftGrid[i]){ craftGrid[i].count--; if(craftGrid[i].count<=0) craftGrid[i]=null; } } }
-  else { const need={...r.in}; for(let i=0;i<9;i++){ const s=craftGrid[i]; if(!s) continue; if(need[s.id]){ const tk=Math.min(s.count,need[s.id]); s.count-=tk; need[s.id]-=tk; if(s.count<=0) craftGrid[i]=null; } } }
+  if(r.shape){ for(let i=0;i<craftN*craftN;i++){ if(craftGrid[i]){ craftGrid[i].count--; if(craftGrid[i].count<=0) craftGrid[i]=null; } } }
+  else { const need={...r.in}; for(let i=0;i<craftN*craftN;i++){ const s=craftGrid[i]; if(!s) continue; if(need[s.id]){ const tk=Math.min(s.count,need[s.id]); s.count-=tk; need[s.id]-=tk; if(s.count<=0) craftGrid[i]=null; } } }
   if(isTool(r.out.id)) addToolItem(r.out.id); else addItem(r.out.id, r.out.count);
   recomputeCraft(); renderInventory();
 }
-function handleSlot(zone,idx){
+function handleSlot(zone,idx,split){
   if(zone==='out'){ takeCraftOutput(); return; }
   if(zone==='off'){ offhandClick(); return; }
-  if(zone==='fce'){ furnaceSlotClick(idx); return; }
-  slotClick(zone==='craft'?craftGrid:inv, idx);
+  if(zone==='fce'){ furnaceSlotClick(idx,split); return; }
+  const arr = zone==='craft'?craftGrid:inv;
+  if(split) splitClick(arr,idx); else slotClick(arr,idx);
 }
 function offhandClick(){
   if(held===null){ if(offhand){ held=offhand; offhand=null; } }
@@ -1271,23 +1310,30 @@ function offhandClick(){
   else { const t=offhand; offhand=held; held=t; }
   renderInventory(); renderHotbar();
 }
-function furnaceSlotClick(idx){
+function furnaceSlotClick(idx,split){
   const f=furnaceAt(furnaceKey);
   if(idx===2){ const o=f.slots[2]; if(!o) return;   // Output nur entnehmen
     if(held===null){ held=o; f.slots[2]=null; }
     else if(held.id===o.id && !isTool(o.id)){ const sp=STACK_MAX-held.count, mv=Math.min(sp,o.count); held.count+=mv; o.count-=mv; if(o.count<=0) f.slots[2]=null; }
     renderInventory(); return;
   }
-  slotClick(f.slots, idx);
+  if(split) splitClick(f.slots, idx); else slotClick(f.slots, idx);
 }
-invPanel.addEventListener('click', (e)=>{ const el=e.target.closest('.islot'); if(!el) return; setPointer(e); handleSlot(el.dataset.zone, +el.dataset.idx); });
-invPanel.addEventListener('touchstart', (e)=>{ const el=e.target.closest('.islot'); if(!el) return; e.preventDefault(); setPointer(e.changedTouches[0]); handleSlot(el.dataset.zone, +el.dataset.idx); }, {passive:false});
+invPanel.addEventListener('click', (e)=>{ const el=e.target.closest('.islot'); if(!el) return; setPointer(e); handleSlot(el.dataset.zone, +el.dataset.idx, splitMode); });
+invPanel.addEventListener('contextmenu', (e)=>{ const el=e.target.closest('.islot'); e.preventDefault(); if(!el) return; setPointer(e); handleSlot(el.dataset.zone, +el.dataset.idx, true); });
+invPanel.addEventListener('touchstart', (e)=>{ const el=e.target.closest('.islot'); if(!el) return; e.preventDefault(); setPointer(e.changedTouches[0]); handleSlot(el.dataset.zone, +el.dataset.idx, splitMode); }, {passive:false});
 document.addEventListener('mousemove', (e)=>{ if(invOpen && held){ setPointer(e); renderHeld(); } });
-function openInv(){ invMode='craft'; invOpen=true; invScreen.classList.add('open'); recomputeCraft(); renderInventory(); if(!isTouch) document.exitPointerLock(); }
+const splitToggleEl=document.getElementById('splitToggle');
+function updateSplitToggle(){ splitToggleEl.textContent='Einzeln: '+(splitMode?'an':'aus'); splitToggleEl.classList.toggle('on',splitMode); }
+splitToggleEl.addEventListener('click', ()=>{ splitMode=!splitMode; updateSplitToggle(); });
+splitToggleEl.addEventListener('touchstart', (e)=>{ e.preventDefault(); e.stopPropagation(); splitMode=!splitMode; updateSplitToggle(); }, {passive:false});
+updateSplitToggle();
+function openInv(){ invMode='craft'; craftN=2; invOpen=true; invScreen.classList.add('open'); recomputeCraft(); renderInventory(); if(!isTouch) document.exitPointerLock(); }
+function openTable(){ if(invOpen) return; invMode='craft'; craftN=3; invOpen=true; invScreen.classList.add('open'); recomputeCraft(); renderInventory(); if(!isTouch) document.exitPointerLock(); }
 function openFurnace(key){ furnaceAt(key); furnaceKey=key; invMode='furnace'; invOpen=true; invScreen.classList.add('open'); renderInventory(); if(!isTouch) document.exitPointerLock(); }
 function closeInv(){
   invOpen=false; invScreen.classList.remove('open');
-  if(invMode==='craft'){ for(let i=0;i<9;i++){ if(craftGrid[i]){ addItem(craftGrid[i].id, craftGrid[i].count); craftGrid[i]=null; } } } // Werkbank leeren
+  if(invMode==='craft'){ for(let i=0;i<craftN*craftN;i++){ if(craftGrid[i]){ addItem(craftGrid[i].id, craftGrid[i].count); craftGrid[i]=null; } } } // Werkbank/Crafting leeren
   if(held){ addItem(held.id, held.count); held=null; }
   invMode='craft'; furnaceKey=null;
   recomputeCraft(); renderHotbar();
@@ -1303,8 +1349,8 @@ const setRD=document.getElementById('setRD'), setRDVal=document.getElementById('
 const setSD=document.getElementById('setSD'), setSDVal=document.getElementById('setSDVal');
 const setPresetEl=document.getElementById('setPreset'), setResEl=document.getElementById('setRes');
 const setCloseEl=document.getElementById('setClose');
-setRD.max = isTouch ? 6 : 12;   // Handy verkraftet keine 12 Chunks
-setSD.max = isTouch ? 6 : 12;
+setRD.max = isTouch ? 8 : 16;   // Obergrenze hochgesetzt; Handy bitte vorsichtig hochdrehen
+setSD.max = isTouch ? 8 : 16;
 
 function applyRenderDistance(){
   UNLOAD_DISTANCE = RENDER_DISTANCE + 2;
