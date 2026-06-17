@@ -115,6 +115,18 @@
   #setClose:hover { background: #3a7de0; }
   .invToggleBtn { margin:0 auto 8px; width:fit-content; padding:5px 12px; border-radius:7px; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.06); color:#cdd9f0; font-size:12px; font-weight:600; cursor:pointer; user-select:none; -webkit-user-select:none; }
   .invToggleBtn.on { background:#2f6fd0; border-color:#4a9eff; color:#fff; }
+  #invClose { position:absolute; top:10px; right:12px; z-index:11; width:40px; height:40px; border-radius:9px; border:1px solid rgba(255,255,255,0.25); background:rgba(30,32,40,0.92); color:#ffd0d0; font-size:18px; line-height:38px; text-align:center; cursor:pointer; user-select:none; -webkit-user-select:none; }
+  #invClose:active { background:rgba(90,45,45,0.95); }
+  .invToggleRow { display:flex; gap:8px; justify-content:center; }
+  .invToggleRow .invToggleBtn { margin:0; }
+  #recipeBook { display:none; max-height:30vh; overflow-y:auto; -webkit-overflow-scrolling:touch; background:rgba(0,0,0,0.22); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:6px; }
+  .rrow { display:flex; align-items:center; gap:4px; padding:5px 6px; border-radius:6px; cursor:pointer; opacity:0.45; }
+  .rrow.can { opacity:1; background:rgba(80,150,90,0.14); }
+  .rrow.can:active { background:rgba(80,150,90,0.32); }
+  .ribox { width:24px; height:24px; border-radius:5px; border:1px solid rgba(255,255,255,0.14); display:inline-block; flex:0 0 auto; background-size:cover; image-rendering:pixelated; }
+  .ribox.out { border-color:rgba(120,200,130,0.6); }
+  .rixn { font-size:11px; color:#cdd9f0; margin-right:3px; }
+  .rarrow { color:#9fb0cc; font-size:13px; margin:0 2px; }
 </style>
 </head>
 <body>
@@ -135,14 +147,19 @@
 <div id="btnSettings" title="Einstellungen (O)">&#9881;</div>
 
 <div id="invScreen">
+  <div id="invClose">&#10005;</div>
   <div id="invPanel">
     <div id="invTitle">INVENTAR</div>
-    <div id="splitToggle" class="invToggleBtn">Einzeln: aus</div>
+    <div class="invToggleRow">
+      <div id="splitToggle" class="invToggleBtn">Einzeln: aus</div>
+      <div id="recipeToggle" class="invToggleBtn">Rezepte</div>
+    </div>
     <div id="craftRow" class="invCraftRow">
       <div id="craftGridEl" class="craftGrid"></div>
       <div class="craftArrow">&#10142;</div>
       <div id="craftOutEl"></div>
     </div>
+    <div id="recipeBook"></div>
     <div id="furnaceRow" class="invFurnaceRow" style="display:none">
       <div class="fceCol">
         <div id="fceInEl"></div>
@@ -1265,6 +1282,7 @@ function renderInventory(){
     let cg=''; for(let i=0;i<craftN*craftN;i++) cg+=slotDiv('craft',i,craftGrid[i]); craftGridEl.innerHTML=cg;
     craftOutEl.innerHTML='<div class="islot out" data-zone="out" data-idx="0">'+slotInner(craftOutput)+'</div>';
   }
+  renderRecipeBook();
   renderHeld();
 }
 function slotClick(arr,idx){
@@ -1328,6 +1346,46 @@ function updateSplitToggle(){ splitToggleEl.textContent='Einzeln: '+(splitMode?'
 splitToggleEl.addEventListener('click', ()=>{ splitMode=!splitMode; updateSplitToggle(); });
 splitToggleEl.addEventListener('touchstart', (e)=>{ e.preventDefault(); e.stopPropagation(); splitMode=!splitMode; updateSplitToggle(); }, {passive:false});
 updateSplitToggle();
+// ---- Rezeptbuch + Schliessen-Button ----
+let recipeBookOpen=false;
+const recipeToggleEl=document.getElementById('recipeToggle');
+const recipeBookEl=document.getElementById('recipeBook');
+const invCloseEl=document.getElementById('invClose');
+function invCount(id){ let n=0; for(let i=0;i<SLOT_COUNT;i++){ const s=inv[i]; if(s&&s.id===id) n+=s.count; } return n; }
+function availCount(id){ let n=invCount(id); for(let i=0;i<craftN*craftN;i++){ const s=craftGrid[i]; if(s&&s.id===id) n+=s.count; } return n; }
+function invTake(id,n){ let taken=0; for(let i=0;i<SLOT_COUNT&&taken<n;i++){ const s=inv[i]; if(s&&s.id===id){ const t=Math.min(s.count,n-taken); s.count-=t; taken+=t; if(s.count<=0) inv[i]=null; } } return taken; }
+function recipeNeed(r){ const need={}; if(r.shape){ for(const row of r.shape) for(const ch of row){ if(ch!=='.'&&ch!==' '){ const id=r.key[ch]; need[id]=(need[id]||0)+1; } } } else { for(const k in r.in) need[k]=r.in[k]; } return need; }
+function recipeFits(r){ if(r.shape){ const sh=trimGrid(shapeIds(r)); if(!sh) return false; return sh.length<=craftN && sh[0].length<=craftN; } let total=0; for(const k in r.in) total+=r.in[k]; return total<=craftN*craftN; }
+function recipeAvailable(r){ const need=recipeNeed(r); for(const id in need){ if(availCount(+id)<need[id]) return false; } return true; }
+function autoFill(r){
+  if(!recipeFits(r) || !recipeAvailable(r)) return false;
+  for(let i=0;i<craftN*craftN;i++){ if(craftGrid[i]){ addItem(craftGrid[i].id, craftGrid[i].count); craftGrid[i]=null; } } // Raster zurueck ins Inventar
+  if(r.shape){ const tg=trimGrid(shapeIds(r)); for(let rr=0;rr<tg.length;rr++) for(let cc=0;cc<tg[rr].length;cc++){ const id=tg[rr][cc]; if(id!=null && invTake(id,1)===1) craftGrid[rr*craftN+cc]={id,count:1}; } }
+  else { let cell=0; for(const k in r.in){ const id=+k; for(let q=0;q<r.in[k];q++){ if(invTake(id,1)===1){ craftGrid[cell]={id,count:1}; cell++; } } } }
+  recomputeCraft(); renderInventory(); renderHotbar();
+  return true;
+}
+function renderRecipeBook(){
+  recipeToggleEl.style.display = (invMode==='craft') ? 'block' : 'none';
+  recipeToggleEl.classList.toggle('on', recipeBookOpen);
+  if(!(recipeBookOpen && invMode==='craft')){ recipeBookEl.style.display='none'; return; }
+  recipeBookEl.style.display='block';
+  let html='';
+  for(let ri=0;ri<RECIPES.length;ri++){
+    const r=RECIPES[ri], can=recipeFits(r)&&recipeAvailable(r), need=recipeNeed(r);
+    let ing=''; for(const id in need){ ing+='<span class="ribox" style="'+swatchStyle(+id)+'"></span><span class="rixn">'+need[id]+'</span>'; }
+    html+='<div class="rrow'+(can?' can':'')+'" data-ri="'+ri+'"><span class="ribox out" style="'+swatchStyle(r.out.id)+'"></span><span class="rixn">x'+r.out.count+'</span><span class="rarrow">&#8592;</span>'+ing+'</div>';
+  }
+  recipeBookEl.innerHTML=html;
+}
+function toggleRecipeBook(){ recipeBookOpen=!recipeBookOpen; renderRecipeBook(); }
+function clickRecipe(el){ if(!el) return; autoFill(RECIPES[+el.dataset.ri]); renderRecipeBook(); }
+recipeToggleEl.addEventListener('click', toggleRecipeBook);
+recipeToggleEl.addEventListener('touchstart', (e)=>{ e.preventDefault(); e.stopPropagation(); toggleRecipeBook(); }, {passive:false});
+recipeBookEl.addEventListener('click', (e)=>{ clickRecipe(e.target.closest('.rrow')); });
+recipeBookEl.addEventListener('touchstart', (e)=>{ const el=e.target.closest('.rrow'); if(!el) return; e.preventDefault(); e.stopPropagation(); clickRecipe(el); }, {passive:false});
+invCloseEl.addEventListener('click', ()=>{ if(invOpen) closeInv(); });
+invCloseEl.addEventListener('touchstart', (e)=>{ e.preventDefault(); e.stopPropagation(); if(invOpen) closeInv(); }, {passive:false});
 function openInv(){ invMode='craft'; craftN=2; invOpen=true; invScreen.classList.add('open'); recomputeCraft(); renderInventory(); if(!isTouch) document.exitPointerLock(); }
 function openTable(){ if(invOpen) return; invMode='craft'; craftN=3; invOpen=true; invScreen.classList.add('open'); recomputeCraft(); renderInventory(); if(!isTouch) document.exitPointerLock(); }
 function openFurnace(key){ furnaceAt(key); furnaceKey=key; invMode='furnace'; invOpen=true; invScreen.classList.add('open'); renderInventory(); if(!isTouch) document.exitPointerLock(); }
