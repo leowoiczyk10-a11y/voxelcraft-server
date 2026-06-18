@@ -208,6 +208,11 @@
       </div>
       <div class="setHint">Pixel-Aufloesung der Block-Texturen. Wirkt sofort.</div>
     </div>
+    <div class="setRow">
+      <div class="setLabel">Lautstaerke <span id="setVolVal" class="setVal"></span></div>
+      <input id="setVol" type="range" min="0" max="100" step="1">
+      <div class="setHint">Lautstaerke aller Spielgeraeusche. 0 = stumm. Wirkt sofort.</div>
+    </div>
     <div id="setClose">Fertig</div>
   </div>
 </div>
@@ -264,13 +269,148 @@ const PRESETS = {
 };
 const SETTINGS_KEY = 'voxelcraft_settings_v1';
 const DEFAULT_PRESET = isTouch ? 'niedrig' : 'mittel';
-let settings = Object.assign({ preset: DEFAULT_PRESET, blockRes:16 }, PRESETS[DEFAULT_PRESET]);
+let settings = Object.assign({ preset: DEFAULT_PRESET, blockRes:16, volume:0.7 }, PRESETS[DEFAULT_PRESET]);
 try { const _raw = localStorage.getItem(SETTINGS_KEY); if(_raw){ Object.assign(settings, JSON.parse(_raw)); } } catch(_){}
 function saveSettings(){ try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch(_){} }
 let settingsOpen = false;
 let RENDER_DISTANCE = settings.renderDist;
 let SIM_DISTANCE = settings.simDist;
 let UNLOAD_DISTANCE = RENDER_DISTANCE + 2;
+
+// =====================================================================
+//  SOUND  (prozedural, Web Audio API - keine externen Dateien)
+//  Wird per User-Geste (startGame) initialisiert, sonst blockt der Browser.
+//  Alle Welt-Geraeusche werden mit der Entfernung zum Spieler leiser.
+// =====================================================================
+const SFX = (function(){
+  let ctx=null, master=null, ready=false, noiseBuf=null;
+  function init(){
+    if(ctx) return;
+    try{
+      ctx = new (window.AudioContext||window.webkitAudioContext)();
+      master = ctx.createGain();
+      master.gain.value = (settings.volume!=null?settings.volume:0.7);
+      master.connect(ctx.destination);
+      // 1s weisses Rauschen, wird fuer alle Rausch-Klaenge wiederverwendet
+      const n = ctx.sampleRate|0; noiseBuf = ctx.createBuffer(1,n,ctx.sampleRate);
+      const d = noiseBuf.getChannelData(0); for(let i=0;i<n;i++) d[i]=Math.random()*2-1;
+      ready=true;
+    }catch(_){ ready=false; }
+  }
+  function resume(){ if(ctx && ctx.state==='suspended') ctx.resume(); }
+  function setVolume(v){ if(master) master.gain.value = Math.max(0, Math.min(1, v)); }
+  // Lautstaerke nach Entfernung (0 ab ~28 Bloecken). pos = {x,y,z} oder null (= am Spieler)
+  function distGain(pos){
+    if(!pos) return 1;
+    const dx=pos.x-player.x, dy=(pos.y!=null?pos.y:player.y)-player.y, dz=pos.z-player.z;
+    const dd=Math.hypot(dx,dy,dz); if(dd>=28) return 0; return 1-dd/28;
+  }
+  function noiseSrc(){ const s=ctx.createBufferSource(); s.buffer=noiseBuf; s.loop=true; return s; }
+  // Rausch-Stoss durch ein Filter (fuer Abbau/Schritte/Explosion)
+  function burst(t0, f, q, dur, gain, type){
+    const src=noiseSrc();
+    const filt=ctx.createBiquadFilter(); filt.type=type||'bandpass'; filt.frequency.value=f; filt.Q.value=q;
+    const g=ctx.createGain();
+    g.gain.setValueAtTime(0.0001,t0);
+    g.gain.linearRampToValueAtTime(gain,t0+0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+    src.connect(filt); filt.connect(g); g.connect(master);
+    src.start(t0); src.stop(t0+dur+0.03);
+  }
+  // Ton (fuer Treffer/Pickup/Sterben). f2 = Zielfrequenz fuer Gleiten
+  function tone(t0, f, f2, dur, gain, type){
+    const o=ctx.createOscillator(); o.type=type||'square'; o.frequency.setValueAtTime(f,t0);
+    if(f2) o.frequency.exponentialRampToValueAtTime(f2, t0+dur);
+    const g=ctx.createGain();
+    g.gain.setValueAtTime(0.0001,t0);
+    g.gain.linearRampToValueAtTime(gain,t0+0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+    o.connect(g); g.connect(master); o.start(t0); o.stop(t0+dur+0.03);
+  }
+  // Material-Profil je Blocktyp -> bestimmt Klangfarbe von Abbau/Platzieren/Schritt
+  function matOf(id){
+    switch(id){
+      case GRASS: case LEAVES: case SNOW: return 'grass';
+      case SAND: case GRAVEL: return 'sand';
+      case DIRT: return 'dirt';
+      case WOOD: case LOG: case CRAFTING_TABLE: case TORCH: return 'wood';
+      case GLASS: return 'glass';
+      case WATER: return 'water';
+      case STONE: case COBBLE: case BRICKS: case BEDROCK: case FURNACE:
+      case COAL_ORE: case COPPER_ORE: case IRON_ORE: case GOLD_ORE: case DIAMOND_ORE: return 'stone';
+      default: return 'dirt';
+    }
+  }
+  const MAT = {
+    grass: { f:340, q:1.1, body:0,   dur:0.16 },
+    dirt:  { f:240, q:1.0, body:95,  dur:0.18 },
+    sand:  { f:520, q:0.7, body:0,   dur:0.15 },
+    stone: { f:200, q:2.6, body:130, dur:0.20 },
+    wood:  { f:300, q:3.2, body:170, dur:0.18 },
+    glass: { f:1100,q:1.4, body:0,   dur:0.22 },
+    water: { f:600, q:0.6, body:0,   dur:0.20 },
+  };
+  // ---- oeffentliche Klaenge ----
+  function dig(id, pos){
+    if(!ready) return; resume(); const t=ctx.currentTime; const dg=distGain(pos); if(dg<=0) return;
+    const m=MAT[matOf(id)]; const j=0.9+Math.random()*0.2;
+    burst(t, m.f*j, m.q, m.dur, 0.5*dg, 'bandpass');
+    if(m.body) tone(t, m.body*j, m.body*0.6, m.dur*0.9, 0.18*dg, 'triangle');
+    if(matOf(id)==='glass'){ burst(t+0.01, 2200*j, 3, 0.10, 0.22*dg, 'highpass'); burst(t+0.05, 1700*j, 4, 0.08, 0.16*dg, 'highpass'); }
+  }
+  function place(id, pos){
+    if(!ready) return; resume(); const t=ctx.currentTime; const dg=distGain(pos); if(dg<=0) return;
+    const m=MAT[matOf(id)]; const j=0.9+Math.random()*0.2;
+    burst(t, m.f*0.8*j, m.q*1.3, m.dur*0.8, 0.34*dg, 'lowpass');
+    tone(t, (m.body||120)*0.8*j, null, 0.07, 0.12*dg, 'sine');
+  }
+  function step(id){
+    if(!ready) return; resume(); const t=ctx.currentTime;
+    const m=MAT[matOf(id)]; const j=0.85+Math.random()*0.3;
+    burst(t, m.f*0.9*j, m.q*0.8, 0.07, 0.12, 'bandpass');
+  }
+  function land(id){
+    if(!ready) return; resume(); const t=ctx.currentTime;
+    const m=MAT[matOf(id)];
+    burst(t, m.f*0.7, m.q, 0.12, 0.28, 'lowpass'); tone(t, 90, 55, 0.10, 0.10, 'sine');
+  }
+  function hit(){ // Spieler trifft Mob (Nahkampf)
+    if(!ready) return; resume(); const t=ctx.currentTime;
+    burst(t, 700, 1.2, 0.06, 0.30, 'bandpass'); tone(t, 150, 90, 0.08, 0.16, 'square');
+  }
+  function mobDie(kind, pos){
+    if(!ready) return; resume(); const t=ctx.currentTime; const dg=distGain(pos); if(dg<=0) return;
+    burst(t, 380, 0.8, 0.22, 0.30*dg, 'lowpass');
+    const lo = (kind==='zombie'||kind==='skeleton')?120:200;
+    tone(t, lo, lo*0.55, 0.22, 0.16*dg, 'square');
+  }
+  function pickup(){
+    if(!ready) return; resume(); const t=ctx.currentTime;
+    tone(t, 660, null, 0.06, 0.14, 'square'); tone(t+0.06, 990, null, 0.07, 0.13, 'square');
+  }
+  function hurt(){ // Spieler nimmt Schaden
+    if(!ready) return; resume(); const t=ctx.currentTime;
+    tone(t, 200, 120, 0.18, 0.26, 'square'); burst(t, 500, 0.7, 0.12, 0.18, 'bandpass');
+  }
+  function die(){ // Spieler stirbt
+    if(!ready) return; resume(); const t=ctx.currentTime;
+    tone(t, 300, 70, 0.7, 0.30, 'sawtooth'); tone(t+0.05, 200, 50, 0.7, 0.18, 'square');
+  }
+  function eat(){
+    if(!ready) return; resume(); const t=ctx.currentTime;
+    for(let i=0;i<3;i++) burst(t+i*0.09, 300+Math.random()*200, 1.5, 0.06, 0.14, 'bandpass');
+  }
+  function ui(){
+    if(!ready) return; resume(); const t=ctx.currentTime;
+    tone(t, 520, null, 0.04, 0.10, 'square');
+  }
+  function explode(pos){ // fuer spaeter (Creeper/TNT)
+    if(!ready) return; resume(); const t=ctx.currentTime; const dg=distGain(pos); if(dg<=0) return;
+    burst(t, 90, 0.5, 0.6, 0.6*dg, 'lowpass'); tone(t, 70, 35, 0.6, 0.3*dg, 'sawtooth');
+    burst(t+0.02, 400, 0.6, 0.25, 0.3*dg, 'bandpass');
+  }
+  return { init, resume, setVolume, dig, place, step, land, hit, mobDie, pickup, hurt, die, eat, ui, explode };
+})();
 let SEED = 1337;                 // Default; wird vom Server-Seed ueberschrieben
 const CHUNK_BUDGET_MS = isTouch ? 5 : 6;
 
@@ -1081,6 +1221,7 @@ function stepAxis(axis,d){
   }
   return hit;
 }
+let stepAcc=0, _wasAir=false;   // fuer Schrittgeraeusche / Landung
 function updatePlayer(dt){
   let fwd=(keys.has('KeyW')?1:0)-(keys.has('KeyS')?1:0);
   let str=(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0);
@@ -1106,6 +1247,15 @@ function updatePlayer(dt){
   const impactVy=player.vy;
   moveAxis(1,player.vy*dt);
   if(player.onGround && impactVy<-16){ const dmg=Math.floor((-impactVy-16)/3); if(dmg>0) damagePlayer(dmg); }
+
+  // Schritte + Landung
+  const _hsp=Math.hypot(player.vx,player.vz);
+  if(player.onGround){
+    const fb=world.getBlock(Math.floor(player.x), Math.floor(player.y-0.2), Math.floor(player.z));
+    if(_wasAir && impactVy<-4){ SFX.land(fb); stepAcc=0; }
+    else if(_hsp>1.5){ stepAcc+=_hsp*dt; const stride=sprinting?2.6:2.1; if(stepAcc>=stride){ stepAcc-=stride; SFX.step(fb); } }
+    _wasAir=false;
+  } else { _wasAir=true; }
 
   camera.position.set(player.x,player.y+EYE_HEIGHT,player.z);
   camera.rotation.set(pitch,yaw,0);
@@ -1156,7 +1306,7 @@ function doPlace(){
   if(isFood(s.id)){ eat(); return; }
   if(!BLOCKS[s.id]) return;                  // nicht platzierbar (Stock, Schwert)
   const px=h.x+h.nx,py=h.y+h.ny,pz=h.z+h.nz;
-  if(canPlaceAt(px,py,pz)){ world.setBlock(px,py,pz,s.id); consumeSelected(1); }
+  if(canPlaceAt(px,py,pz)){ world.setBlock(px,py,pz,s.id); SFX.place(s.id,{x:px+0.5,y:py+0.5,z:pz+0.5}); consumeSelected(1); }
 }
 function consumeSelected(n){ const s=inv[selectedSlot]; if(!s) return; s.count-=n; if(s.count<=0) inv[selectedSlot]=null; renderHotbar(); if(invOpen) renderInventory(); }
 
@@ -1190,6 +1340,7 @@ addEventListener('wheel', (e)=>{ if(!locked)return; selectedSlot=(selectedSlot+(
 
 // ---- Start ----
 function startGame(){
+  SFX.init(); SFX.resume();
   playerName=(nameInput.value||'').trim().slice(0,16);
   overlay.classList.add('hidden');
   const _sp=loadPos(); if(_sp){ player.x=_sp.x; player.y=_sp.y; player.z=_sp.z; player.vx=player.vy=player.vz=0; if(typeof _sp.yaw==='number') camera.rotation.y=_sp.yaw; if(typeof _sp.pitch==='number') camera.rotation.x=_sp.pitch; }
@@ -1426,7 +1577,7 @@ function markSegButtons(){
 function syncSettingsUI(){
   setRD.value=settings.renderDist; setRDVal.textContent=settings.renderDist;
   setSD.value=settings.simDist;    setSDVal.textContent=settings.simDist;
-  markSegButtons();
+  markSegButtons(); syncVol();
 }
 function applyPreset(name){
   const p=PRESETS[name]; if(!p) return;
@@ -1445,6 +1596,9 @@ setSD.addEventListener('input', ()=>{
 });
 setPresetEl.addEventListener('click', (e)=>{ const b=e.target.closest('button'); if(b) applyPreset(b.dataset.preset); });
 setResEl.addEventListener('click', (e)=>{ const b=e.target.closest('button'); if(!b) return; settings.blockRes=+b.dataset.res; applyBlockRes(); markSegButtons(); saveSettings(); });
+const setVol=document.getElementById('setVol'), setVolVal=document.getElementById('setVolVal');
+function syncVol(){ const v=Math.round((settings.volume!=null?settings.volume:0.7)*100); setVol.value=v; setVolVal.textContent=v+'%'; }
+setVol.addEventListener('input', ()=>{ settings.volume=+setVol.value/100; SFX.setVolume(settings.volume); setVolVal.textContent=setVol.value+'%'; saveSettings(); });
 
 function openSettings(){ settingsOpen=true; settingsScreen.classList.add('open'); syncSettingsUI(); if(!isTouch) document.exitPointerLock(); }
 function closeSettings(){ settingsOpen=false; settingsScreen.classList.remove('open'); }
@@ -1645,6 +1799,7 @@ function attackMob(id){
   let dmg=3; if(sel && isTool(sel.id)){ const td=TOOL[sel.id]; dmg = td.dmg || (td.cat==='axe'?4:3); }  // Schwert/Axt mehr Schaden
   net.send({t:'mobhit', mobId:id, dmg});
   myHits.set(id, now);
+  SFX.hit();
   const mm=mobsMap.get(id); if(mm){ mm.hp=Math.max(0, mm.hp-dmg); onMobHp(id, mm.hp); } // sofortiges Feedback, Server korrigiert per 'mobhp'
   if(sel && isTool(sel.id)) damageTool();                      // Werkzeug nutzt sich ab
 }
@@ -1652,12 +1807,12 @@ function eat(){
   const s=inv[selectedSlot]; if(!s||!isFood(s.id)) return;
   const now=performance.now();
   if(now-lastEat<1000 || hunger>=HUNGER_MAX) return;          // Ess-Cooldown, nicht wenn voll
-  lastEat=now; hunger=Math.min(HUNGER_MAX, hunger+FOOD[s.id]); consumeSelected(1);
+  lastEat=now; hunger=Math.min(HUNGER_MAX, hunger+FOOD[s.id]); consumeSelected(1); SFX.eat();
 }
 function onMobDead(id){
   const m=mobsMap.get(id), t=myHits.get(id);
-  if(m) spawnPoof(m.group.position.x, m.group.position.y+0.6, m.group.position.z, m.kind);
-  if(m && t && performance.now()-t<4000){ const d=MOB_DROP[m.kind]; if(d) addItem(d, 1 + (Math.random()<0.5?1:0)); }
+  if(m){ spawnPoof(m.group.position.x, m.group.position.y+0.6, m.group.position.z, m.kind); SFX.mobDie(m.kind, m.group.position); }
+  if(m && t && performance.now()-t<4000){ const d=MOB_DROP[m.kind]; if(d){ addItem(d, 1 + (Math.random()<0.5?1:0)); SFX.pickup(); } }
   myHits.delete(id);
   removeMob(id);
 }
@@ -1688,10 +1843,10 @@ function mobInView(maxT){
 // ---- Schaden / Tod / Respawn ----
 function damagePlayer(amount){
   if(dead) return;
-  health -= amount; hurtT=0.35;
+  health -= amount; hurtT=0.35; SFX.hurt();
   if(health<=0){ health=0; die(); }
 }
-function die(){ dead=true; invOpen=false; invScreen.classList.remove('open'); deathEl.classList.add('open'); if(!isTouch) document.exitPointerLock(); }
+function die(){ dead=true; SFX.die(); invOpen=false; invScreen.classList.remove('open'); deathEl.classList.add('open'); if(!isTouch) document.exitPointerLock(); }
 function respawn(){
   dead=false; deathEl.classList.remove('open');
   health=HEALTH_MAX; hunger=HUNGER_MAX; air=AIR_MAX;
@@ -1851,6 +2006,7 @@ function addToolItem(id){ for(let i=0;i<SLOT_COUNT;i++){ if(!inv[i]){ inv[i]={id
 function damageTool(){ const t=inv[selectedSlot]; if(!t||!isTool(t.id)) return; t.dur--; if(t.dur<=0) inv[selectedSlot]=null; renderHotbar(); if(invOpen) renderInventory(); }
 function breakBlock(x,y,z,bid,info,tool){
   if(bid===FURNACE){ const fk=x+'_'+y+'_'+z, f=furnaces.get(fk); if(f){ for(const s of f.slots){ if(s) addItem(s.id,s.count); } furnaces.delete(fk); } }
+  SFX.dig(bid, {x:x+0.5, y:y+0.5, z:z+0.5});
   world.setBlock(x,y,z,AIR);
   const okTool = !info.needsTool || (tool && isTool(tool.id) && TOOL[tool.id].cat===info.tool && TOOL[tool.id].tier >= (info.minTier||1));
   if(okTool){ const dr=dropFor(bid); if(dr!==AIR) addItem(dr,1); }

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoxelCraft Pro — Roadmap</title>
+<style>
+  :root{
+    --bg:#0f140c; --panel:#19200f; --panel2:#212a16;
+    --line:#33401f; --grass:#5fa83c; --grass-lit:#86d95a;
+    --dirt:#6b4f2a; --text:#e9f1df; --muted:#8fa07d; --done:#9fe06a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0; background:
+      linear-gradient(180deg,#0f140c 0%,#0c1009 100%);
+    color:var(--text);
+    font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    padding:16px 14px 40px; line-height:1.5;
+  }
+  .wrap{max-width:640px; margin:0 auto;}
+
+  /* ---- header / XP-style progress bar (das Signature-Element) ---- */
+  header{margin-bottom:18px;}
+  h1{font-size:20px; letter-spacing:1px; margin:0 0 2px; font-weight:700;}
+  .sub{font-size:11px; color:var(--muted); margin-bottom:14px;}
+  .xpwrap{display:flex; align-items:center; gap:10px;}
+  .xpbar{
+    flex:1; height:18px; background:#0a0d07;
+    border:2px solid var(--line); border-radius:3px;
+    overflow:hidden; position:relative;
+    image-rendering:pixelated;
+  }
+  .xpfill{
+    height:100%; width:0;
+    background:repeating-linear-gradient(90deg,
+      var(--grass) 0 14px, var(--grass-lit) 14px 16px);
+    transition:width .35s cubic-bezier(.2,.8,.2,1);
+    box-shadow:inset 0 -4px 0 rgba(0,0,0,.28), inset 0 2px 0 rgba(255,255,255,.18);
+  }
+  .xpnum{font-size:13px; color:var(--done); min-width:62px; text-align:right; font-weight:700;}
+
+  /* ---- categories ---- */
+  .cat{margin-top:20px;}
+  .cat-h{
+    display:flex; align-items:center; gap:8px;
+    font-size:12px; letter-spacing:1.5px; text-transform:uppercase;
+    color:var(--muted); margin-bottom:8px; padding-left:2px;
+  }
+  .cat-h .bar{height:2px; flex:1; background:var(--line);}
+  .cat-h .cnt{color:var(--grass); font-size:11px;}
+
+  /* ---- task rows ---- */
+  ul{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:5px;}
+  li{
+    display:flex; align-items:flex-start; gap:11px;
+    background:var(--panel); border:1px solid var(--line);
+    border-left:3px solid var(--line);
+    border-radius:7px; padding:11px 12px;
+    cursor:pointer; user-select:none;
+    transition:border-color .15s, background .15s, transform .05s;
+  }
+  li:active{transform:scale(.992);}
+  li.done{border-left-color:var(--grass); background:var(--panel2);}
+
+  /* voxel-cube checkbox */
+  .box{
+    flex:0 0 22px; width:22px; height:22px; margin-top:1px;
+    border:2px solid #4a5c2c; border-radius:4px; background:#0c1007;
+    position:relative; transition:all .15s;
+    box-shadow:inset 0 -3px 0 rgba(0,0,0,.35);
+  }
+  li.done .box{
+    background:linear-gradient(180deg,var(--grass-lit),var(--grass));
+    border-color:var(--grass-lit);
+    box-shadow:inset 0 -3px 0 rgba(0,0,0,.25), inset 0 2px 0 rgba(255,255,255,.3);
+  }
+  .box::after{
+    content:""; position:absolute; left:6px; top:2px;
+    width:6px; height:11px; border:solid #0c1007;
+    border-width:0 3px 3px 0; transform:rotate(45deg) scale(0);
+    transition:transform .15s cubic-bezier(.2,1.4,.4,1);
+  }
+  li.done .box::after{transform:rotate(45deg) scale(1);}
+
+  .txt{flex:1;}
+  .label{font-size:14px;}
+  li.done .label{color:var(--done);}
+  .note{font-size:11px; color:var(--muted); margin-top:3px;}
+  .tag{
+    display:inline-block; font-size:9px; letter-spacing:.5px;
+    padding:1px 6px; border-radius:3px; margin-left:6px;
+    vertical-align:middle; text-transform:uppercase;
+  }
+  .tag.opt{background:#2a2436; color:#b9a8e0; border:1px solid #463a5c;}
+  .tag.icon{background:#3a2218; color:#f0b89a; border:1px solid #5c382a;}
+  .tag.wait{background:#1f2a36; color:#9ac3e6; border:1px solid #2e455c;}
+
+  footer{margin-top:26px; display:flex; align-items:center; justify-content:space-between; gap:12px;}
+  .hint{font-size:11px; color:var(--muted);}
+  .reset{
+    font-size:11px; color:var(--muted); background:transparent;
+    border:1px solid var(--line); border-radius:6px; padding:7px 12px;
+    cursor:pointer; font-family:inherit;
+  }
+  .reset:active{background:var(--panel2);}
+  @media (prefers-reduced-motion:reduce){ *{transition:none!important;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>VoxelCraft Pro — Roadmap</h1>
+    <div class="sub">Tippen zum Abhaken. Stand wird gespeichert.</div>
+    <div class="xpwrap">
+      <div class="xpbar"><div class="xpfill" id="fill"></div></div>
+      <div class="xpnum" id="num">0 / 0</div>
+    </div>
+  </header>
+  <div id="list"></div>
+  <footer>
+    <span class="hint">Sound + Lautstaerke sind erledigt.</span>
+    <button class="reset" id="reset">Alles zuruecksetzen</button>
+  </footer>
+</div>
+
+<script>
+// Datenmodell. done:true = Standard abgehakt. note/tag = Zusatzinfo.
+const DATA = [
+  { cat:"Kern-Gameplay", items:[
+    { id:"drops",   label:"Zombie/Skelett droppen Items", note:"Kuh/Schaf/Huhn droppen schon Fleisch — fehlt nur fuer Gegner (Fleisch/Knochen/Pfeile)" },
+    { id:"arrowcraft", label:"Crafting-Rezept Pfeile + Bogen" },
+    { id:"sleep",   label:"Schlafen (Bett skippt die Nacht)" },
+    { id:"respawn", label:"Inventar-Reset beim Tod", note:"aktuell stirbst du, behaeltst aber alles" },
+    { id:"xp",      label:"Erfahrungssystem / Levelaufstieg" },
+  ]},
+  { cat:"Bloecke / Welt", items:[
+    { id:"waterflow", label:"Wasser-Fluss", note:"Wasser ist aktuell statisch" },
+    { id:"lava",    label:"Lava" },
+    { id:"redstone",label:"Redstone" },
+    { id:"caves",   label:"Hoehlen unter dem Terrain" },
+    { id:"nether",  label:"Nether / Dimensionen" },
+    { id:"structs", label:"Strukturen (Doerfer, Minen, Tempel)" },
+  ]},
+  { cat:"Mobs", items:[
+    { id:"creeper", label:"Creeper", tag:"icon", note:"naechster dran — kriegt Zisch + Bumm aus der neuen Sound-Engine" },
+    { id:"farm",    label:"Schwein + Kuh mit Milch" },
+    { id:"mobai",   label:"Mob-KI die Hindernissen ausweicht" },
+    { id:"spawner", label:"Mob-Spawner-Block" },
+  ]},
+  { cat:"Inventar / Items", items:[
+    { id:"armor",   label:"Ruestungssystem" },
+    { id:"bow",     label:"Bogen als Spieler-Waffe", note:"Pfeil-Logik existiert schon (Skelett schiesst) — Infra teils da" },
+    { id:"bucket",  label:"Eimer (Wasser/Lava aufnehmen)" },
+    { id:"compass", label:"Kompass / Karte" },
+    { id:"anvil",   label:"Amboss (Items reparieren)" },
+    { id:"enchant", label:"Zaubertisch" },
+  ]},
+  { cat:"Multiplayer", items:[
+    { id:"chat",    label:"Chat-Funktion" },
+    { id:"pvp",     label:"PvP (Spieler-Schaden gegen Spieler)" },
+    { id:"chests",  label:"Truhen synchronisieren sich uebers Netz" },
+  ]},
+  { cat:"Sound", items:[
+    { id:"sfx",     label:"Sound-Engine (Abbau, Platzieren, Schritte, Kampf, Tod, Essen)", done:true },
+    { id:"volume",  label:"Lautstaerke-Regler im Menue", done:true },
+    { id:"ambient", label:"Tag/Nacht-Ambient", tag:"opt" },
+    { id:"boom",    label:"Creeper-Zischen + Explosions-Bumm", tag:"wait", note:"explode()-Klang ist schon in der Engine, wartet auf den Creeper" },
+  ]},
+];
+
+const KEY = "voxelcraft_roadmap_v1";
+let overrides = {};   // id -> bool (ueberschreibt done-Standard)
+
+const ALL = DATA.flatMap(c => c.items);
+function isDone(it){ return (it.id in overrides) ? overrides[it.id] : !!it.done; }
+
+async function loadState(){
+  try{ const r = await window.storage.get(KEY); if(r && r.value) overrides = JSON.parse(r.value) || {}; }
+  catch(e){ overrides = {}; }   // erster Start oder Storage nicht verfuegbar -> Standard
+  render();
+}
+async function saveState(){
+  try{ await window.storage.set(KEY, JSON.stringify(overrides)); }catch(e){}
+}
+
+function tagHtml(it){
+  if(it.tag==="opt")  return '<span class="tag opt">optional</span>';
+  if(it.tag==="icon") return '<span class="tag icon">ikonisch</span>';
+  if(it.tag==="wait") return '<span class="tag wait">wartet</span>';
+  return "";
+}
+
+function render(){
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+  for(const c of DATA){
+    const done = c.items.filter(isDone).length;
+    const cat = document.createElement("div"); cat.className = "cat";
+    cat.innerHTML =
+      '<div class="cat-h"><span>'+c.cat+'</span><span class="bar"></span>'+
+      '<span class="cnt">'+done+'/'+c.items.length+'</span></div>';
+    const ul = document.createElement("ul");
+    for(const it of c.items){
+      const li = document.createElement("li");
+      li.className = isDone(it) ? "done" : "";
+      li.innerHTML =
+        '<div class="box"></div><div class="txt"><div class="label">'+
+        it.label+tagHtml(it)+'</div>'+
+        (it.note ? '<div class="note">'+it.note+'</div>' : '')+'</div>';
+      li.addEventListener("click", ()=>toggle(it));
+      ul.appendChild(li);
+    }
+    cat.appendChild(ul);
+    list.appendChild(cat);
+  }
+  const total = ALL.length, done = ALL.filter(isDone).length;
+  document.getElementById("fill").style.width = (total? (done/total*100):0)+"%";
+  document.getElementById("num").textContent = done+" / "+total;
+}
+
+function toggle(it){
+  overrides[it.id] = !isDone(it);
+  saveState();
+  render();
+}
+
+document.getElementById("reset").addEventListener("click", ()=>{
+  overrides = {};
+  saveState();
+  render();
+});
+
+loadState();
+</script>
+</body>
+</html>
