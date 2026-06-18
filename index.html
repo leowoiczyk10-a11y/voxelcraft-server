@@ -404,12 +404,22 @@ const SFX = (function(){
     if(!ready) return; resume(); const t=ctx.currentTime;
     tone(t, 520, null, 0.04, 0.10, 'square');
   }
-  function explode(pos){ // fuer spaeter (Creeper/TNT)
+  function fuse(pos){ // Creeper-Zischen (aufsteigend), kurz vor dem Bumm
+    if(!ready) return; resume(); const t=ctx.currentTime; const dg=distGain(pos); if(dg<=0) return;
+    const src=noiseSrc();
+    const filt=ctx.createBiquadFilter(); filt.type='bandpass'; filt.Q.value=1.3;
+    filt.frequency.setValueAtTime(700,t); filt.frequency.exponentialRampToValueAtTime(2600,t+0.5);
+    const g=ctx.createGain();
+    g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.24*dg,t+0.05);
+    g.gain.setValueAtTime(0.24*dg,t+0.4); g.gain.exponentialRampToValueAtTime(0.0001,t+0.62);
+    src.connect(filt); filt.connect(g); g.connect(master); src.start(t); src.stop(t+0.66);
+  }
+  function explode(pos){ // Creeper/TNT
     if(!ready) return; resume(); const t=ctx.currentTime; const dg=distGain(pos); if(dg<=0) return;
     burst(t, 90, 0.5, 0.6, 0.6*dg, 'lowpass'); tone(t, 70, 35, 0.6, 0.3*dg, 'sawtooth');
     burst(t+0.02, 400, 0.6, 0.25, 0.3*dg, 'bandpass');
   }
-  return { init, resume, setVolume, dig, place, step, land, hit, mobDie, pickup, hurt, die, eat, ui, explode };
+  return { init, resume, setVolume, dig, place, step, land, hit, mobDie, pickup, hurt, die, eat, ui, fuse, explode };
 })();
 let SEED = 1337;                 // Default; wird vom Server-Seed ueberschrieben
 const CHUNK_BUDGET_MS = isTouch ? 5 : 6;
@@ -463,6 +473,8 @@ const COOKED_BEEF=120, COOKED_CHICKEN=121, COOKED_MUTTON=122;
 const IRON_PICKAXE=123, IRON_AXE=124, IRON_SHOVEL=125, IRON_SWORD=126;
 const GOLD_PICKAXE=127, GOLD_AXE=128, GOLD_SHOVEL=129, GOLD_SWORD=130;
 const DIAMOND_PICKAXE=131, DIAMOND_AXE=132, DIAMOND_SHOVEL=133, DIAMOND_SWORD=134;
+// Mob-Drops (Kampf-Update)
+const ROTTEN_FLESH=135, BONE=136, ARROW_ITEM=137, GUNPOWDER=138;
 const ITEM = {
   [STICK]:       { name:'Stock',        color:0x9a7842 },
   [BEEF]:        { name:'Rohes Rind',   color:0xc06050 },
@@ -480,10 +492,14 @@ const ITEM = {
   [COOKED_BEEF]:   { name:'Steak',        color:0x8a4a28 },
   [COOKED_CHICKEN]:{ name:'Brathuhn',     color:0xc88a4a },
   [COOKED_MUTTON]: { name:'Hammelbraten', color:0x9a5030 },
+  [ROTTEN_FLESH]:  { name:'Verrottetes Fleisch', color:0x7a5a3a },
+  [BONE]:          { name:'Knochen',             color:0xe8e4d4 },
+  [ARROW_ITEM]:    { name:'Pfeil',               color:0xb0a080 },
+  [GUNPOWDER]:     { name:'Schwarzpulver',       color:0x40403e },
 };
 function thing(id){ return BLOCKS[id] || ITEM[id] || TOOL[id]; }
 function thingColor(id){ const t=thing(id); return t ? (t.color??t.top??0x888888) : 0x888888; }
-const FOOD = { [BEEF]:3, [CHICKEN_RAW]:2, [MUTTON]:2, [COOKED_BEEF]:8, [COOKED_CHICKEN]:6, [COOKED_MUTTON]:6 }; // Hunger den es zurueckgibt
+const FOOD = { [BEEF]:3, [CHICKEN_RAW]:2, [MUTTON]:2, [COOKED_BEEF]:8, [COOKED_CHICKEN]:6, [COOKED_MUTTON]:6, [ROTTEN_FLESH]:2 }; // Hunger den es zurueckgibt
 function isFood(id){ return FOOD[id]!==undefined; }
 
 // Werkzeuge: cat (pick/axe/shovel/sword), tier, speed (Abbau-Tempo), dur (Haltbarkeit), dmg
@@ -1666,6 +1682,7 @@ const net={
   },
   send(o){ if(this.ws&&this.ws.readyState===1) this.ws.send(JSON.stringify(o)); },
   sendBlock(x,y,z,id){ this.send({t:'block',x,y,z,id}); },
+  sendBlockBulk(blocks){ this.send({t:'blockbulk',blocks}); },
   sendMove(x,y,z,ry){ this.send({t:'move',x,y,z,ry}); },
   sendStat(o){ this.send(Object.assign({t:'stat'},o)); },
   handle(raw){
@@ -1677,9 +1694,11 @@ const net={
       case 'move':    moveAvatar(m.id,m.x,m.y,m.z,m.ry); break;
       case 'stat':    statAvatar(m.id,m); break;
       case 'block':    world.setBlock(m.x,m.y,m.z,m.id,true); break;
+      case 'blockbulk': if(Array.isArray(m.blocks)) for(const b of m.blocks) world.setBlock(b.x,b.y,b.z,b.id,true); break;
       case 'mobspawn': addMob(m.mob); break;
       case 'mobdead':  onMobDead(m.mobId); break;
       case 'mobhp':    onMobHp(m.mobId, m.hp); break; // Mob getroffen -> Balken + Blitz
+      case 'explode':  onExplode(m); break;
       case 'tick':     if(typeof m.time==='number') dayTime=m.time; updateMobsFromTick(m.mobs); updateArrowsFromTick(m.arrows); break;
     }
   }
@@ -1707,8 +1726,9 @@ const MOB_DEF = {
   chicken: { hostile:false, hw:0.3,  hh:0.6  },
   zombie:  { hostile:true,  hw:0.35, hh:0.95 },
   skeleton:{ hostile:true,  hw:0.35, hh:0.95 },
+  creeper: { hostile:true,  hw:0.35, hh:0.95 },
 };
-const MOB_HP_MAX = { cow:8, sheep:6, chicken:4, zombie:10, skeleton:8 }; // muss zum Server passen
+const MOB_HP_MAX = { cow:8, sheep:6, chicken:4, zombie:10, skeleton:8, creeper:10 }; // muss zum Server passen
 function makeMobModel(kind){
   const g=new THREE.Group(); const legs=[], arms=[];
   if(kind==='zombie' || kind==='skeleton'){
@@ -1724,6 +1744,19 @@ function makeMobModel(kind){
     const lL=legPivot(0.17,0.7,0.17, cloth, -0.13,0.7,0);
     const lR=legPivot(0.17,0.7,0.17, cloth,  0.13,0.7,0);
     g.add(lL); g.add(lR); legs.push(lL,lR);
+  } else if(kind==='creeper'){
+    const grn=0x57a83c, drk=0x3f7d2c;
+    g.add(boxMesh(0.5,0.78,0.34, grn, 0,0.95,0));            // Rumpf (hoch+schmal)
+    g.add(boxMesh(0.5,0.5,0.5, grn, 0,1.62,0));              // Kopf
+    g.add(boxMesh(0.14,0.14,0.02, 0x0d1f0d, -0.12,1.7,0.25)); // Augen
+    g.add(boxMesh(0.14,0.14,0.02, 0x0d1f0d,  0.12,1.7,0.25));
+    g.add(boxMesh(0.1,0.24,0.02, 0x0d1f0d,  0,1.5,0.25));     // Mund Mitte (das ikonische Gesicht)
+    g.add(boxMesh(0.13,0.1,0.02, 0x0d1f0d, -0.13,1.45,0.25)); // Mund unten links
+    g.add(boxMesh(0.13,0.1,0.02, 0x0d1f0d,  0.13,1.45,0.25)); // Mund unten rechts
+    const fz=0.22, off=0.16;
+    const l1=legPivot(0.18,0.34,0.2, drk, -off,0.34, fz), l2=legPivot(0.18,0.34,0.2, drk, off,0.34, fz);
+    const l3=legPivot(0.18,0.34,0.2, drk, -off,0.34,-fz), l4=legPivot(0.18,0.34,0.2, drk, off,0.34,-fz);
+    g.add(l1); g.add(l2); g.add(l3); g.add(l4); legs.push(l1,l2,l3,l4);
   } else if(kind==='chicken'){
     g.add(boxMesh(0.34,0.36,0.46, 0xf2f2ec, 0,0.5,0));        // Koerper
     g.add(boxMesh(0.26,0.28,0.26, 0xf6f6f0, 0,0.82,0.16));    // Kopf
@@ -1779,7 +1812,12 @@ function addMob(mob){
 }
 function removeMob(id){ const m=mobsMap.get(id); if(!m) return; scene.remove(m.group); m.group.traverse(o=>{ if(o.geometry) o.geometry.dispose(); if(o.material) o.material.dispose(); }); if(m.hpBar){ if(m.hpBar.material.map) m.hpBar.material.map.dispose(); m.hpBar.material.dispose(); } mobsMap.delete(id); }
 function clearMobs(){ for(const id of [...mobsMap.keys()]) removeMob(id); }
-function updateMobsFromTick(list){ if(!Array.isArray(list)) return; for(const e of list){ const m=mobsMap.get(e[0]); if(!m) continue; m.tx=e[1]; m.tz=e[2]; m.dir=e[3]; } }
+function updateMobsFromTick(list){ if(!Array.isArray(list)) return; for(const e of list){ const m=mobsMap.get(e[0]); if(!m) continue; m.tx=e[1]; m.tz=e[2]; m.dir=e[3];
+  const fz = e.length>=5 ? e[4] : 0;                        // Creeper haengen ihren Zuender-Stand hinten dran
+  if(fz>0 && !m.fusing){ m.fusing=true; SFX.fuse(m.group.position); }   // Zischen genau einmal beim Start
+  else if(fz<=0 && m.fusing){ m.fusing=false; }
+  m.fuse=fz;
+} }
 // Schaden an einem Mob (egal von wem) -> HP-Balken zeigen + rot aufblitzen
 function onMobHp(id, hp){
   const m=mobsMap.get(id); if(!m) return;
@@ -1790,7 +1828,21 @@ function onMobHp(id, hp){
 }
 
 const myHits = new Map(); // mobId -> Zeitpunkt (wer zuletzt traf -> kriegt Drop beim Kill)
-const MOB_DROP = { cow:BEEF, sheep:MUTTON, chicken:CHICKEN_RAW };
+// pro Mob: Liste von {id, min, max}. n=0 moeglich -> nicht immer ein Drop.
+const MOB_DROP = {
+  cow:     [{id:BEEF,        min:1, max:2}],
+  sheep:   [{id:MUTTON,      min:1, max:2}],
+  chicken: [{id:CHICKEN_RAW, min:1, max:1}],
+  zombie:  [{id:ROTTEN_FLESH,min:1, max:2}],
+  skeleton:[{id:BONE,        min:1, max:2}, {id:ARROW_ITEM, min:0, max:2}],
+  creeper: [{id:GUNPOWDER,   min:1, max:2}],   // nur beim normalen Erschlagen, nicht bei der Explosion
+};
+function rollDrops(kind){
+  const tbl=MOB_DROP[kind]; if(!tbl) return;
+  let got=false;
+  for(const d of tbl){ const n=d.min + Math.floor(Math.random()*(d.max-d.min+1)); if(n>0){ addItem(d.id, n); got=true; } }
+  if(got) SFX.pickup();
+}
 let lastAtk=0, lastEat=0;
 function attackMob(id){
   const now=performance.now(); if(now-lastAtk<500) return;     // Angriffs-Cooldown
@@ -1812,7 +1864,7 @@ function eat(){
 function onMobDead(id){
   const m=mobsMap.get(id), t=myHits.get(id);
   if(m){ spawnPoof(m.group.position.x, m.group.position.y+0.6, m.group.position.z, m.kind); SFX.mobDie(m.kind, m.group.position); }
-  if(m && t && performance.now()-t<4000){ const d=MOB_DROP[m.kind]; if(d){ addItem(d, 1 + (Math.random()<0.5?1:0)); SFX.pickup(); } }
+  if(m && t && performance.now()-t<4000){ rollDrops(m.kind); }   // nur wer kurz vorher traf, kriegt den Drop
   myHits.delete(id);
   removeMob(id);
 }
@@ -1850,6 +1902,11 @@ function die(){ dead=true; SFX.die(); invOpen=false; invScreen.classList.remove(
 function respawn(){
   dead=false; deathEl.classList.remove('open');
   health=HEALTH_MAX; hunger=HUNGER_MAX; air=AIR_MAX;
+  // Tod kostet alles: Inventar, Werkbank-Raster, Zweithand leeren. (Keine Item-Drops in der Welt zum Einsammeln.)
+  for(let i=0;i<SLOT_COUNT;i++) inv[i]=null;
+  for(let i=0;i<craftGrid.length;i++) craftGrid[i]=null;
+  offhand=null; held=null; selectedSlot=0;
+  recomputeCraft(); renderHotbar(); renderHeld(); if(invOpen) renderInventory();
   player.x=8.5; player.z=8.5; player.vx=player.vy=player.vz=0;
   for(let dz=-1;dz<=1;dz++) for(let dx=-1;dx<=1;dx++) world.ensureChunkData(dx,dz);
   player.y=Math.max(terrainHeight(8,8),WATER_LEVEL)+2;
@@ -1898,6 +1955,15 @@ function updateMobs(dt){
     // Treffer-Blitz: kurz rot aufleuchten (ueber emissive der Mob-Materialien)
     if(m.flash>0){ m.flash=Math.max(0,m.flash-dt); const f=m.flash/0.28; for(const mat of m.tint) mat.emissive.setRGB(f*0.85, 0, 0); }
     else if(m.tint.length){ for(const mat of m.tint) if(mat.emissive.r) mat.emissive.setRGB(0,0,0); }
+    // Creeper-Zuendung: weiss aufblitzend + leicht aufgeblaeht, schneller je naeher am Bumm
+    if(m.kind==='creeper'){
+      const fz=m.fuse||0;
+      if(fz>0){
+        const pulse=(Math.sin(performance.now()*0.001*(6+fz*34))*0.5+0.5)*fz;
+        for(const mat of m.tint) mat.emissive.setRGB(pulse, pulse*0.95, pulse*0.5);
+        m.group.scale.setScalar(1+fz*0.12);
+      } else if(m.group.scale.x!==1){ m.group.scale.setScalar(1); }
+    }
     // HP-Balken: schwebt ueberm Kopf, blendet nach kurzer Zeit aus
     if(m.hpBar){
       if(m.hpShow>0){ m.hpShow=Math.max(0,m.hpShow-dt); m.hpBar.visible=true; m.hpBar.position.set(0, m.hh*2+0.55, 0); }
@@ -1955,6 +2021,7 @@ const _poofGeo = new THREE.BoxGeometry(0.18,0.18,0.18);
 function poofColor(kind){
   if(kind==='zombie') return 0x3a5a3a;
   if(kind==='skeleton') return 0xd8d8d0;
+  if(kind==='creeper') return 0x57a83c;
   if(kind==='cow') return 0x5a4632;
   if(kind==='sheep') return 0xe8e8e0;
   if(kind==='chicken') return 0xf2f2ec;
@@ -1969,6 +2036,61 @@ function spawnPoof(x,y,z,kind){
     scene.add(mesh);
     particles.push({ mesh, vx:(Math.random()-0.5)*1.6, vy:1.0+Math.random()*1.4, vz:(Math.random()-0.5)*1.6, life:0.6+Math.random()*0.3, max:0.9 });
   }
+}
+
+// ---- Explosion (Creeper): Partikel-Wolke + Krater ----
+const _boomGeo = new THREE.BoxGeometry(0.26,0.26,0.26);
+function spawnExplosion(x,y,z){
+  for(let i=0;i<28;i++){
+    const orange = Math.random()<0.4;
+    const col = orange ? (Math.random()<0.5?0xff8c2a:0xffd24a) : (Math.random()<0.5?0x555555:0x888888);
+    const mat=new THREE.MeshLambertMaterial({ color:col, transparent:true, opacity:0.95 });
+    const mesh=new THREE.Mesh(_boomGeo, mat);
+    mesh.position.set(x+(Math.random()-0.5)*0.6, y+(Math.random()-0.5)*0.6, z+(Math.random()-0.5)*0.6);
+    scene.add(mesh);
+    const ang=Math.random()*6.283, sp=2+Math.random()*4.5;
+    particles.push({ mesh, vx:Math.cos(ang)*sp, vy:Math.random()*4+1, vz:Math.sin(ang)*sp, life:0.5+Math.random()*0.5, max:1.0 });
+  }
+}
+// alle festen Bloecke in einer Kugel entfernen. Gibt die Liste zurueck (fuer Server-Persistenz).
+function applyCrater(cx,cy,cz,r){
+  const removed=[], touched=new Set(), r2=r*r;
+  const x0=Math.floor(cx-r), x1=Math.floor(cx+r);
+  const y0=Math.floor(cy-r), y1=Math.floor(cy+r);
+  const z0=Math.floor(cz-r), z1=Math.floor(cz+r);
+  for(let x=x0;x<=x1;x++) for(let y=y0;y<=y1;y++) for(let z=z0;z<=z1;z++){
+    const dx=x+0.5-cx, dy=y+0.5-cy, dz=z+0.5-cz;
+    if(dx*dx+dy*dy+dz*dz>r2) continue;
+    const b=world.getBlock(x,y,z);
+    if(b===AIR||b===BEDROCK||b===WATER) continue;       // Luft/Grundgestein/Wasser bleiben
+    setOverride(x,y,z,AIR);
+    const ccx=Math.floor(x/CHUNK_SIZE), ccz=Math.floor(z/CHUNK_SIZE);
+    const c=world.ensureChunkData(ccx,ccz);
+    const lx=x-ccx*CHUNK_SIZE, lz=z-ccz*CHUNK_SIZE;
+    c.data[((y-Y_MIN)*CHUNK_SIZE+lz)*CHUNK_SIZE+lx]=AIR;
+    touched.add(ccx+','+ccz);
+    if(lx===0) touched.add((ccx-1)+','+ccz); if(lx===CHUNK_SIZE-1) touched.add((ccx+1)+','+ccz);
+    if(lz===0) touched.add(ccx+','+(ccz-1)); if(lz===CHUNK_SIZE-1) touched.add(ccx+','+(ccz+1));
+    removed.push({x,y,z,id:0});
+  }
+  for(const key of touched){ const p=key.split(','); world._remesh(+p[0],+p[1]); }  // betroffene Chunks nur einmal neu bauen
+  return removed;
+}
+function onExplode(m){
+  const mob=mobsMap.get(m.mobId);
+  let cx,cy,cz;
+  if(mob){ const p=mob.group.position; cx=p.x; cy=p.y+0.6; cz=p.z; }
+  else { cx=m.x; cz=m.z; cy=mobGroundY(m.x,m.z)+0.6; }     // Mob ausserhalb Sichtweite: Position vom Server
+  const r=m.r||3;
+  spawnExplosion(cx,cy,cz); SFX.explode({x:cx,y:cy,z:cz});
+  const removed=applyCrater(cx,cy,cz,r);                   // Krater sofort lokal (Terrain ist bei allen gleich -> kein Auseinanderlaufen)
+  if(m.owner && net.myId===m.owner && removed.length) net.sendBlockBulk(removed);  // nur der naechste Spieler persistiert
+  if(!dead){                                               // Schaden am eigenen Spieler nach Entfernung
+    const dx=player.x-cx, dy=(player.y+0.9)-cy, dz=player.z-cz, dist=Math.hypot(dx,dy,dz);
+    if(dist<r+1) damagePlayer(Math.max(1, Math.ceil((m.dmg||7)*(1-dist/(r+1)))));
+  }
+  if(mob) removeMob(m.mobId);
+  myHits.delete(m.mobId);
 }
 function updateParticles(dt){
   for(let i=particles.length-1;i>=0;i--){

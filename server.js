@@ -156,7 +156,7 @@ process.on('SIGTERM', async () => { await saveWorld(); process.exit(0); });
 const mobs = new Map();             // mobId -> {id,kind,x,y,z,dir,hp,hostile}
 let nextMobId = 1;
 const MOB_KINDS_PASSIVE = ['cow','sheep','chicken'];
-const MOB_HP = { cow:8, sheep:6, chicken:4, zombie:10, skeleton:8 };
+const MOB_HP = { cow:8, sheep:6, chicken:4, zombie:10, skeleton:8, creeper:10 };
 let mobSpawnTimer = 0;
 
 function isNight() { return dayTime > 0.75 || dayTime < 0.2; }
@@ -166,10 +166,10 @@ function spawnMob(hostile) {
   const ang = Math.random()*Math.PI*2, r = 8 + Math.random()*16;
   const x = Math.cos(ang)*r, z = Math.sin(ang)*r;
   let kind;
-  if (hostile) kind = Math.random()<0.5 ? 'zombie':'skeleton';
+  if (hostile) { const q = Math.random(); kind = q<0.4 ? 'zombie' : q<0.75 ? 'skeleton' : 'creeper'; }
   else kind = MOB_KINDS_PASSIVE[Math.floor(Math.random()*3)];
   const id = nextMobId++;
-  mobs.set(id, { id, kind, x, y:20, z, dir:Math.random()*6.28, hp:MOB_HP[kind], hostile, atkCd:0 });
+  mobs.set(id, { id, kind, x, y:20, z, dir:Math.random()*6.28, hp:MOB_HP[kind], hostile, atkCd:0, fuse:0 });
 }
 
 // ---- Pfeile (von Skeletten abgeschossen, serverseitig simuliert) ----
@@ -230,6 +230,17 @@ wss.on('connection', (ws) => {
           broadcast({ t:'block', x:m.x, y:m.y, z:m.z, id:m.id }, id);
         }
         break;
+      case 'blockbulk':       // viele Bloecke auf einmal (z.B. Explosions-Krater)
+        { if (Array.isArray(m.blocks)) {
+            for (const b of m.blocks) {
+              const k = b.x+'_'+b.y+'_'+b.z;
+              if (b.id === 0) blockOverrides.set(k, 0); else blockOverrides.set(k, b.id);
+            }
+            saveDirty = true;
+            broadcast({ t:'blockbulk', blocks:m.blocks }, id);
+          }
+        }
+        break;
       case 'mobhit':          // jemand trifft/toetet einen Mob
         { const mob = mobs.get(m.mobId);
           if (mob) {
@@ -285,10 +296,10 @@ setInterval(() => {
     if (isNight() && hostile < 6) { spawnMob(true); broadcast({ t:'mobspawn', mob:[...mobs.values()].pop() }); }
   }
 
-  // tagsueber verbrennen feindliche Mobs nach und nach (verschwinden)
+  // tagsueber verbrennen feindliche Mobs nach und nach (verschwinden) - Creeper aber nicht
   if (day) {
     for (const mob of mobs.values()) {
-      if (mob.hostile && Math.random() < 0.02) { mobs.delete(mob.id); broadcast({ t:'mobdead', mobId:mob.id }); }
+      if (mob.hostile && mob.kind !== 'creeper' && Math.random() < 0.02) { mobs.delete(mob.id); broadcast({ t:'mobdead', mobId:mob.id }); }
     }
   }
 
@@ -319,6 +330,23 @@ setInterval(() => {
         arrows.set(aid, { id:aid, x:mob.x, y:sy, z:mob.z,
           vx: dx/dl*ARROW_SPEED, vy: dyy/dl*ARROW_SPEED + 2.5, vz: dz/dl*ARROW_SPEED, life: ARROW_LIFE });
       }
+    } else if (mob.kind === 'creeper') {
+      // ranlaufen, nah dran zuenden, Spieler weg -> Zuender wieder runter
+      if (nearest && nd < 16) mob.dir = Math.atan2(nearest.x-mob.x, nearest.z-mob.z);
+      if (nearest && nd < 2.6) {
+        mob.fuse = (mob.fuse||0) + dt/1.5;            // 1.5 s bis Bumm
+        if (mob.fuse >= 1) {
+          const ownerId = nearest ? nearest.id : 0;   // wer am naechsten ist, persistiert den Krater
+          broadcast({ t:'explode', mobId:mob.id, x:+mob.x.toFixed(2), z:+mob.z.toFixed(2), r:3, dmg:7, owner:ownerId });
+          mobs.delete(mob.id);
+          continue;
+        }
+      } else {
+        mob.fuse = Math.max(0, (mob.fuse||0) - dt/0.8);
+        const sp = 2.2*dt;
+        mob.x += Math.sin(mob.dir)*sp;
+        mob.z += Math.cos(mob.dir)*sp;
+      }
     } else {
       const speed = (mob.hostile?2.4:1.4) * dt;
       if (mob.hostile && nearest && nd<16) {
@@ -339,8 +367,12 @@ setInterval(() => {
     if (a.life <= 0 || a.y < -10) arrows.delete(a.id);
   }
 
-  // kompakter Zustand: nur Positionen
-  const mobState   = [...mobs.values()].map(m => [m.id, +m.x.toFixed(2), +m.z.toFixed(2), +m.dir.toFixed(2)]);
+  // kompakter Zustand: nur Positionen (Creeper haengen ihren Zuender-Stand 0..1 hinten dran)
+  const mobState   = [...mobs.values()].map(m => {
+    const base = [m.id, +m.x.toFixed(2), +m.z.toFixed(2), +m.dir.toFixed(2)];
+    if (m.kind === 'creeper') base.push(+(m.fuse||0).toFixed(2));
+    return base;
+  });
   const arrowState = [...arrows.values()].map(a => [a.id, +a.x.toFixed(2), +a.y.toFixed(2), +a.z.toFixed(2)]);
   broadcast({ t:'tick', time:+dayTime.toFixed(4), mobs: mobState, arrows: arrowState });
 }, TICK_MS);
