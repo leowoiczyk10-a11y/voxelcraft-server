@@ -169,8 +169,14 @@ function spawnMob(hostile) {
   if (hostile) kind = Math.random()<0.5 ? 'zombie':'skeleton';
   else kind = MOB_KINDS_PASSIVE[Math.floor(Math.random()*3)];
   const id = nextMobId++;
-  mobs.set(id, { id, kind, x, y:20, z, dir:Math.random()*6.28, hp:MOB_HP[kind], hostile });
+  mobs.set(id, { id, kind, x, y:20, z, dir:Math.random()*6.28, hp:MOB_HP[kind], hostile, atkCd:0 });
 }
+
+// ---- Pfeile (von Skeletten abgeschossen, serverseitig simuliert) ----
+const arrows = new Map();          // arrowId -> {id,x,y,z,vx,vy,vz,life}
+let nextArrowId = 1;
+const ARROW_SPEED = 22;            // Bloecke pro Sekunde
+const ARROW_LIFE  = 3.0;           // Sekunden bis ein Pfeil verschwindet
 
 function broadcast(obj, exceptId) {
   const msg = JSON.stringify(obj);
@@ -228,6 +234,9 @@ wss.on('connection', (ws) => {
         { const mob = mobs.get(m.mobId);
           if (mob) {
             mob.hp -= (m.dmg||0);
+            // Rueckstoss: Mob ein Stueck vom Angreifer wegschieben (alle sehen es, weil Server-autoritativ)
+            const atk = players.get(id);
+            if (atk) { const dx=mob.x-atk.x, dz=mob.z-atk.z, d=Math.hypot(dx,dz)||1; mob.x += dx/d*0.8; mob.z += dz/d*0.8; }
             if (mob.hp <= 0) { mobs.delete(m.mobId); broadcast({ t:'mobdead', mobId:m.mobId }); }
             else broadcast({ t:'mobhp', mobId:m.mobId, hp:mob.hp });
           }
@@ -259,41 +268,81 @@ setInterval(() => {
   }
 }, 5000);
 
-// ---- Server-Tick: Zeit + Mob-Bewegung an alle senden ----
+// ---- Server-Tick: Zeit + Mob-Bewegung + Pfeile an alle senden ----
 setInterval(() => {
+  const dt = TICK_MS/1000;
   // Tageszeit (volle Runde dauert ~10 Min = 600s; pro Tick 0.1s)
-  dayTime = (dayTime + (TICK_MS/1000)/600) % 1;
+  dayTime = (dayTime + dt/600) % 1;
+  const day = !isNight();
 
   // Mobs spawnen/entfernen
-  mobSpawnTimer += TICK_MS/1000;
+  mobSpawnTimer += dt;
   if (mobSpawnTimer >= 4) {
     mobSpawnTimer = 0;
     let passive=0, hostile=0;
     for (const mob of mobs.values()) mob.hostile ? hostile++ : passive++;
     if (passive < 6) { spawnMob(false); broadcast({ t:'mobspawn', mob:[...mobs.values()].pop() }); }
-    if (isNight() && hostile < 5) { spawnMob(true); broadcast({ t:'mobspawn', mob:[...mobs.values()].pop() }); }
+    if (isNight() && hostile < 6) { spawnMob(true); broadcast({ t:'mobspawn', mob:[...mobs.values()].pop() }); }
   }
 
-  // Mob-Bewegung: simpel, Richtung Naehe oder Wandern. Detail-Animation macht der Client.
+  // tagsueber verbrennen feindliche Mobs nach und nach (verschwinden)
+  if (day) {
+    for (const mob of mobs.values()) {
+      if (mob.hostile && Math.random() < 0.02) { mobs.delete(mob.id); broadcast({ t:'mobdead', mobId:mob.id }); }
+    }
+  }
+
+  // Mob-Bewegung. Skelette: Fernkampf (Abstand halten + Pfeile). Rest: Naehe/Wandern.
   for (const mob of mobs.values()) {
     let nearest=null, nd=1e9;
     for (const p of players.values()) {
       const d = Math.hypot(p.x-mob.x, p.z-mob.z);
       if (d<nd) { nd=d; nearest=p; }
     }
-    const speed = (mob.hostile?2.4:1.4) * (TICK_MS/1000);
-    if (mob.hostile && nearest && nd<16) {
-      mob.dir = Math.atan2(nearest.x-mob.x, nearest.z-mob.z);
-    } else if (Math.random()<0.03) {
-      mob.dir = Math.random()*6.28;
+    if (mob.atkCd > 0) mob.atkCd -= dt;
+
+    if (mob.kind === 'skeleton' && nearest && nd < 18) {
+      mob.dir = Math.atan2(nearest.x-mob.x, nearest.z-mob.z);   // auf Spieler ausrichten
+      // Abstand halten: zu nah -> zurueck, zu weit -> ran, im Fenster -> stehen
+      let move = 0;
+      if (nd < 6) move = -1; else if (nd > 12) move = 1;
+      const sp = 2.0*dt;
+      mob.x += Math.sin(mob.dir)*sp*move;
+      mob.z += Math.cos(mob.dir)*sp*move;
+      // schiessen
+      if (nd < 16 && mob.atkCd <= 0) {
+        mob.atkCd = 1.8;                       // Schussrate (s)
+        const sy = nearest.y + 1.0;            // grob Schulterhoehe (Server kennt kein Terrain)
+        const dx = nearest.x-mob.x, dyy = (nearest.y+0.8)-sy, dz = nearest.z-mob.z;
+        const dl = Math.hypot(dx,dyy,dz) || 1;
+        const aid = nextArrowId++;
+        arrows.set(aid, { id:aid, x:mob.x, y:sy, z:mob.z,
+          vx: dx/dl*ARROW_SPEED, vy: dyy/dl*ARROW_SPEED + 2.5, vz: dz/dl*ARROW_SPEED, life: ARROW_LIFE });
+      }
+    } else {
+      const speed = (mob.hostile?2.4:1.4) * dt;
+      if (mob.hostile && nearest && nd<16) {
+        mob.dir = Math.atan2(nearest.x-mob.x, nearest.z-mob.z);
+      } else if (Math.random()<0.03) {
+        mob.dir = Math.random()*6.28;
+      }
+      mob.x += Math.sin(mob.dir)*speed;
+      mob.z += Math.cos(mob.dir)*speed;
     }
-    mob.x += Math.sin(mob.dir)*speed;
-    mob.z += Math.cos(mob.dir)*speed;
+  }
+
+  // Pfeile bewegen (leichte Schwerkraft) + ablaufen lassen
+  for (const a of arrows.values()) {
+    a.life -= dt;
+    a.vy  -= 9.0*dt;
+    a.x += a.vx*dt; a.y += a.vy*dt; a.z += a.vz*dt;
+    if (a.life <= 0 || a.y < -10) arrows.delete(a.id);
   }
 
   // kompakter Zustand: nur Positionen
-  const mobState = [...mobs.values()].map(m => [m.id, +m.x.toFixed(2), +m.z.toFixed(2), +m.dir.toFixed(2)]);
-  broadcast({ t:'tick', time:+dayTime.toFixed(4), mobs: mobState });
+  const mobState   = [...mobs.values()].map(m => [m.id, +m.x.toFixed(2), +m.z.toFixed(2), +m.dir.toFixed(2)]);
+  const arrowState = [...arrows.values()].map(a => [a.id, +a.x.toFixed(2), +a.y.toFixed(2), +a.z.toFixed(2)]);
+  broadcast({ t:'tick', time:+dayTime.toFixed(4), mobs: mobState, arrows: arrowState });
 }, TICK_MS);
 
 // ---- lokale IP herausfinden und anzeigen ----

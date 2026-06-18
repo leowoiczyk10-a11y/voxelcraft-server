@@ -1491,6 +1491,7 @@ function onWelcome(m){
   for(const id of [...avatars.keys()]) removeAvatar(id);
   if(Array.isArray(m.players)) for(const p of m.players) addAvatar(p);
   clearMobs();
+  clearArrows();
   if(Array.isArray(m.mobs)) for(const mob of m.mobs) addMob(mob);
   if(playerName) net.sendStat({name:playerName});
 }
@@ -1524,8 +1525,8 @@ const net={
       case 'block':    world.setBlock(m.x,m.y,m.z,m.id,true); break;
       case 'mobspawn': addMob(m.mob); break;
       case 'mobdead':  onMobDead(m.mobId); break;
-      case 'mobhp':    break; // HP fuehrt der Server, Client muss nichts tun
-      case 'tick':     if(typeof m.time==='number') dayTime=m.time; updateMobsFromTick(m.mobs); break;
+      case 'mobhp':    onMobHp(m.mobId, m.hp); break; // Mob getroffen -> Balken + Blitz
+      case 'tick':     if(typeof m.time==='number') dayTime=m.time; updateMobsFromTick(m.mobs); updateArrowsFromTick(m.arrows); break;
     }
   }
 };
@@ -1553,6 +1554,7 @@ const MOB_DEF = {
   zombie:  { hostile:true,  hw:0.35, hh:0.95 },
   skeleton:{ hostile:true,  hw:0.35, hh:0.95 },
 };
+const MOB_HP_MAX = { cow:8, sheep:6, chicken:4, zombie:10, skeleton:8 }; // muss zum Server passen
 function makeMobModel(kind){
   const g=new THREE.Group(); const legs=[], arms=[];
   if(kind==='zombie' || kind==='skeleton'){
@@ -1593,8 +1595,24 @@ function makeMobModel(kind){
   return { group:g, legs, arms };
 }
 
+// ---- HP-Balken ueber Mobs (Canvas-Sprite, taucht bei Schaden auf) ----
+function drawHpBar(ctx, frac){
+  ctx.clearRect(0,0,64,10);
+  ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(0,0,64,10);
+  ctx.fillStyle='#5a1414'; ctx.fillRect(2,2,60,6);
+  const w=Math.max(0,Math.min(60,Math.round(60*frac)));
+  ctx.fillStyle = frac>0.5?'#46c84a':(frac>0.25?'#e0b020':'#d23b3b');
+  ctx.fillRect(2,2,w,6);
+}
+function makeHpBar(){
+  const cv=document.createElement('canvas'); cv.width=64; cv.height=10; const ctx=cv.getContext('2d'); drawHpBar(ctx,1);
+  const tex=new THREE.CanvasTexture(cv);
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({ map:tex, depthTest:false, transparent:true }));
+  sp.scale.set(1.1,0.18,1); sp.userData.ctx=ctx; return sp;
+}
+
 // ---- Mob-Verwaltung ----
-const mobsMap = new Map(); // id -> {group, kind, hostile, hw, hh, tx, tz, dir, lastAttack}
+const mobsMap = new Map(); // id -> {group, kind, hostile, hw, hh, tx, tz, dir, lastAttack, hp, maxHp, tint[], flash, hpShow, hpBar}
 function mobGroundY(x,z){ return Math.max(terrainHeight(Math.floor(x), Math.floor(z)), WATER_LEVEL) + 1; }
 function addMob(mob){
   if(!mob || mobsMap.has(mob.id)) return;
@@ -1602,11 +1620,20 @@ function addMob(mob){
   const mdl = makeMobModel(mob.kind);
   mdl.group.position.set(mob.x, mobGroundY(mob.x,mob.z), mob.z);
   scene.add(mdl.group);
-  mobsMap.set(mob.id, { group:mdl.group, legs:mdl.legs, arms:mdl.arms, phase:0, kind:mob.kind, hostile:def.hostile, hw:def.hw, hh:def.hh, tx:mob.x, tz:mob.z, dir:mob.dir||0, lastAttack:0 });
+  const tint=[]; mdl.group.traverse(o=>{ if(o.isMesh && o.material && o.material.emissive) tint.push(o.material); }); // fuer Treffer-Blitz
+  mobsMap.set(mob.id, { group:mdl.group, legs:mdl.legs, arms:mdl.arms, phase:0, kind:mob.kind, hostile:def.hostile, hw:def.hw, hh:def.hh, tx:mob.x, tz:mob.z, dir:mob.dir||0, lastAttack:0, hp:(MOB_HP_MAX[mob.kind]||8), maxHp:(MOB_HP_MAX[mob.kind]||8), tint, flash:0, hpShow:0, hpBar:null });
 }
-function removeMob(id){ const m=mobsMap.get(id); if(!m) return; scene.remove(m.group); m.group.traverse(o=>{ if(o.geometry) o.geometry.dispose(); if(o.material) o.material.dispose(); }); mobsMap.delete(id); }
+function removeMob(id){ const m=mobsMap.get(id); if(!m) return; scene.remove(m.group); m.group.traverse(o=>{ if(o.geometry) o.geometry.dispose(); if(o.material) o.material.dispose(); }); if(m.hpBar){ if(m.hpBar.material.map) m.hpBar.material.map.dispose(); m.hpBar.material.dispose(); } mobsMap.delete(id); }
 function clearMobs(){ for(const id of [...mobsMap.keys()]) removeMob(id); }
 function updateMobsFromTick(list){ if(!Array.isArray(list)) return; for(const e of list){ const m=mobsMap.get(e[0]); if(!m) continue; m.tx=e[1]; m.tz=e[2]; m.dir=e[3]; } }
+// Schaden an einem Mob (egal von wem) -> HP-Balken zeigen + rot aufblitzen
+function onMobHp(id, hp){
+  const m=mobsMap.get(id); if(!m) return;
+  if(typeof hp==='number') m.hp=hp;
+  m.flash=0.28; m.hpShow=4.0;
+  if(!m.hpBar){ m.hpBar=makeHpBar(); m.group.add(m.hpBar); }
+  drawHpBar(m.hpBar.userData.ctx, Math.max(0,m.hp)/m.maxHp); m.hpBar.material.map.needsUpdate=true;
+}
 
 const myHits = new Map(); // mobId -> Zeitpunkt (wer zuletzt traf -> kriegt Drop beim Kill)
 const MOB_DROP = { cow:BEEF, sheep:MUTTON, chicken:CHICKEN_RAW };
@@ -1618,6 +1645,7 @@ function attackMob(id){
   let dmg=3; if(sel && isTool(sel.id)){ const td=TOOL[sel.id]; dmg = td.dmg || (td.cat==='axe'?4:3); }  // Schwert/Axt mehr Schaden
   net.send({t:'mobhit', mobId:id, dmg});
   myHits.set(id, now);
+  const mm=mobsMap.get(id); if(mm){ mm.hp=Math.max(0, mm.hp-dmg); onMobHp(id, mm.hp); } // sofortiges Feedback, Server korrigiert per 'mobhp'
   if(sel && isTool(sel.id)) damageTool();                      // Werkzeug nutzt sich ab
 }
 function eat(){
@@ -1628,6 +1656,7 @@ function eat(){
 }
 function onMobDead(id){
   const m=mobsMap.get(id), t=myHits.get(id);
+  if(m) spawnPoof(m.group.position.x, m.group.position.y+0.6, m.group.position.z, m.kind);
   if(m && t && performance.now()-t<4000){ const d=MOB_DROP[m.kind]; if(d) addItem(d, 1 + (Math.random()<0.5?1:0)); }
   myHits.delete(id);
   removeMob(id);
@@ -1711,6 +1740,88 @@ function updateMobs(dt){
     if(m.legs.length>=4){ m.legs[0].rotation.x=sw; m.legs[1].rotation.x=-sw; m.legs[2].rotation.x=-sw; m.legs[3].rotation.x=sw; }
     else if(m.legs.length>=2){ m.legs[0].rotation.x=sw; m.legs[1].rotation.x=-sw; }
     if(m.arms.length>=2){ m.arms[0].rotation.x=-1.3+sw*0.5; m.arms[1].rotation.x=-1.3-sw*0.5; }
+    // Treffer-Blitz: kurz rot aufleuchten (ueber emissive der Mob-Materialien)
+    if(m.flash>0){ m.flash=Math.max(0,m.flash-dt); const f=m.flash/0.28; for(const mat of m.tint) mat.emissive.setRGB(f*0.85, 0, 0); }
+    else if(m.tint.length){ for(const mat of m.tint) if(mat.emissive.r) mat.emissive.setRGB(0,0,0); }
+    // HP-Balken: schwebt ueberm Kopf, blendet nach kurzer Zeit aus
+    if(m.hpBar){
+      if(m.hpShow>0){ m.hpShow=Math.max(0,m.hpShow-dt); m.hpBar.visible=true; m.hpBar.position.set(0, m.hh*2+0.55, 0); }
+      else m.hpBar.visible=false;
+    }
+  }
+}
+
+// =====================================================================
+//  PFEILE (Skelett-Geschosse) + PARTIKEL (Todes-Wolke)
+// =====================================================================
+const arrowsMap = new Map();   // id -> {mesh, tx,ty,tz, hit}
+const _arrowGeo = new THREE.BoxGeometry(0.07,0.07,0.55);
+const _arrowMat = new THREE.MeshLambertMaterial({ color:0x6a5230 });
+const _arrowTipMat = new THREE.MeshLambertMaterial({ color:0xcfcfcf });
+function makeArrowMesh(){
+  const g=new THREE.Group();
+  const shaft=new THREE.Mesh(_arrowGeo, _arrowMat); g.add(shaft);
+  const tip=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.1,0.12), _arrowTipMat); tip.position.z=0.32; g.add(tip);
+  return g;
+}
+function updateArrowsFromTick(list){
+  if(!Array.isArray(list)) return;
+  const seen=new Set();
+  for(const a of list){
+    const id=a[0]; seen.add(id);
+    let ar=arrowsMap.get(id);
+    if(!ar){ const mesh=makeArrowMesh(); mesh.position.set(a[1],a[2],a[3]); scene.add(mesh); ar={mesh, tx:a[1],ty:a[2],tz:a[3], hit:false}; arrowsMap.set(id,ar); }
+    else { ar.tx=a[1]; ar.ty=a[2]; ar.tz=a[3]; }
+  }
+  // Pfeile, die der Server nicht mehr schickt (abgelaufen/eingeschlagen), entfernen
+  for(const [id,ar] of arrowsMap){ if(!seen.has(id)) removeArrow(id); }
+}
+function removeArrow(id){ const ar=arrowsMap.get(id); if(!ar) return; scene.remove(ar.mesh); arrowsMap.delete(id); }
+function clearArrows(){ for(const id of [...arrowsMap.keys()]) removeArrow(id); }
+function updateArrows(dt){
+  for(const [id,ar] of arrowsMap){
+    const p=ar.mesh.position;
+    const dx=ar.tx-p.x, dy=ar.ty-p.y, dz=ar.tz-p.z;
+    p.x+=dx*0.5; p.y+=dy*0.5; p.z+=dz*0.5;
+    // entlang der Flugrichtung ausrichten
+    const len=Math.hypot(dx,dy,dz); if(len>1e-4){ ar.mesh.lookAt(ar.tx, ar.ty, ar.tz); }
+    // Treffer auf lokalen Spieler? (jeder Client prueft nur sich selbst)
+    if(!ar.hit && !dead){
+      const ex=player.x, ey=player.y+EYE_HEIGHT*0.5, ez=player.z;
+      if(Math.abs(p.x-ex)<0.55 && Math.abs(p.z-ez)<0.55 && Math.abs(p.y-ey)<1.2){
+        ar.hit=true; ar.mesh.visible=false; damagePlayer(2);
+      }
+    }
+  }
+}
+
+const particles=[]; // {mesh, vx,vy,vz, life, max}
+const _poofGeo = new THREE.BoxGeometry(0.18,0.18,0.18);
+function poofColor(kind){
+  if(kind==='zombie') return 0x3a5a3a;
+  if(kind==='skeleton') return 0xd8d8d0;
+  if(kind==='cow') return 0x5a4632;
+  if(kind==='sheep') return 0xe8e8e0;
+  if(kind==='chicken') return 0xf2f2ec;
+  return 0xcccccc;
+}
+function spawnPoof(x,y,z,kind){
+  const col=poofColor(kind);
+  for(let i=0;i<10;i++){
+    const mat=new THREE.MeshLambertMaterial({ color:col, transparent:true, opacity:0.95 });
+    const mesh=new THREE.Mesh(_poofGeo, mat);
+    mesh.position.set(x+(Math.random()-0.5)*0.5, y+(Math.random()-0.5)*0.5, z+(Math.random()-0.5)*0.5);
+    scene.add(mesh);
+    particles.push({ mesh, vx:(Math.random()-0.5)*1.6, vy:1.0+Math.random()*1.4, vz:(Math.random()-0.5)*1.6, life:0.6+Math.random()*0.3, max:0.9 });
+  }
+}
+function updateParticles(dt){
+  for(let i=particles.length-1;i>=0;i--){
+    const pt=particles[i]; pt.life-=dt;
+    if(pt.life<=0){ scene.remove(pt.mesh); pt.mesh.material.dispose(); particles.splice(i,1); continue; }
+    pt.vy-=4.0*dt;
+    pt.mesh.position.x+=pt.vx*dt; pt.mesh.position.y+=pt.vy*dt; pt.mesh.position.z+=pt.vz*dt;
+    const f=pt.life/pt.max; pt.mesh.material.opacity=Math.max(0,f); pt.mesh.scale.setScalar(Math.max(0.05,f));
   }
 }
 
@@ -1780,6 +1891,8 @@ function frame(now){
 
   survivalUpdate(dt, now);
   updateMobs(dt);
+  updateArrows(dt);
+  updateParticles(dt);
   updateAim(dt);
   tickAllFurnaces(dt);
   updateTorchGlow();
