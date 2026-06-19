@@ -85,6 +85,7 @@
   #invTitle { text-align: center; color: #cfd8ec; font-size: 12px; letter-spacing: 1.5px; }
 
   #hurt { position: fixed; inset: 0; pointer-events: none; z-index: 4; background: radial-gradient(circle, rgba(170,0,0,0) 42%, rgba(170,0,0,0.6) 100%); opacity: 0; transition: opacity 0.08s; }
+  #burn { position: fixed; inset: 0; pointer-events: none; z-index: 4; background: radial-gradient(circle, rgba(255,90,0,0) 36%, rgba(255,64,0,0.55) 100%); opacity: 0; transition: opacity 0.12s; }
   #vitals { position: fixed; left: 50%; bottom: 74px; transform: translateX(-50%); z-index: 5; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 3px; }
   .vrow { display: flex; gap: 3px; }
   .pip { width: 12px; height: 12px; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.5); }
@@ -218,6 +219,7 @@
 </div>
 
 <div id="hurt"></div>
+<div id="burn"></div>
 <div id="vitals">
   <div id="airRow" class="vrow"></div>
   <div id="hpRow" class="vrow"></div>
@@ -260,6 +262,7 @@ const CHUNK_SIZE   = 16;
 const Y_MIN = -64, Y_MAX = 320;          // echte Minecraft-Hoehe (Bedrock bis Bauhoehe)
 const WORLD_HEIGHT = Y_MAX - Y_MIN;      // Spannweite (384) = Array-Hoehe pro Chunk
 const WATER_LEVEL  = 62;
+const LAVA_SEA     = -48;   // Hoehlen-Luft auf/unter dieser Hoehe laeuft mit Lava voll (16 ueber Bedrock)
 // ---- Einstellungen (Settings-Menue) -----------------------------------
 // Grafik-Presets. renderScale = interne Aufloesung (pixelRatio-Cap): kleiner = unschaerfer aber schneller.
 const PRESETS = {
@@ -419,7 +422,16 @@ const SFX = (function(){
     burst(t, 90, 0.5, 0.6, 0.6*dg, 'lowpass'); tone(t, 70, 35, 0.6, 0.3*dg, 'sawtooth');
     burst(t+0.02, 400, 0.6, 0.25, 0.3*dg, 'bandpass');
   }
-  return { init, resume, setVolume, dig, place, step, land, hit, mobDie, pickup, hurt, die, eat, ui, fuse, explode };
+  function sizzle(){ // Verbrennen / Lava-Kontakt
+    if(!ready) return; resume(); const t=ctx.currentTime;
+    const src=noiseSrc();
+    const filt=ctx.createBiquadFilter(); filt.type='highpass'; filt.frequency.value=1100;
+    const g=ctx.createGain();
+    g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.11,t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.32);
+    src.connect(filt); filt.connect(g); g.connect(master); src.start(t); src.stop(t+0.36);
+  }
+  return { init, resume, setVolume, dig, place, step, land, hit, mobDie, pickup, hurt, die, eat, ui, fuse, explode, sizzle };
 })();
 let SEED = 1337;                 // Default; wird vom Server-Seed ueberschrieben
 const CHUNK_BUDGET_MS = isTouch ? 5 : 6;
@@ -433,6 +445,8 @@ const WALK_SPEED = 4.7, GRAVITY = 26, JUMP_VELOCITY = 8.4, TERMINAL_VY = -42, RE
 const AIR=0, GRASS=1, DIRT=2, STONE=3, SAND=4, WATER=5, WOOD=6;
 const COBBLE=7, GLASS=8, BRICKS=9, LOG=10, LEAVES=11, SNOW=12, GRAVEL=13, CRAFTING_TABLE=14;
 const BEDROCK=15, COAL_ORE=16, COPPER_ORE=17, IRON_ORE=18, GOLD_ORE=19, DIAMOND_ORE=20;
+const LAVA=21, OBSIDIAN=22;
+const TALL_GRASS=23, FLOWER_RED=24, FLOWER_YELLOW=25, CACTUS=26, DEAD_BUSH=27;
 const FURNACE=21, TORCH=22;
 const BLOCKS = {
   [AIR]:   { name:'Air',    solid:false, opaque:false },
@@ -458,9 +472,17 @@ const BLOCKS = {
   [DIAMOND_ORE]:{ name:'Diamanterz', solid:true, opaque:true, color:0x52c7cf },
   [FURNACE]:    { name:'Ofen',   solid:true,  opaque:true,  color:0x6e6e74, top:0x5c5c62 },
   [TORCH]:      { name:'Fackel', solid:false, opaque:false, color:0xffb34d },
+  [LAVA]:       { name:'Lava',   solid:false, opaque:false, color:0xff7a1a },
+  [OBSIDIAN]:   { name:'Obsidian', solid:true, opaque:true,  color:0x14121f },
+  [TALL_GRASS]: { name:'Hohes Gras', solid:false, opaque:false, color:0x5fa83d },
+  [FLOWER_RED]: { name:'Mohn',      solid:false, opaque:false, color:0xd83a3a },
+  [FLOWER_YELLOW]:{ name:'Loewenzahn', solid:false, opaque:false, color:0xf2d24a },
+  [CACTUS]:     { name:'Kaktus',    solid:true,  opaque:true,  color:0x4e8f3a },
+  [DEAD_BUSH]:  { name:'Toter Busch', solid:false, opaque:false, color:0x9a6f3a },
 };
 const isSolid  = (id) => BLOCKS[id] ? BLOCKS[id].solid : true;
 const isOpaque = (id) => BLOCKS[id] ? BLOCKS[id].opaque : true;
+const isCrossPlant = (id) => id===TALL_GRASS||id===FLOWER_RED||id===FLOWER_YELLOW||id===DEAD_BUSH;
 const HOTBAR_COUNT = 9;        // Hotbar = die ersten 9 Inventar-Slots
 let selectedSlot = 0;
 
@@ -475,6 +497,7 @@ const GOLD_PICKAXE=127, GOLD_AXE=128, GOLD_SHOVEL=129, GOLD_SWORD=130;
 const DIAMOND_PICKAXE=131, DIAMOND_AXE=132, DIAMOND_SHOVEL=133, DIAMOND_SWORD=134;
 // Mob-Drops (Kampf-Update)
 const ROTTEN_FLESH=135, BONE=136, ARROW_ITEM=137, GUNPOWDER=138;
+const EMPTY_BUCKET=139, WATER_BUCKET=140, LAVA_BUCKET=141;
 const ITEM = {
   [STICK]:       { name:'Stock',        color:0x9a7842 },
   [BEEF]:        { name:'Rohes Rind',   color:0xc06050 },
@@ -496,6 +519,9 @@ const ITEM = {
   [BONE]:          { name:'Knochen',             color:0xe8e4d4 },
   [ARROW_ITEM]:    { name:'Pfeil',               color:0xb0a080 },
   [GUNPOWDER]:     { name:'Schwarzpulver',       color:0x40403e },
+  [EMPTY_BUCKET]:  { name:'Eimer',               color:0xb8bcc4 },
+  [WATER_BUCKET]:  { name:'Wassereimer',         color:0x3a6fd0 },
+  [LAVA_BUCKET]:   { name:'Lavaeimer',           color:0xe2531a },
 };
 function thing(id){ return BLOCKS[id] || ITEM[id] || TOOL[id]; }
 function thingColor(id){ const t=thing(id); return t ? (t.color??t.top??0x888888) : 0x888888; }
@@ -553,6 +579,12 @@ const BLOCK_MINE = {
   [BEDROCK]:    {hard:1e9, tool:'pick', needsTool:true, minTier:99},
   [FURNACE]:    {hard:3.5, tool:'pick', needsTool:true, minTier:1},
   [TORCH]:      {hard:0.1, tool:null,   needsTool:false},
+  [OBSIDIAN]:   {hard:25,  tool:'pick', needsTool:true, minTier:4},
+  [TALL_GRASS]: {hard:0,   tool:null,   needsTool:false},
+  [FLOWER_RED]: {hard:0,   tool:null,   needsTool:false},
+  [FLOWER_YELLOW]:{hard:0, tool:null,   needsTool:false},
+  [DEAD_BUSH]:  {hard:0,   tool:null,   needsTool:false},
+  [CACTUS]:     {hard:0.4, tool:null,   needsTool:false},
 };
 function mineInfo(id){ return BLOCK_MINE[id] || {hard:1, tool:null, needsTool:false}; }
 
@@ -570,7 +602,7 @@ function addItem(id,count){
   renderHotbar(); if(invOpen) renderInventory();
   return count;
 }
-function dropFor(id){ if(id===GRASS) return DIRT; if(id===STONE) return COBBLE; if(id===COAL_ORE) return COAL; if(id===COPPER_ORE) return RAW_COPPER; if(id===IRON_ORE) return RAW_IRON; if(id===GOLD_ORE) return RAW_GOLD; if(id===DIAMOND_ORE) return DIAMOND; if(id===LEAVES||id===GLASS||id===BEDROCK) return AIR; return id; }
+function dropFor(id){ if(id===GRASS) return DIRT; if(id===STONE) return COBBLE; if(id===COAL_ORE) return COAL; if(id===COPPER_ORE) return RAW_COPPER; if(id===IRON_ORE) return RAW_IRON; if(id===GOLD_ORE) return RAW_GOLD; if(id===DIAMOND_ORE) return DIAMOND; if(id===LEAVES||id===GLASS||id===BEDROCK||id===TALL_GRASS||id===DEAD_BUSH) return AIR; return id; }
 
 // Crafting: shapeless (in:{...}, Position egal) ODER shaped (shape:[...], key:{...})
 const RECIPES = [
@@ -590,6 +622,7 @@ const RECIPES = [
   // Ofen (8 Bruchstein im Ring) + Fackeln (Kohle auf Stock)
   { shape:["XXX","X.X","XXX"], key:{X:COBBLE},          out:{id:FURNACE, count:1} },
   { shape:["C","S"],           key:{C:COAL,S:STICK},    out:{id:TORCH,   count:4} },
+  { shape:["X.X",".X."],       key:{X:IRON_INGOT},      out:{id:EMPTY_BUCKET, count:1} },
   // Eisen-Werkzeuge (Eisenbarren + Stoecke)
   { shape:["XXX",".S.",".S."], key:{X:IRON_INGOT,S:STICK}, out:{id:IRON_PICKAXE, count:1} },
   { shape:["XX","XS",".S"],    key:{X:IRON_INGOT,S:STICK}, out:{id:IRON_AXE,     count:1} },
@@ -715,27 +748,45 @@ function terrainHeight(wx,wz){
   val/=sum;
   return Math.max(WATER_LEVEL-14, Math.min(100, Math.floor((WATER_LEVEL+2)+val*20)));
 }
+// Biom-Rauschen (grosse Regionen) -> Wueste, wenn ueber Schwelle. 0..1
+const DESERT_T = 0.62;
+function biomeNoise(wx,wz){ return (perlin(wx/240+1000, wz/240-1000)+1)*0.5; }
 function generateChunkData(cx,cz){
   const data=new Uint8Array(CHUNK_SIZE*WORLD_HEIGHT*CHUNK_SIZE);
   const ox=cx*CHUNK_SIZE, oz=cz*CHUNK_SIZE;
   for(let z=0;z<CHUNK_SIZE;z++) for(let x=0;x<CHUNK_SIZE;x++){
     const wx=ox+x, wz=oz+z;
     const h=terrainHeight(wx,wz), beach=h<=WATER_LEVEL+1, snowy=h>WATER_LEVEL+18;
+    const desert = !beach && !snowy && biomeNoise(wx,wz) > DESERT_T;
     for(let y=Y_MIN;y<Y_MAX;y++){
       let b=AIR;
       if(y===Y_MIN){ b=BEDROCK; }
       else if(y<=h){
-        if(y===h) b = beach?SAND : (snowy?SNOW:GRASS);
-        else if(y>=h-3) b = beach?SAND : DIRT;
+        if(y===h) b = beach?SAND : (snowy?SNOW : (desert?SAND:GRASS));
+        else if(y>=h-3) b = (beach||desert)?SAND : DIRT;
         else b = STONE;
         // Hoehlen ins Gestein schnitzen (nicht an Oberflaeche, nicht in Bedrock)
         if(b===STONE && y>Y_MIN+2 && y<h-2){
-          if(noise3(wx*0.09, y*0.13, wz*0.09) > 0.78 || noise3(wx*0.05+50, y*0.08, wz*0.05+50) > 0.84){ b=AIR; }
+          if(noise3(wx*0.09, y*0.13, wz*0.09) > 0.78 || noise3(wx*0.05+50, y*0.08, wz*0.05+50) > 0.84){
+            b = (y <= LAVA_SEA) ? LAVA : AIR;   // tiefe Hoehlen laufen mit Lava voll
+          }
         }
         // Erze nur falls noch Gestein
         if(b===STONE){ const o=oreAt(wx,y,wz); if(o) b=o; }
       } else if(y<=WATER_LEVEL){ b=WATER; }
       data[((y-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=b;
+    }
+    // Oberflaechen-Bewuchs: eine Zelle ueberm Boden, deterministisch, nur auf Land
+    const top=h+1;
+    if(h>WATER_LEVEL+1 && top<Y_MAX){
+      const pr=hash2(wx*1.7+300, wz*1.7-300);
+      if(desert){
+        if(pr<0.010){ const ch=1+((hash2(wx-9,wz+9)*3)|0); for(let k=0;k<ch && top+k<Y_MAX;k++) data[((top+k-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=CACTUS; }
+        else if(pr<0.020){ data[((top-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=DEAD_BUSH; }
+      } else if(!snowy){
+        if(pr<0.10){ data[((top-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=TALL_GRASS; }
+        else if(pr<0.115){ data[((top-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=(hash2(wx+5,wz+5)<0.5)?FLOWER_RED:FLOWER_YELLOW; }
+      }
     }
   }
   // Baeume: deterministisch, chunk-uebergreifend (Rand-Spalten mit-scannen, M=Kronenradius)
@@ -745,6 +796,7 @@ function generateChunkData(cx,cz){
     if(hash2(wx,wz) > 0.012) continue;                 // Baum-Dichte
     const gh=terrainHeight(wx,wz);
     if(gh<=WATER_LEVEL+1 || gh>WATER_LEVEL+18) continue; // nicht am Wasser, nicht auf Schnee
+    if(biomeNoise(wx,wz) > DESERT_T) continue;            // keine Baeume in der Wueste
     const trunk = 4 + ((hash2(wx+7,wz-7)*3)|0);        // 4..6 hoch
     const topY = gh + trunk;
     for(let i=1;i<=trunk;i++) setTreeBlock(data, ox, oz, wx, gh+i, wz, LOG, false);
@@ -775,7 +827,7 @@ function setOverride(wx,wy,wz,id){
 // =====================================================================
 //  CHUNK + WORLD
 // =====================================================================
-class Chunk { constructor(cx,cz){ this.cx=cx; this.cz=cz; this.data=null; this.hasData=false; this.mesh=null; this.waterMesh=null; this.torchMesh=null; this.dirty=true; } }
+class Chunk { constructor(cx,cz){ this.cx=cx; this.cz=cz; this.data=null; this.hasData=false; this.mesh=null; this.waterMesh=null; this.torchMesh=null; this.lavaMesh=null; this.plantMesh=null; this.dirty=true; } }
 
 const world = {
   chunks: new Map(),
@@ -822,7 +874,7 @@ const world = {
 };
 
 function clearAllChunks(){
-  for(const [,c] of world.chunks){ disposeMesh(c.mesh); disposeMesh(c.waterMesh); disposeMesh(c.torchMesh); }
+  for(const [,c] of world.chunks){ disposeMesh(c.mesh); disposeMesh(c.waterMesh); disposeMesh(c.torchMesh); disposeMesh(c.lavaMesh); disposeMesh(c.plantMesh); }
   world.chunks.clear();
   lastCX=null; lastCZ=null; // erzwingt Neuaufbau in updateWorld
 }
@@ -841,7 +893,8 @@ const KIND_LIST = [
   'grass_top','grass_side','dirt','stone','sand','water','planks','cobble',
   'glass','bricks','log_top','bark','leaves','snow','gravel','crafting_top',
   'crafting_side','bedrock','coal_ore','copper_ore','iron_ore','gold_ore',
-  'diamond_ore','furnace_top','furnace_side'
+  'diamond_ore','furnace_top','furnace_side','lava','obsidian',
+  'tall_grass','flower_red','flower_yellow','cactus','dead_bush'
 ];
 
 function hashStr(s){ let h=2166136261>>>0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
@@ -995,6 +1048,40 @@ function paintTile(ctx, kind, ts, ox, oy){
       // Glanz-Diagonale
       for(let i=0;i<ts;i++){ if(i<ts) px(ctx,ox,oy,i,(ts-1-i),rgbaHex(0xffffff,0.35)); }
       break; }
+    case 'lava': {
+      // glutroter Grund + dunkle Krusten-Inseln + heisse gelbe Risse
+      noiseFill(ctx,ox,oy,ts,rng,0xe24c10,0.18);
+      for(let i=0;i<Math.round(5*s*s);i++){ const x=(rng()*ts)|0,y=(rng()*ts)|0,w=1+((rng()*3*s)|0),h=1+((rng()*3*s)|0); rect(ctx,ox,oy,x,y,w,h,shadeHex(0x7a2606,0.9+0.3*rng())); }
+      for(let i=0;i<Math.round(7*s*s);i++){ const x=(rng()*ts)|0,y=(rng()*ts)|0; px(ctx,ox,oy,x,y,shadeHex(0xffd24a,1.0)); }
+      for(let i=0;i<2*s;i++){ let x=(rng()*ts)|0; const y=(rng()*ts)|0, len=2+((rng()*4*s)|0); for(let k=0;k<len;k++){ x=Math.max(0,Math.min(ts-1,x+(rng()<0.5?1:-1))); px(ctx,ox,oy,x,Math.min(ts-1,y),shadeHex(0xffa024,1.15)); } }
+      break; }
+    case 'obsidian': {
+      // fast schwarz mit violettem Schimmer + ein paar glasige Glanzpunkte
+      noiseFill(ctx,ox,oy,ts,rng,0x17121f,0.22);
+      for(let i=0;i<Math.round(8*s*s);i++){ const x=(rng()*ts)|0,y=(rng()*ts)|0; px(ctx,ox,oy,x,y,shadeHex(0x3a2a55,0.9+0.5*rng())); }
+      for(let i=0;i<Math.round(3*s*s);i++){ const x=(rng()*ts)|0,y=(rng()*ts)|0; px(ctx,ox,oy,x,y,shadeHex(0x6a52a0,1.0)); }
+      break; }
+    case 'tall_grass': {
+      const base=0x4f9e30;
+      for(let i=0;i<Math.round(5*s);i++){
+        const x=Math.min(ts-1, 2+((rng()*(ts-4))|0)), topY=Math.round(ts*(0.25+rng()*0.25)), f=0.8+rng()*0.4;
+        for(let y=topY; y<ts; y++) px(ctx,ox,oy,x,y,shadeHex(base,f));
+        if(rng()<0.6){ const x2=Math.min(ts-1,x+1); for(let y=Math.round(ts*0.7); y<ts; y++) px(ctx,ox,oy,x2,y,shadeHex(base,f*0.9)); }
+      }
+      break; }
+    case 'flower_red':    return flowerTile(ctx,ox,oy,ts,rng,0xd83a3a);
+    case 'flower_yellow': return flowerTile(ctx,ox,oy,ts,rng,0xf2d24a);
+    case 'dead_bush': {
+      const base=0x8a6230, cx=(ts/2)|0;
+      for(let y=Math.round(ts*0.45); y<ts; y++) px(ctx,ox,oy,cx,y,shadeHex(base,0.8+rng()*0.3));
+      for(let i=0;i<3;i++){ let x=cx,y=Math.round(ts*(0.45+rng()*0.3)); const dir=rng()<0.5?1:-1; for(let k=0;k<Math.round(ts*0.3);k++){ x=Math.max(0,Math.min(ts-1,x+dir)); y=Math.max(0,y-(rng()<0.6?1:0)); px(ctx,ox,oy,x,y,shadeHex(base,0.9)); } }
+      break; }
+    case 'cactus': {
+      noiseFill(ctx,ox,oy,ts,rng,0x4e8f3a,0.10);
+      for(let i=0;i<3;i++){ const x=Math.min(ts-1,Math.round(ts*(0.2+i*0.3))); for(let y=0;y<ts;y++) px(ctx,ox,oy,x,y,shadeHex(0x3a6f2a,0.85)); }
+      for(let y=0;y<ts;y++) px(ctx,ox,oy,1,y,shadeHex(0x6fb050,1.05));
+      for(let i=0;i<Math.round(5*s*s);i++){ const x=(rng()*ts)|0,y=(rng()*ts)|0; px(ctx,ox,oy,x,y,shadeHex(0xdfe8c0,1.1)); }
+      break; }
     default: { noiseFill(ctx,ox,oy,ts,rng,0x888d92,0.12); }
   }
 }
@@ -1007,12 +1094,22 @@ function ore(ctx,ox,oy,ts,rng,oreHex,bright){
     for(let k=0;k<n;k++){ const dx=((rng()*3-1)*s)|0, dy=((rng()*3-1)*s)|0, x=Math.max(0,Math.min(ts-1,cx+dx)), y=Math.max(0,Math.min(ts-1,cy+dy)); const f=bright*(0.85+0.3*rng()); rect(ctx,ox,oy,x,y,Math.max(1,s|0),Math.max(1,s|0),shadeHex(oreHex,f)); }
   }
 }
+// Blume: gruener Stiel unten + farbige Bluete oben, Rest der Kachel bleibt transparent (Cutout)
+function flowerTile(ctx,ox,oy,ts,rng,petalHex){
+  const stem=0x3f8f2a, cx=(ts/2)|0;
+  for(let y=Math.round(ts*0.4); y<ts; y++) px(ctx,ox,oy,cx,y,shadeHex(stem,0.9+rng()*0.2));
+  px(ctx,ox,oy,Math.max(0,cx-1),Math.round(ts*0.65),shadeHex(stem,1.0));
+  const by=Math.round(ts*0.28), r=Math.max(1,Math.round(ts*0.18));
+  for(let yy=-r; yy<=r; yy++) for(let xx=-r; xx<=r; xx++){ if(xx*xx+yy*yy<=r*r) px(ctx,ox,oy,Math.max(0,Math.min(ts-1,cx+xx)),Math.max(0,Math.min(ts-1,by+yy)),shadeHex(petalHex,0.85+rng()*0.3)); }
+  px(ctx,ox,oy,cx,by,shadeHex(0xffe24a,1.0));
+}
 
 
 // ---- Block -> Tile-Namen (top/side/bottom). String = alle Faces gleich. ----
 const TEX = {
   [GRASS]:{top:'grass_top',side:'grass_side',bottom:'dirt'},
-  [DIRT]:'dirt', [STONE]:'stone', [SAND]:'sand', [WATER]:'water',
+  [DIRT]:'dirt', [STONE]:'stone', [SAND]:'sand', [WATER]:'water', [LAVA]:'lava', [OBSIDIAN]:'obsidian',
+  [TALL_GRASS]:'tall_grass', [FLOWER_RED]:'flower_red', [FLOWER_YELLOW]:'flower_yellow', [CACTUS]:'cactus', [DEAD_BUSH]:'dead_bush',
   [WOOD]:'planks', [COBBLE]:'cobble', [GLASS]:'glass', [BRICKS]:'bricks',
   [LOG]:{top:'log_top',side:'bark',bottom:'log_top'}, [LEAVES]:'leaves',
   [SNOW]:'snow', [GRAVEL]:'gravel',
@@ -1091,18 +1188,33 @@ function pushTorch(P,N,C,I, x,y,z){
   pushBox(P,N,C,I, cx-0.08,y+0.0,cz-0.08, cx+0.08,y+0.55,cz+0.08, 0.45,0.30,0.16); // Stiel
   pushBox(P,N,C,I, cx-0.12,y+0.5,cz-0.12, cx+0.12,y+0.74,cz+0.12, 1.0,0.74,0.32);  // Flamme (hell)
 }
+// Pflanze als zwei gekreuzte Quads (X von oben), volle Kachel mit Alpha-Cutout
+function pushCross(P,N,C,U,I, x,y,z, tileIdx){
+  const quads=[
+    [[x,y,z],[x+1,y,z+1],[x+1,y+1,z+1],[x,y+1,z]],
+    [[x,y,z+1],[x+1,y,z],[x+1,y+1,z],[x,y+1,z+1]],
+  ];
+  const uvs=[[0,0],[1,0],[1,1],[0,1]];
+  for(const q of quads){
+    const base=P.length/3;
+    for(let k=0;k<4;k++){ const v=q[k]; P.push(v[0],v[1],v[2]); N.push(0,1,0); C.push(1,1,1); const t=tileUV(tileIdx,uvs[k][0],uvs[k][1]); U.push(t[0],t[1]); }
+    I.push(base,base+1,base+2, base,base+2,base+3);
+  }
+}
 function buildChunkGeometry(c){
-  const pos=[],nor=[],col=[],uv=[],idx=[], wpos=[],wnor=[],wcol=[],wuv=[],widx=[], tpos=[],tnor=[],tcol=[],tidx=[];
+  const pos=[],nor=[],col=[],uv=[],idx=[], wpos=[],wnor=[],wcol=[],wuv=[],widx=[], tpos=[],tnor=[],tcol=[],tidx=[], lpos=[],lnor=[],lcol=[],luv=[],lidx=[], ppos=[],pnor=[],pcol=[],puv=[],pidx=[];
   const ox=c.cx*CHUNK_SIZE, oz=c.cz*CHUNK_SIZE;
   for(let y=Y_MIN;y<Y_MAX;y++) for(let z=0;z<CHUNK_SIZE;z++) for(let x=0;x<CHUNK_SIZE;x++){
     const id=c.data[((y-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x];
     if(id===AIR) continue;
     if(id===TORCH){ pushTorch(tpos,tnor,tcol,tidx, x, y, z); continue; }
+    if(isCrossPlant(id)){ pushCross(ppos,pnor,pcol,puv,pidx, x, y, z, blockTileIndex(id,'side')); continue; }
+    const isLava = (id===LAVA);
     const trans = BLOCKS[id].transparent===true, wx=ox+x, wz=oz+z;
     for(const f of FACES){
       const nb=world.getBlock(wx+f.dir[0], y+f.dir[1], wz+f.dir[2]);
       if(!faceVisible(id, nb)) continue;
-      const P=trans?wpos:pos, N=trans?wnor:nor, C=trans?wcol:col, U=trans?wuv:uv, I=trans?widx:idx;
+      const P=isLava?lpos:(trans?wpos:pos), N=isLava?lnor:(trans?wnor:nor), C=isLava?lcol:(trans?wcol:col), U=isLava?luv:(trans?wuv:uv), I=isLava?lidx:(trans?widx:idx);
       const ndx=P.length/3, shade=faceShade(f.dir);
       const fType = f.dir[1]>0?'top':(f.dir[1]<0?'bottom':'side');
       const tileIdx = blockTileIndex(id, fType);
@@ -1115,7 +1227,7 @@ function buildChunkGeometry(c){
       I.push(ndx,ndx+1,ndx+2,ndx+2,ndx+1,ndx+3);
     }
   }
-  return { pos,nor,col,uv,idx,wpos,wnor,wcol,wuv,widx,tpos,tnor,tcol,tidx };
+  return { pos,nor,col,uv,idx,wpos,wnor,wcol,wuv,widx,tpos,tnor,tcol,tidx,lpos,lnor,lcol,luv,lidx,ppos,pnor,pcol,puv,pidx };
 }
 function makeMesh(P,N,C,U,I,material,cx,cz){
   if(P.length===0) return null;
@@ -1131,10 +1243,12 @@ function makeMesh(P,N,C,U,I,material,cx,cz){
 function disposeMesh(m){ if(!m) return; scene.remove(m); m.geometry.dispose(); }
 function meshChunk(c){
   const g=buildChunkGeometry(c);
-  disposeMesh(c.mesh); c.mesh=null; disposeMesh(c.waterMesh); c.waterMesh=null; disposeMesh(c.torchMesh); c.torchMesh=null;
+  disposeMesh(c.mesh); c.mesh=null; disposeMesh(c.waterMesh); c.waterMesh=null; disposeMesh(c.torchMesh); c.torchMesh=null; disposeMesh(c.lavaMesh); c.lavaMesh=null; disposeMesh(c.plantMesh); c.plantMesh=null;
   c.mesh=makeMesh(g.pos,g.nor,g.col,g.uv,g.idx,opaqueMat,c.cx,c.cz); if(c.mesh) scene.add(c.mesh);
   c.waterMesh=makeMesh(g.wpos,g.wnor,g.wcol,g.wuv,g.widx,waterMat,c.cx,c.cz); if(c.waterMesh) scene.add(c.waterMesh);
   c.torchMesh=makeMesh(g.tpos,g.tnor,g.tcol,null,g.tidx,torchMat,c.cx,c.cz); if(c.torchMesh) scene.add(c.torchMesh);
+  c.lavaMesh=makeMesh(g.lpos,g.lnor,g.lcol,g.luv,g.lidx,lavaMat,c.cx,c.cz); if(c.lavaMesh) scene.add(c.lavaMesh);
+  c.plantMesh=makeMesh(g.ppos,g.pnor,g.pcol,g.puv,g.pidx,plantMat,c.cx,c.cz); if(c.plantMesh) scene.add(c.plantMesh);
   c.dirty=false;
 }
 
@@ -1157,7 +1271,9 @@ const canvas=renderer.domElement;
 
 const opaqueMat=new THREE.MeshLambertMaterial({ vertexColors:true, map:ATLAS[settings.blockRes] });
 const waterMat =new THREE.MeshLambertMaterial({ vertexColors:true, map:ATLAS[settings.blockRes], transparent:true, depthWrite:false, side:THREE.DoubleSide });
-function applyBlockRes(){ const t=ATLAS[settings.blockRes]; if(!t) return; opaqueMat.map=t; waterMat.map=t; opaqueMat.needsUpdate=true; waterMat.needsUpdate=true; }
+const lavaMat  =new THREE.MeshBasicMaterial({ vertexColors:true, map:ATLAS[settings.blockRes], side:THREE.DoubleSide }); // unbeleuchtet -> Lava glueht auch tief unten
+const plantMat =new THREE.MeshLambertMaterial({ vertexColors:true, map:ATLAS[settings.blockRes], alphaTest:0.5, side:THREE.DoubleSide }); // Cutout -> scharfe Pflanzenkanten
+function applyBlockRes(){ const t=ATLAS[settings.blockRes]; if(!t) return; opaqueMat.map=t; waterMat.map=t; lavaMat.map=t; plantMat.map=t; opaqueMat.needsUpdate=true; waterMat.needsUpdate=true; lavaMat.needsUpdate=true; plantMat.needsUpdate=true; }
 const torchMat =new THREE.MeshBasicMaterial({ vertexColors:true, side:THREE.DoubleSide }); // unbeleuchtet -> Fackeln leuchten immer
 const hemi=new THREE.HemisphereLight(0xbcd6f5,0x6b5a40,0.85); scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xffffff,0.45); sun.position.set(0.4,1.0,0.25); scene.add(sun);
@@ -1190,7 +1306,7 @@ function updateWorld(pcx,pcz){
     lastCX=pcx; lastCZ=pcz;
     for(const [k,c] of world.chunks){
       if(Math.max(Math.abs(c.cx-pcx),Math.abs(c.cz-pcz))>UNLOAD_DISTANCE){
-        disposeMesh(c.mesh); disposeMesh(c.waterMesh); disposeMesh(c.torchMesh); world.chunks.delete(k);
+        disposeMesh(c.mesh); disposeMesh(c.waterMesh); disposeMesh(c.torchMesh); disposeMesh(c.lavaMesh); disposeMesh(c.plantMesh); world.chunks.delete(k);
       }
     }
     chunkQueue=[];
@@ -1290,12 +1406,68 @@ function raycast(){
   let tmz=dir.z>0?(Math.floor(o.z)+1-o.z)*tdz:(o.z-Math.floor(o.z))*tdz;
   let nx=0,ny=0,nz=0,t=0;
   while(t<=REACH){
-    const _tb=world.getBlock(x,y,z); if(isSolid(_tb)||_tb===TORCH) return {x,y,z,nx,ny,nz,t};
+    const _tb=world.getBlock(x,y,z); if(isSolid(_tb)||_tb===TORCH||isCrossPlant(_tb)) return {x,y,z,nx,ny,nz,t};
     if(tmx<tmy&&tmx<tmz){ x+=sx; t=tmx; tmx+=tdx; nx=-sx;ny=0;nz=0; }
     else if(tmy<tmz){ y+=sy; t=tmy; tmy+=tdy; nx=0;ny=-sy;nz=0; }
     else { z+=sz; t=tmz; tmz+=tdz; nx=0;ny=0;nz=-sz; }
   }
   return null;
+}
+// wie raycast, aber liefert die erste Wasser-/Lava-Zelle (zum Aufnehmen). Wand davor -> null.
+function liquidRay(){
+  const o=camera.position, dir=new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
+  let x=Math.floor(o.x),y=Math.floor(o.y),z=Math.floor(o.z);
+  const sx=Math.sign(dir.x),sy=Math.sign(dir.y),sz=Math.sign(dir.z);
+  const tdx=dir.x!==0?Math.abs(1/dir.x):Infinity, tdy=dir.y!==0?Math.abs(1/dir.y):Infinity, tdz=dir.z!==0?Math.abs(1/dir.z):Infinity;
+  let tmx=dir.x>0?(Math.floor(o.x)+1-o.x)*tdx:(o.x-Math.floor(o.x))*tdx;
+  let tmy=dir.y>0?(Math.floor(o.y)+1-o.y)*tdy:(o.y-Math.floor(o.y))*tdy;
+  let tmz=dir.z>0?(Math.floor(o.z)+1-o.z)*tdz:(o.z-Math.floor(o.z))*tdz;
+  let t=0;
+  while(t<=REACH){
+    const b=world.getBlock(x,y,z);
+    if(b===WATER||b===LAVA) return {x,y,z,b};
+    if(isSolid(b)||b===TORCH) return null;
+    if(tmx<tmy&&tmx<tmz){ x+=sx; t=tmx; tmx+=tdx; }
+    else if(tmy<tmz){ y+=sy; t=tmy; tmy+=tdy; }
+    else { z+=sz; t=tmz; tmz+=tdz; }
+  }
+  return null;
+}
+function isBucket(id){ return id===EMPTY_BUCKET||id===WATER_BUCKET||id===LAVA_BUCKET; }
+// Eimer-Stack umwandeln: bei Stack 1 in der Hand tauschen, sonst einen abziehen + neuen ins Inventar
+function swapSelected(newId){
+  const s=inv[selectedSlot]; if(!s) return;
+  if(s.count<=1){ s.id=newId; s.count=1; } else { s.count--; addItem(newId,1); }
+  renderHotbar(); renderHeld(); if(invOpen) renderInventory();
+}
+// Lava trifft Wasser -> Obsidian. Gibt true, wenn an (x,y,z) statt Lava Obsidian gesetzt wurde.
+function tryObsidian(x,y,z,liquid){
+  const N=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+  if(liquid===LAVA){
+    let water = world.getBlock(x,y,z)===WATER;
+    for(const n of N) if(world.getBlock(x+n[0],y+n[1],z+n[2])===WATER) water=true;
+    if(water){ world.setBlock(x,y,z,OBSIDIAN); SFX.place(OBSIDIAN,{x:x+0.5,y:y+0.5,z:z+0.5}); return true; }
+  } else { // Wasser platziert -> benachbarte Lava wird zu Obsidian, Wasser kommt trotzdem
+    let any=false;
+    for(const n of N){ if(world.getBlock(x+n[0],y+n[1],z+n[2])===LAVA){ world.setBlock(x+n[0],y+n[1],z+n[2],OBSIDIAN); any=true; } }
+    if(any) SFX.place(OBSIDIAN,{x:x+0.5,y:y+0.5,z:z+0.5});
+  }
+  return false;
+}
+function useBucket(id){
+  if(id===EMPTY_BUCKET){
+    const L=liquidRay(); if(!L) return;
+    world.setBlock(L.x,L.y,L.z,AIR);
+    if(L.b===WATER){ swapSelected(WATER_BUCKET); SFX.place(WATER,{x:L.x+0.5,y:L.y+0.5,z:L.z+0.5}); }
+    else { swapSelected(LAVA_BUCKET); SFX.sizzle(); }
+    return;
+  }
+  const h=raycast(); if(!h) return;
+  const px=h.x+h.nx, py=h.y+h.ny, pz=h.z+h.nz;
+  if(!canPlaceAt(px,py,pz)) return;
+  const liquid = (id===WATER_BUCKET)?WATER:LAVA;
+  if(!tryObsidian(px,py,pz,liquid)){ world.setBlock(px,py,pz,liquid); SFX.place(liquid,{x:px+0.5,y:py+0.5,z:pz+0.5}); }
+  swapSelected(EMPTY_BUCKET);
 }
 function canPlaceAt(x,y,z){
   const target=world.getBlock(x,y,z);
@@ -1320,6 +1492,7 @@ function doPlace(){
   if(tb===CRAFTING_TABLE){ openTable(); return; }
   const s=inv[selectedSlot]; if(!s) return;
   if(isFood(s.id)){ eat(); return; }
+  if(isBucket(s.id)){ useBucket(s.id); return; }
   if(!BLOCKS[s.id]) return;                  // nicht platzierbar (Stock, Schwert)
   const px=h.x+h.nx,py=h.y+h.ny,pz=h.z+h.nz;
   if(canPlaceAt(px,py,pz)){ world.setBlock(px,py,pz,s.id); SFX.place(s.id,{x:px+0.5,y:py+0.5,z:pz+0.5}); consumeSelected(1); }
@@ -1711,10 +1884,10 @@ net.connect();
 //  Der Client rendert sie, macht Nahkampf und Schaden. Leben/Hunger lokal.
 // =====================================================================
 const HEALTH_MAX=10, HUNGER_MAX=10, AIR_MAX=10;
-let health=HEALTH_MAX, hunger=HUNGER_MAX, air=AIR_MAX, dead=false, hurtT=0;
-let lastDrown=0, lastStatSent=0, lastH=-1, lastHu=-1;
+let health=HEALTH_MAX, hunger=HUNGER_MAX, air=AIR_MAX, dead=false, hurtT=0, burnT=0;
+let lastDrown=0, lastStatSent=0, lastH=-1, lastHu=-1, lastBurnDmg=0;
 
-const hurtEl=document.getElementById('hurt'), hpRow=document.getElementById('hpRow'), hungerRow=document.getElementById('hungerRow'), airRow=document.getElementById('airRow');
+const hurtEl=document.getElementById('hurt'), burnEl=document.getElementById('burn'), hpRow=document.getElementById('hpRow'), hungerRow=document.getElementById('hungerRow'), airRow=document.getElementById('airRow');
 const deathEl=document.getElementById('death'), respawnBtn=document.getElementById('respawnBtn');
 
 // ---- Mob-Modelle (detaillierter, mit animierbaren Beinen/Armen) ----
@@ -1901,7 +2074,7 @@ function damagePlayer(amount){
 function die(){ dead=true; SFX.die(); invOpen=false; invScreen.classList.remove('open'); deathEl.classList.add('open'); if(!isTouch) document.exitPointerLock(); }
 function respawn(){
   dead=false; deathEl.classList.remove('open');
-  health=HEALTH_MAX; hunger=HUNGER_MAX; air=AIR_MAX;
+  health=HEALTH_MAX; hunger=HUNGER_MAX; air=AIR_MAX; burnT=0;
   // Tod kostet alles: Inventar, Werkbank-Raster, Zweithand leeren. (Keine Item-Drops in der Welt zum Einsammeln.)
   for(let i=0;i<SLOT_COUNT;i++) inv[i]=null;
   for(let i=0;i<craftGrid.length;i++) craftGrid[i]=null;
@@ -1924,6 +2097,16 @@ function survivalUpdate(dt, now){
   const eb = world.getBlock(Math.floor(player.x), Math.floor(player.y+EYE_HEIGHT), Math.floor(player.z));
   if(eb===WATER){ air=Math.max(0,air-dt); if(air<=0 && now-lastDrown>1000){ lastDrown=now; damagePlayer(1); } }
   else air=AIR_MAX;
+  // Lava: Feuerschaden + Nachbrennen (auch noch kurz nach dem Rauskommen)
+  const feetB = world.getBlock(Math.floor(player.x), Math.floor(player.y), Math.floor(player.z));
+  const midB  = world.getBlock(Math.floor(player.x), Math.floor(player.y+0.9), Math.floor(player.z));
+  const inLava = (feetB===LAVA || midB===LAVA || eb===LAVA);
+  if(inLava) burnT = 5;                                   // in Lava: Brand-Timer voll auffuellen
+  if(burnT>0){
+    burnT = Math.max(0, burnT - dt);
+    const iv = inLava ? 500 : 1000, dmg = inLava ? 2 : 1; // in Lava schneller + haerter
+    if(now - lastBurnDmg > iv){ lastBurnDmg = now; SFX.sizzle(); damagePlayer(dmg); }
+  }
   for(const [id,m] of mobsMap){
     if(!m.hostile) continue;
     const p=m.group.position, dd=Math.hypot(p.x-player.x, p.z-player.z);
@@ -2062,7 +2245,7 @@ function applyCrater(cx,cy,cz,r){
     const dx=x+0.5-cx, dy=y+0.5-cy, dz=z+0.5-cz;
     if(dx*dx+dy*dy+dz*dz>r2) continue;
     const b=world.getBlock(x,y,z);
-    if(b===AIR||b===BEDROCK||b===WATER) continue;       // Luft/Grundgestein/Wasser bleiben
+    if(b===AIR||b===BEDROCK||b===WATER||b===LAVA) continue;       // Luft/Grundgestein/Wasser/Lava bleiben
     setOverride(x,y,z,AIR);
     const ccx=Math.floor(x/CHUNK_SIZE), ccz=Math.floor(z/CHUNK_SIZE);
     const c=world.ensureChunkData(ccx,ccz);
@@ -2115,6 +2298,7 @@ function renderVitals(){
     if(showAir) airRow.innerHTML=pips(ar,'air');
   }
   hurtEl.style.opacity = hurtT>0 ? (hurtT/0.35*0.8).toFixed(2) : '0';
+  if(burnEl) burnEl.style.opacity = burnT>0 ? Math.min(0.7, 0.18 + burnT/5*0.5).toFixed(2) : '0';
 }
 
 // =====================================================================
