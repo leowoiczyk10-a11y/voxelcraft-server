@@ -253,6 +253,15 @@ wss.on('connection', (ws) => {
           }
         }
         break;
+      case 'shoot':           // Spieler schiesst einen Pfeil (Bogen)
+        { const dx=+m.dx||0, dy=+m.dy||0, dz=+m.dz||0;
+          const dl = Math.hypot(dx,dy,dz) || 1;        // Richtung normieren -> Tempo bestimmt der Server (kein Cheat)
+          const aid = nextArrowId++;
+          arrows.set(aid, { id:aid, x:+m.x||0, y:+m.y||0, z:+m.z||0,
+            vx: dx/dl*ARROW_SPEED, vy: dy/dl*ARROW_SPEED + 1.5, vz: dz/dl*ARROW_SPEED,
+            life: ARROW_LIFE, owner: id });
+        }
+        break;
     }
   });
 
@@ -373,7 +382,7 @@ setInterval(() => {
     if (m.kind === 'creeper') base.push(+(m.fuse||0).toFixed(2));
     return base;
   });
-  const arrowState = [...arrows.values()].map(a => [a.id, +a.x.toFixed(2), +a.y.toFixed(2), +a.z.toFixed(2)]);
+  const arrowState = [...arrows.values()].map(a => [a.id, +a.x.toFixed(2), +a.y.toFixed(2), +a.z.toFixed(2), a.owner||0]);
   broadcast({ t:'tick', time:+dayTime.toFixed(4), mobs: mobState, arrows: arrowState });
 }, TICK_MS);
 

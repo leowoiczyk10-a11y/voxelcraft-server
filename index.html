@@ -435,6 +435,10 @@ const SFX = (function(){
     burst(t, 90, 0.5, 0.6, 0.6*dg, 'lowpass'); tone(t, 70, 35, 0.6, 0.3*dg, 'sawtooth');
     burst(t+0.02, 400, 0.6, 0.25, 0.3*dg, 'bandpass');
   }
+  function bow(){ // Bogen abschiessen ("fwip")
+    if(!ready) return; resume(); const t=ctx.currentTime;
+    burst(t, 1200, 1.5, 0.10, 0.16, 'bandpass'); tone(t, 520, 160, 0.12, 0.10, 'triangle');
+  }
   function sizzle(){ // Verbrennen / Lava-Kontakt
     if(!ready) return; resume(); const t=ctx.currentTime;
     const src=noiseSrc();
@@ -444,7 +448,7 @@ const SFX = (function(){
     g.gain.exponentialRampToValueAtTime(0.0001,t+0.32);
     src.connect(filt); filt.connect(g); g.connect(master); src.start(t); src.stop(t+0.36);
   }
-  return { init, resume, setVolume, dig, place, step, land, hit, mobDie, pickup, hurt, die, eat, ui, fuse, explode, sizzle };
+  return { init, resume, setVolume, dig, place, step, land, hit, mobDie, pickup, hurt, die, eat, ui, fuse, explode, sizzle, bow };
 })();
 let SEED = 1337;                 // Default; wird vom Server-Seed ueberschrieben
 const CHUNK_BUDGET_MS = isTouch ? 5 : 6;
@@ -517,6 +521,7 @@ const LEATHER_HELMET=143, LEATHER_CHEST=144, LEATHER_LEGS=145, LEATHER_BOOTS=146
 const IRON_HELMET=147,    IRON_CHEST=148,    IRON_LEGS=149,    IRON_BOOTS=150;
 const GOLD_HELMET=151,    GOLD_CHEST=152,    GOLD_LEGS=153,    GOLD_BOOTS=154;
 const DIAMOND_HELMET=155, DIAMOND_CHEST=156, DIAMOND_LEGS=157, DIAMOND_BOOTS=158;
+const BOW=159;   // Fernkampfwaffe
 const ITEM = {
   [STICK]:       { name:'Stock',        color:0x9a7842 },
   [BEEF]:        { name:'Rohes Rind',   color:0xc06050 },
@@ -573,8 +578,11 @@ const TOOL = {
   [DIAMOND_AXE]:    {cat:'axe',   tier:4, speed:14,  dur:1000,       name:'Diamantaxt',      color:0x52c7cf},
   [DIAMOND_SHOVEL]: {cat:'shovel',tier:4, speed:14,  dur:1000,       name:'Diamantschaufel', color:0x52c7cf},
   [DIAMOND_SWORD]:  {cat:'sword', tier:4, speed:1,   dur:1000, dmg:9,name:'Diamantschwert',  color:0x52c7cf},
+  // Bogen (Fernkampf - Schaden macht der Pfeil, Nahkampf nur minimal)
+  [BOW]:            {cat:'bow',   tier:1, speed:1,   dur:120,  dmg:1, name:'Bogen',          color:0x8a5a2a},
 };
 function isTool(id){ return TOOL[id]!==undefined; }
+function isBow(id){ return id===BOW; }
 
 // Ruestung: slot (0 Helm, 1 Brust, 2 Hose, 3 Schuhe), points (Ruestungspunkte), dur (Haltbarkeit). Werte wie echtes MC.
 // Schadensreduktion = min(80%, Summe der Punkte * 4%). Voll Diamant = 20 Punkte = 80%.
@@ -700,6 +708,9 @@ const RECIPES = [
   { shape:["X.X","XXX","XXX"], key:{X:DIAMOND},    out:{id:DIAMOND_CHEST,  count:1} },
   { shape:["XXX","X.X","X.X"], key:{X:DIAMOND},    out:{id:DIAMOND_LEGS,   count:1} },
   { shape:["X.X","X.X"],       key:{X:DIAMOND},    out:{id:DIAMOND_BOOTS,  count:1} },
+  // ---- Bogen + Pfeile (Leder statt Sehne/Feder, da kein Faden/keine Feder im Spiel) ----
+  { shape:[".XL","X.L",".XL"], key:{X:STICK, L:LEATHER},          out:{id:BOW,        count:1} },
+  { shape:["C","S","L"],       key:{C:COBBLE, S:STICK, L:LEATHER}, out:{id:ARROW_ITEM, count:4} },
 ];
 function craftCounts(){ const c={}; for(let i=0;i<craftN*craftN;i++){ const s=craftGrid[i]; if(s) c[s.id]=(c[s.id]||0)+s.count; } return c; }
 function gridIds(){ const a=[]; for(let r=0;r<craftN;r++){ a.push([]); for(let c=0;c<craftN;c++){ const s=craftGrid[r*craftN+c]; a[r].push(s?s.id:null); } } return a; }
@@ -1148,12 +1159,16 @@ function paintTile(ctx, kind, ts, ox, oy){
   }
 }
 function ore(ctx,ox,oy,ts,rng,oreHex,bright){
-  const s=ts/16;
-  paintTile(ctx,'stone',ts,ox,oy); // Steinbasis
-  const clusters=3+((rng()*2)|0);
-  for(let c=0;c<clusters;c++){
-    const cx=2+((rng()*(ts-4))|0), cy=2+((rng()*(ts-4))|0), n=2+((rng()*3)|0);
-    for(let k=0;k<n;k++){ const dx=((rng()*3-1)*s)|0, dy=((rng()*3-1)*s)|0, x=Math.max(0,Math.min(ts-1,cx+dx)), y=Math.max(0,Math.min(ts-1,cy+dy)); const f=bright*(0.85+0.3*rng()); rect(ctx,ox,oy,x,y,Math.max(1,s|0),Math.max(1,s|0),shadeHex(oreHex,f)); }
+  const s=Math.max(1, (ts/16)|0);
+  paintTile(ctx,'stone',ts,ox,oy);                       // Steinbasis
+  const outline=shadeHex(oreHex,0.4);                     // kraeftiger dunkler Rand -> Brocken hebt sich ab
+  const blobs=4+((rng()*3)|0);
+  for(let b=0;b<blobs;b++){
+    const w=s*(1+(rng()<0.5?1:0)), h=s*(1+(rng()<0.5?1:0));
+    const bx=s+((rng()*(ts-w-2*s))|0), by=s+((rng()*(ts-h-2*s))|0);
+    rect(ctx,ox,oy,bx-1,by-1,w+2,h+2,outline);            // 1px Rand ringsum
+    rect(ctx,ox,oy,bx,by,w,h,shadeHex(oreHex,bright*(0.95+0.2*rng())));  // Erz-Kern
+    rect(ctx,ox,oy,bx,by,Math.max(1,s|0),Math.max(1,s|0),shadeHex(oreHex,bright*1.5)); // Glanz oben-links
   }
 }
 // Blume: gruener Stiel unten + farbige Bluete oben, Rest der Kachel bleibt transparent (Cutout)
@@ -1203,7 +1218,131 @@ function blockIconURL(id){
   ctx.save(); ctx.beginPath(); ctx.rect(0,0,sz,sz); ctx.clip(); paintTile(ctx,kind,sz,0,0); ctx.restore();
   const url=cv.toDataURL(); _iconCache[id]=url; return url;
 }
-function swatchStyle(id){ return (TEX[id]!==undefined) ? ('background-image:url('+blockIconURL(id)+');background-size:cover;image-rendering:pixelated') : ('background:'+hex(thingColor(id))); }
+// ---- Item-Icons: erkennbare Silhouetten statt einfarbiger Quadrate ----
+// Typ + Materialfarbe pro Item. Werkzeuge/Ruestung leiten Form+Farbe aus ihren Maps ab.
+function itemIconSpec(id){
+  if(isTool(id)){ const t=TOOL[id]; return {type:t.cat, col:t.color}; }      // pickaxe/axe/shovel/sword/bow
+  if(isArmor(id)){ const a=ARMOR[id]; return {type:'armor'+a.slot, col:a.color}; } // armor0..3
+  switch(id){
+    case STICK:        return {type:'stick',     col:0x9a7842};
+    case COAL:         return {type:'lump',      col:0x36383e};
+    case RAW_COPPER:   return {type:'lump',      col:0xc07850};
+    case RAW_IRON:     return {type:'lump',      col:0xd8b89a};
+    case RAW_GOLD:     return {type:'lump',      col:0xd8b840};
+    case DIAMOND:      return {type:'gem',       col:0x52c7cf};
+    case IRON_INGOT:   return {type:'ingot',     col:0xe6d8c8};
+    case COPPER_INGOT: return {type:'ingot',     col:0xd98c5f};
+    case GOLD_INGOT:   return {type:'ingot',     col:0xf2d24a};
+    case LEATHER:      return {type:'leather',   col:0x8a5a32};
+    case BONE:         return {type:'bone',      col:0xefe9d8};
+    case ARROW_ITEM:   return {type:'arrow',     col:0xb0a080};
+    case GUNPOWDER:    return {type:'gunpowder', col:0x44443f};
+    case ROTTEN_FLESH: return {type:'meat',      col:0x7a5a3a, rotten:true};
+    case BEEF:         return {type:'meat',      col:0xc06050};
+    case MUTTON:       return {type:'meat',      col:0xd08070};
+    case CHICKEN_RAW:  return {type:'meat',      col:0xe8b0a0};
+    case COOKED_BEEF:  return {type:'meat',      col:0x8a4a28};
+    case COOKED_MUTTON:return {type:'meat',      col:0x9a5030};
+    case COOKED_CHICKEN:return{type:'meat',      col:0xc88a4a};
+    case EMPTY_BUCKET: return {type:'bucket',    col:0xb8bcc4};
+    case WATER_BUCKET: return {type:'bucket',    col:0xb8bcc4, liquid:0x3a6fd0};
+    case LAVA_BUCKET:  return {type:'bucket',    col:0xb8bcc4, liquid:0xe2531a};
+    case SWORD_WOOD:   return {type:'sword',     col:0xb0a060};
+  }
+  return null;
+}
+function paintItemIcon(ctx, id, ts, ox, oy){
+  const spec=itemIconSpec(id); if(!spec) return false;
+  const S=ts/16, X=u=>ox+u*S, Y=v=>oy+v*S, Wl=u=>u*S;
+  const dark=c=>shadeHex(c,0.6), mid=c=>shadeHex(c,1.0), lite=c=>shadeHex(c,1.28);
+  const stroke=(x0,y0,x1,y1,w,c)=>{ ctx.strokeStyle=c; ctx.lineWidth=Wl(w); ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(X(x0),Y(y0)); ctx.lineTo(X(x1),Y(y1)); ctx.stroke(); };
+  const poly=(pts,c)=>{ ctx.fillStyle=c; ctx.beginPath(); pts.forEach((p,i)=> i? ctx.lineTo(X(p[0]),Y(p[1])) : ctx.moveTo(X(p[0]),Y(p[1]))); ctx.closePath(); ctx.fill(); };
+  const box=(x,y,w,h,c)=>{ ctx.fillStyle=c; ctx.fillRect(X(x),Y(y),Wl(w),Wl(h)); };
+  const dot=(x,y,r,c)=>{ ctx.fillStyle=c; ctx.beginPath(); ctx.arc(X(x),Y(y),Wl(r),0,7); ctx.fill(); };
+  const arc=(x,y,r,a0,a1,w,c)=>{ ctx.strokeStyle=c; ctx.lineWidth=Wl(w); ctx.lineCap='round'; ctx.beginPath(); ctx.arc(X(x),Y(y),Wl(r),a0,a1); ctx.stroke(); };
+  const col=spec.col;
+  const handle=()=>{ stroke(5,13,10.5,6.5, 2.3, dark(0x6f4f28)); stroke(5,13,10.5,6.5, 1.0, mid(0x9a7842)); };
+  switch(spec.type){
+    case 'stick':
+      stroke(4.5,12.5,11.5,4.5, 2.6, dark(col)); stroke(4.5,12.5,11.5,4.5, 1.2, lite(col)); break;
+    case 'ingot':
+      poly([[3.5,9],[12.5,9],[11,12.5],[5,12.5]], mid(col));
+      poly([[4.7,9],[11.3,9],[10.6,7.4],[5.4,7.4]], lite(col));
+      stroke(5.4,7.4,10.6,7.4, 0.5, lite(col)); break;
+    case 'gem':
+      poly([[8,2.5],[12.6,7],[8,13.5],[3.4,7]], mid(col));
+      poly([[8,2.5],[12.6,7],[8,7],[3.4,7]], lite(col));
+      stroke(8,2.5,8,13.5, 0.4, dark(col)); stroke(3.4,7,12.6,7, 0.4, dark(col)); break;
+    case 'lump':
+      dot(7,8.5,3.1,mid(col)); dot(10,7,2.5,mid(col)); dot(8.6,10.6,2.1,mid(col));
+      dot(6.6,7.2,1.1,lite(col)); dot(9.6,6,0.9,lite(col)); break;
+    case 'leather':
+      poly([[4,5],[12,5.5],[12.5,11],[5,13]], mid(col));
+      poly([[5.5,6.5],[10.6,6.8],[10.8,9.2],[6.2,10.4]], lite(col));
+      box(7,7.5,0.9,0.9,dark(col)); box(9,8.5,0.9,0.9,dark(col)); break;
+    case 'bone':
+      stroke(5.5,10.5,10.5,5.5, 2.0, lite(0xefe9d8));
+      dot(4.9,10.1,1.5,lite(0xffffff)); dot(6.3,11.5,1.5,lite(0xffffff));
+      dot(11.1,5.5,1.5,lite(0xffffff)); dot(9.7,3.9,1.5,lite(0xffffff));
+      stroke(5.7,10.3,10.3,5.7, 0.7, shadeHex(0xcfc8b4,1.0)); break;
+    case 'arrow':
+      stroke(4,13,12,5, 1.5, mid(0x8a6a3a));
+      poly([[12.6,4.4],[10.4,5.2],[11.6,6.6]], lite(0xd0d0d0));
+      stroke(4,13,5.6,11.4, 1.3, lite(0xeaeaea)); stroke(4,13,5.7,13.0, 1.3, lite(0xeaeaea)); break;
+    case 'gunpowder':
+      for(let i=0;i<16;i++){ const a=hashStr('gp'+id+i); const x=4+(a%9), y=4+((a>>5)%9); box(x,y,1,1, (a&1)?mid(col):dark(col)); } break;
+    case 'meat':
+      poly([[4,7],[11,5],[13,9],[9,13],[4.5,11]], mid(col));
+      poly([[5.6,8],[9.6,6.6],[10.4,8.8],[8,11]], lite(col));
+      if(spec.rotten){ box(6,8.5,0.9,0.9,shadeHex(0x4a6a3a,1.0)); box(9,9.5,0.9,0.9,shadeHex(0x4a6a3a,1.0)); }
+      else dot(11.8,5.6,1.2,lite(0xf2efe6)); break;
+    case 'bucket':
+      poly([[4,6],[12,6],[11,13],[5,13]], mid(col)); box(4,6,8,1,lite(col));
+      if(spec.liquid) poly([[5.1,7.2],[10.9,7.2],[10.6,8.8],[5.4,8.8]], mid(spec.liquid));
+      arc(8,6,3,Math.PI,2*Math.PI,0.8,dark(col)); stroke(4.4,6.6,11.6,6.6,0.4,dark(col)); break;
+    case 'bow':
+      arc(4.5,8,7,-1.05,1.05,1.9,dark(0x6f4f28)); arc(4.5,8,7,-1.05,1.05,0.8,mid(0x9a7842));
+      stroke(10.9,2.9,10.9,13.1, 0.6, lite(0xe8e8e8)); break;
+    case 'pick':
+      handle(); arc(8,9,6.5,-1.25,-0.25,1.9,dark(col)); arc(8,9,6.5,-1.25,-0.25,0.8,lite(col)); break;
+    case 'axe':
+      handle(); poly([[8.6,3],[12.6,4.2],[12.6,7.4],[8.6,8.2]], mid(col));
+      poly([[8.8,3.6],[11.8,4.6],[11.8,6.2],[9,5.6]], lite(col)); stroke(8.6,3,8.6,8.2,0.4,dark(col)); break;
+    case 'shovel':
+      handle(); poly([[8.4,3],[12.2,3],[12.2,6.6],[10.3,8.2],[8.4,6.6]], mid(col));
+      poly([[9.2,3.7],[11.4,3.7],[11.4,5.8],[10.3,6.9],[9.2,5.8]], lite(col)); break;
+    case 'sword':
+      stroke(5.5,12.5,12,5, 2.6, dark(col)); stroke(5.5,12.5,12,5, 1.1, lite(col));
+      stroke(3.8,11,7,14.2, 1.9, dark(0x7a6a4a)); box(3.6,12,1.7,1.7, mid(0x6a5a3a)); break;
+    case 'armor0':
+      poly([[4,8.5],[4,6],[6,4],[10,4],[12,6],[12,8.5],[10,8.5],[10,6.4],[6,6.4],[6,8.5]], mid(col));
+      poly([[5,7.4],[5,6.3],[6.3,5],[9.7,5],[11,6.3],[11,7.4],[10,7.4],[10,5.9],[6,5.9],[6,7.4]], lite(col)); break;
+    case 'armor1':
+      poly([[4,4],[12,4],[12,12.5],[9.2,12.5],[9.2,7],[6.8,7],[6.8,12.5],[4,12.5]], mid(col));
+      poly([[5,5],[11,5],[11,7.6],[10,7.6],[10,6],[6,6],[6,7.6],[5,7.6]], lite(col)); break;
+    case 'armor2':
+      poly([[4,4],[12,4],[12,6],[9,6],[9,13],[7.2,13],[7.2,8],[8.8,8],[8.8,6.4],[7.2,6.4],[7.2,13],[5.4,13],[4,6]], mid(col));
+      box(4.6,4.4,6.8,1.1,lite(col)); break;
+    case 'armor3':
+      poly([[3.6,6],[7,6],[7,10],[8,10],[8,12.4],[3,12.4],[3,10],[3.6,10]], mid(col));
+      poly([[9,6],[12.4,6],[13,10],[13,12.4],[9,12.4],[9,8.4]], mid(col));
+      box(3,11.4,5,1,lite(col)); box(9,11.4,4,1,lite(col)); break;
+  }
+  return true;
+}
+const _itemIconCache={};
+function itemIconURL(id){
+  if(_itemIconCache[id]!==undefined) return _itemIconCache[id];
+  const sz=32, cv=document.createElement('canvas'); cv.width=cv.height=sz; const ctx=cv.getContext('2d');
+  const ok=paintItemIcon(ctx, id, sz, 0, 0);
+  const url=ok?cv.toDataURL():null; _itemIconCache[id]=url; return url;
+}
+function swatchStyle(id){
+  if(TEX[id]!==undefined) return 'background-image:url('+blockIconURL(id)+');background-size:cover;image-rendering:pixelated';
+  const iu=itemIconURL(id);
+  if(iu) return 'background-image:url('+iu+');background-size:contain;background-repeat:no-repeat;background-position:center';
+  return 'background:'+hex(thingColor(id));
+}
 // UV fuer ein Tile. eps = halbe Texel-Einrueckung (16px-Basis) gegen Bleeding, aufloesungs-unabhaengig.
 const TILE_EPS = 0.5/16;
 function tileUV(idx, uFrac, vFrac){
@@ -1555,6 +1694,7 @@ function doPlace(){
   const s=inv[selectedSlot]; if(!s) return;
   if(isFood(s.id)){ eat(); return; }
   if(isBucket(s.id)){ useBucket(s.id); return; }
+  if(isBow(s.id)){ shootBow(); return; }
   if(!BLOCKS[s.id]) return;                  // nicht platzierbar (Stock, Schwert)
   const px=h.x+h.nx,py=h.y+h.ny,pz=h.z+h.nz;
   if(canPlaceAt(px,py,pz)){ world.setBlock(px,py,pz,s.id); SFX.place(s.id,{x:px+0.5,y:py+0.5,z:pz+0.5}); consumeSelected(1); }
@@ -1595,6 +1735,7 @@ function startGame(){
   playerName=(nameInput.value||'').trim().slice(0,16);
   overlay.classList.add('hidden');
   const _sp=loadPos(); if(_sp){ player.x=_sp.x; player.y=_sp.y; player.z=_sp.z; player.vx=player.vy=player.vz=0; if(typeof _sp.yaw==='number') camera.rotation.y=_sp.yaw; if(typeof _sp.pitch==='number') camera.rotation.x=_sp.pitch; }
+  loadInv();
   if(isTouch) touchPlaying=true; else canvas.requestPointerLock();
   if(net.connected&&playerName) net.sendStat({name:playerName});
 }
@@ -1607,6 +1748,30 @@ function savePos(){ try{ localStorage.setItem(POS_KEY, JSON.stringify({x:player.
 function loadPos(){ try{ const r=localStorage.getItem(POS_KEY); return r?JSON.parse(r):null; }catch(_){ return null; } }
 setInterval(()=>{ if(overlay.classList.contains('hidden') && !dead) savePos(); }, 3000);
 addEventListener('beforeunload', savePos);
+
+// ---- Inventar + Ruestung speichern (lokal, pro Geraet) -> nach Rejoin behalten ----
+const INV_KEY='voxelcraft_inv_v1';
+function serializeSlot(s){ if(!s) return null; const o={id:s.id, count:s.count}; if(s.dur!=null) o.dur=s.dur; return o; }
+function validSlot(o){
+  if(!o || typeof o.id!=='number' || !thing(o.id)) return null;
+  const count=Math.max(1, Math.min(STACK_MAX, (o.count|0)||1));
+  const slot={id:o.id, count};
+  if(typeof o.dur==='number' && o.dur>0) slot.dur=o.dur;   // Haltbarkeit erhalten
+  return slot;
+}
+function saveInv(){ try{
+  localStorage.setItem(INV_KEY, JSON.stringify({ inv: inv.map(serializeSlot), armor: armor.map(serializeSlot), sel: selectedSlot }));
+}catch(_){} }
+function loadInv(){ try{
+  const r=localStorage.getItem(INV_KEY); if(!r) return;
+  const d=JSON.parse(r);
+  if(Array.isArray(d.inv)) for(let i=0;i<SLOT_COUNT;i++) inv[i]=validSlot(d.inv[i]);
+  if(Array.isArray(d.armor)) for(let i=0;i<4;i++){ const s=validSlot(d.armor[i]); armor[i]=(s && isArmor(s.id) && ARMOR[s.id].slot===i)?s:null; }
+  if(typeof d.sel==='number' && d.sel>=0 && d.sel<HOTBAR_COUNT) selectedSlot=d.sel;
+  renderHotbar(); if(invOpen) renderInventory();
+}catch(_){} }
+setInterval(()=>{ if(overlay.classList.contains('hidden') && !dead) saveInv(); }, 3000);
+addEventListener('beforeunload', saveInv);
 
 // ---- Touch: Joystick ----
 const joy=document.getElementById('joy'), knob=document.getElementById('joyKnob');
@@ -2103,6 +2268,31 @@ function attackMob(id){
   const mm=mobsMap.get(id); if(mm){ mm.hp=Math.max(0, mm.hp-dmg); onMobHp(id, mm.hp); } // sofortiges Feedback, Server korrigiert per 'mobhp'
   if(sel && isTool(sel.id)) damageTool();                      // Werkzeug nutzt sich ab
 }
+// ---- Bogen: Pfeil abschiessen ----
+function countItem(id){ let n=0; for(const s of inv){ if(s&&s.id===id) n+=s.count; } return n; }
+function removeItem(id,n){ for(let i=0;i<inv.length&&n>0;i++){ const s=inv[i]; if(s&&s.id===id){ const take=Math.min(n,s.count); s.count-=take; n-=take; if(s.count<=0) inv[i]=null; } } renderHotbar(); if(invOpen) renderInventory(); }
+let lastShot=0;
+function shootBow(){
+  const now=performance.now(); if(now-lastShot<350) return;     // Schuss-Cooldown
+  if(countItem(ARROW_ITEM)<=0){ SFX.ui(); return; }             // keine Pfeile -> nur Klick-Sound
+  lastShot=now;
+  const dir=new THREE.Vector3(); camera.getWorldDirection(dir);
+  const o=camera.position;
+  const sx=o.x+dir.x*0.6, sy=o.y+dir.y*0.6, sz=o.z+dir.z*0.6;   // knapp vor dem Kopf starten
+  net.send({ t:'shoot', x:+sx.toFixed(2), y:+sy.toFixed(2), z:+sz.toFixed(2),
+             dx:+dir.x.toFixed(3), dy:+dir.y.toFixed(3), dz:+dir.z.toFixed(3) });
+  removeItem(ARROW_ITEM,1);
+  damageTool();                                                 // Bogen (selektiert) nutzt sich ab
+  SFX.bow();
+}
+// Eigener Pfeil trifft Mob (client-seitig, weil Server keine Mob-Hoehe kennt) -> bestehende mobhit-Infra
+function arrowHitMob(id){
+  const dmg=4;
+  net.send({t:'mobhit', mobId:id, dmg});
+  myHits.set(id, performance.now());
+  const mm=mobsMap.get(id); if(mm){ mm.hp=Math.max(0, mm.hp-dmg); onMobHp(id, mm.hp); }
+  SFX.hit();
+}
 function eat(){
   const s=inv[selectedSlot]; if(!s||!isFood(s.id)) return;
   const now=performance.now();
@@ -2160,6 +2350,7 @@ function respawn(){
   for(let i=0;i<craftGrid.length;i++) craftGrid[i]=null;
   for(let i=0;i<4;i++) armor[i]=null;
   offhand=null; held=null; selectedSlot=0;
+  saveInv();   // Tod sofort sichern, sonst laedt ein Rejoin das alte volle Inventar
   recomputeCraft(); renderHotbar(); renderHeld(); if(invOpen) renderInventory();
   player.x=8.5; player.z=8.5; player.vx=player.vy=player.vz=0;
   for(let dz=-1;dz<=1;dz++) for(let dx=-1;dx<=1;dx++) world.ensureChunkData(dx,dz);
@@ -2255,7 +2446,7 @@ function updateArrowsFromTick(list){
   for(const a of list){
     const id=a[0]; seen.add(id);
     let ar=arrowsMap.get(id);
-    if(!ar){ const mesh=makeArrowMesh(); mesh.position.set(a[1],a[2],a[3]); scene.add(mesh); ar={mesh, tx:a[1],ty:a[2],tz:a[3], hit:false}; arrowsMap.set(id,ar); }
+    if(!ar){ const mesh=makeArrowMesh(); mesh.position.set(a[1],a[2],a[3]); scene.add(mesh); ar={mesh, tx:a[1],ty:a[2],tz:a[3], hit:false, owner:a[4]||0}; arrowsMap.set(id,ar); }
     else { ar.tx=a[1]; ar.ty=a[2]; ar.tz=a[3]; }
   }
   // Pfeile, die der Server nicht mehr schickt (abgelaufen/eingeschlagen), entfernen
@@ -2270,8 +2461,19 @@ function updateArrows(dt){
     p.x+=dx*0.5; p.y+=dy*0.5; p.z+=dz*0.5;
     // entlang der Flugrichtung ausrichten
     const len=Math.hypot(dx,dy,dz); if(len>1e-4){ ar.mesh.lookAt(ar.tx, ar.ty, ar.tz); }
-    // Treffer auf lokalen Spieler? (jeder Client prueft nur sich selbst)
-    if(!ar.hit && !dead){
+    if(ar.hit) continue;
+    // Eigener Pfeil (mein Bogen): trifft Mobs, niemals mich selbst
+    if(ar.owner && ar.owner===net.myId){
+      for(const [mid,m] of mobsMap){
+        const mp=m.group.position;
+        if(Math.abs(p.x-mp.x)<m.hw+0.2 && Math.abs(p.z-mp.z)<m.hw+0.2 && p.y>mp.y-0.15 && p.y<mp.y+m.hh*2+0.15){
+          ar.hit=true; ar.mesh.visible=false; arrowHitMob(mid); break;
+        }
+      }
+      continue;
+    }
+    // Fremder Pfeil (Skelett oder anderer Spieler): trifft den lokalen Spieler
+    if(!dead){
       const ex=player.x, ey=player.y+EYE_HEIGHT*0.5, ez=player.z;
       if(Math.abs(p.x-ex)<0.55 && Math.abs(p.z-ez)<0.55 && Math.abs(p.y-ey)<1.2){
         ar.hit=true; ar.mesh.visible=false; damagePlayer(2);
