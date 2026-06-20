@@ -27,6 +27,9 @@
   .durbar { position: absolute; left: 4px; right: 4px; bottom: 3px; height: 3px; background: rgba(0,0,0,0.45); border-radius: 2px; overflow: hidden; }
 
   #hotbar { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; gap: 5px; padding: 5px; background: rgba(20,22,28,0.45); border-radius: 10px; backdrop-filter: blur(4px); pointer-events: auto; }
+  #hotbarName { position: absolute; left: 50%; bottom: 70px; transform: translateX(-50%); color: #fff; font-size: 15px; font-weight: 600; text-shadow: 0 1px 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.6); padding: 1px 8px; opacity: 0; transition: opacity 0.35s; pointer-events: none; white-space: nowrap; }
+  #hotbarName.show { opacity: 1; }
+  #slotTip { position: fixed; z-index: 30; background: rgba(12,14,20,0.95); color: #e8eefc; border: 1px solid rgba(255,255,255,0.16); border-radius: 6px; padding: 3px 9px; font-size: 13px; font-weight: 600; pointer-events: none; white-space: nowrap; transform: translate(-50%, -135%); display: none; box-shadow: 0 4px 14px rgba(0,0,0,0.55); }
   .slot { width: 46px; height: 46px; border-radius: 7px; background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
   .slot .swatch { width: 28px; height: 28px; border-radius: 4px; box-shadow: inset 0 -6px 0 rgba(0,0,0,0.22), inset 0 2px 0 rgba(255,255,255,0.18); }
   .slot .num { position: absolute; top: 2px; left: 4px; font-size: 10px; color: rgba(255,255,255,0.55); }
@@ -143,7 +146,9 @@
   <div id="mineBar"><div id="mineFill"></div></div>
   <div id="debug"></div>
   <div id="hotbar"></div>
+  <div id="hotbarName"></div>
 </div>
+<div id="slotTip"></div>
 
 <div id="joy"><div id="joyKnob"></div></div>
 <div id="btnJump" class="btn">SPRUNG</div>
@@ -226,6 +231,14 @@
       <input id="setVol" type="range" min="0" max="100" step="1">
       <div class="setHint">Lautstaerke aller Spielgeraeusche. 0 = stumm. Wirkt sofort.</div>
     </div>
+    <div class="setRow">
+      <div class="setLabel">Inventar bei Tod behalten</div>
+      <div class="setSeg" id="setKeepInv">
+        <button data-keep="0">Aus</button>
+        <button data-keep="1">An</button>
+      </div>
+      <div class="setHint">Wenn an, bleibt dein Inventar beim Sterben erhalten. Lokale Einstellung pro Geraet.</div>
+    </div>
     <div id="setClose">Fertig</div>
   </div>
 </div>
@@ -274,6 +287,13 @@ document.body.classList.toggle('touch', isTouch);
 const CHUNK_SIZE   = 16;
 const Y_MIN = -64, Y_MAX = 320;          // echte Minecraft-Hoehe (Bedrock bis Bauhoehe)
 const WORLD_HEIGHT = Y_MAX - Y_MIN;      // Spannweite (384) = Array-Hoehe pro Chunk
+// ---- Vertikale Sektionen (wie MC-Sub-Chunks): Chunk in 64-hohe Scheiben teilen.
+//      Grenze liegt exakt bei y=0 -> positive/negative Y getrennt. Nur nicht-leere
+//      Sektionen werden gemesht/gerendert, und Block-Aenderungen bauen nur ihre Sektion neu.
+const SECTION_H = 64;
+const NUM_SECTIONS = WORLD_HEIGHT / SECTION_H;        // 6
+const SECTION_VOL = SECTION_H * CHUNK_SIZE * CHUNK_SIZE;
+function sectionOf(wy){ return ((wy - Y_MIN) / SECTION_H) | 0; }
 const WATER_LEVEL  = 62;
 const LAVA_SEA     = -48;   // Hoehlen-Luft auf/unter dieser Hoehe laeuft mit Lava voll (16 ueber Bedrock)
 // ---- Einstellungen (Settings-Menue) -----------------------------------
@@ -285,7 +305,7 @@ const PRESETS = {
 };
 const SETTINGS_KEY = 'voxelcraft_settings_v1';
 const DEFAULT_PRESET = isTouch ? 'niedrig' : 'mittel';
-let settings = Object.assign({ preset: DEFAULT_PRESET, blockRes:16, volume:0.7 }, PRESETS[DEFAULT_PRESET]);
+let settings = Object.assign({ preset: DEFAULT_PRESET, blockRes:16, volume:0.7, keepInv:false }, PRESETS[DEFAULT_PRESET]);
 try { const _raw = localStorage.getItem(SETTINGS_KEY); if(_raw){ Object.assign(settings, JSON.parse(_raw)); } } catch(_){}
 function saveSettings(){ try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch(_){} }
 let settingsOpen = false;
@@ -455,6 +475,7 @@ const CHUNK_BUDGET_MS = isTouch ? 5 : 6;
 
 const PLAYER_HALF = 0.3, PLAYER_HEIGHT = 1.8, EYE_HEIGHT = 1.62;
 const WALK_SPEED = 4.7, GRAVITY = 26, JUMP_VELOCITY = 8.4, TERMINAL_VY = -42, REACH = 6;
+const SWIM_UP = 4.2;   // Aufwaerts-Tempo beim Schwimmen (Sprung gedrueckt halten)
 
 // =====================================================================
 //  BLOCK-REGISTRY (data-driven)
@@ -464,7 +485,7 @@ const COBBLE=7, GLASS=8, BRICKS=9, LOG=10, LEAVES=11, SNOW=12, GRAVEL=13, CRAFTI
 const BEDROCK=15, COAL_ORE=16, COPPER_ORE=17, IRON_ORE=18, GOLD_ORE=19, DIAMOND_ORE=20;
 const LAVA=21, OBSIDIAN=22;
 const TALL_GRASS=23, FLOWER_RED=24, FLOWER_YELLOW=25, CACTUS=26, DEAD_BUSH=27;
-const FURNACE=21, TORCH=22;
+const FURNACE=28, TORCH=29;   // eigene IDs! (21/22 sind Lava/Obsidian - vorher kollidiert)
 const BLOCKS = {
   [AIR]:   { name:'Air',    solid:false, opaque:false },
   [GRASS]: { name:'Gras',   solid:true,  opaque:true,  top:0x5fa83d, side:0x6e7b3c, bottom:0x8a6a43 },
@@ -650,9 +671,11 @@ inv[0]={id:LOG,count:8}; inv[1]={id:DIRT,count:16}; inv[2]={id:COBBLE,count:8}; 
 
 function addItem(id,count){
   if(id===AIR||count<=0) return count;
+  const start=count;
   for(let i=0;i<SLOT_COUNT && count>0;i++){ const s=inv[i]; if(s && s.id===id && s.count<STACK_MAX){ const a=Math.min(STACK_MAX-s.count,count); s.count+=a; count-=a; } }
   for(let i=0;i<SLOT_COUNT && count>0;i++){ if(!inv[i]){ const a=Math.min(STACK_MAX,count); inv[i]={id,count:a}; count-=a; } }
   renderHotbar(); if(invOpen) renderInventory();
+  if(!invOpen && count<start) showItemName(id);   // beim Aufnehmen in der Welt kurz den Namen zeigen
   return count;
 }
 function dropFor(id){ if(id===GRASS) return DIRT; if(id===STONE) return COBBLE; if(id===COAL_ORE) return COAL; if(id===COPPER_ORE) return RAW_COPPER; if(id===IRON_ORE) return RAW_IRON; if(id===GOLD_ORE) return RAW_GOLD; if(id===DIAMOND_ORE) return DIAMOND; if(id===LEAVES||id===GLASS||id===BEDROCK||id===TALL_GRASS||id===DEAD_BUSH) return AIR; return id; }
@@ -900,7 +923,25 @@ function setOverride(wx,wy,wz,id){
 // =====================================================================
 //  CHUNK + WORLD
 // =====================================================================
-class Chunk { constructor(cx,cz){ this.cx=cx; this.cz=cz; this.data=null; this.hasData=false; this.mesh=null; this.waterMesh=null; this.torchMesh=null; this.lavaMesh=null; this.plantMesh=null; this.dirty=true; } }
+class Chunk { constructor(cx,cz){ this.cx=cx; this.cz=cz; this.data=null; this.hasData=false;
+  this.secCount=null;                      // Anzahl Nicht-Luft-Bloecke je Sektion (0 = leer -> kein Mesh)
+  this.secMesh = new Array(NUM_SECTIONS).fill(null);   // Opak je Sektion
+  this.secWater= new Array(NUM_SECTIONS).fill(null);
+  this.secTorch= new Array(NUM_SECTIONS).fill(null);
+  this.secLava = new Array(NUM_SECTIONS).fill(null);
+  this.secPlant= new Array(NUM_SECTIONS).fill(null);
+  this.meshed=false; this.dirty=true; } }
+
+// Schreibt einen Block in die Chunk-Daten UND haelt den Sektions-Zaehler korrekt.
+// (Damit leere Sektionen zuverlaessig erkannt werden, auch nach Bauen/Abbauen.)
+function writeData(c, idx, id){
+  const old=c.data[idx]; if(old===id) return;
+  c.data[idx]=id;
+  if(c.secCount){ const s=(idx/SECTION_VOL)|0;
+    if(old===AIR && id!==AIR) c.secCount[s]++;
+    else if(old!==AIR && id===AIR) c.secCount[s]--;
+  }
+}
 
 const world = {
   chunks: new Map(),
@@ -914,6 +955,10 @@ const world = {
       c.data=generateChunkData(cx,cz);
       const m=overridesByChunk.get(this.key(cx,cz)); // Server-Aenderungen drueberlegen
       if(m) for(const [idx,id] of m) c.data[idx]=id;
+      // Nicht-Luft pro Sektion zaehlen (ein Durchlauf) -> leere Sektionen koennen O(1) uebersprungen werden
+      const sc=new Int32Array(NUM_SECTIONS), d=c.data;
+      for(let i=0;i<d.length;i++){ if(d[i]!==AIR) sc[(i/SECTION_VOL)|0]++; }
+      c.secCount=sc;
       c.hasData=true;
     }
     return c;
@@ -935,19 +980,26 @@ const world = {
     const cx=Math.floor(wx/CHUNK_SIZE), cz=Math.floor(wz/CHUNK_SIZE);
     const c=this.ensureChunkData(cx,cz);
     const lx=wx-cx*CHUNK_SIZE, lz=wz-cz*CHUNK_SIZE;
-    c.data[((wy-Y_MIN)*CHUNK_SIZE+lz)*CHUNK_SIZE+lx]=id;
-    meshChunk(c);
-    if(lx===0)              this._remesh(cx-1,cz);
-    if(lx===CHUNK_SIZE-1)   this._remesh(cx+1,cz);
-    if(lz===0)              this._remesh(cx,cz-1);
-    if(lz===CHUNK_SIZE-1)   this._remesh(cx,cz+1);
+    writeData(c, ((wy-Y_MIN)*CHUNK_SIZE+lz)*CHUNK_SIZE+lx, id);   // Daten + Sektions-Zaehler
+    const s=sectionOf(wy);
+    if(c.meshed){                              // nur die betroffene Sektion neu bauen (statt der ganzen Saeule)
+      meshSection(c, s);
+      const lyInSec=(wy-Y_MIN)-s*SECTION_H;    // an der Sektions-Grenze auch die Nachbar-Sektion (Faces zeigen rueber)
+      if(lyInSec===SECTION_H-1 && s+1<NUM_SECTIONS) meshSection(c, s+1);
+      if(lyInSec===0 && s-1>=0)                     meshSection(c, s-1);
+    }
+    if(lx===0)              this._remeshSection(cx-1,cz,s);
+    if(lx===CHUNK_SIZE-1)   this._remeshSection(cx+1,cz,s);
+    if(lz===0)              this._remeshSection(cx,cz-1,s);
+    if(lz===CHUNK_SIZE-1)   this._remeshSection(cx,cz+1,s);
     if(!fromNet) net.sendBlock(wx,wy,wz,id);
   },
   _remesh(cx,cz){ const c=this.getChunk(cx,cz); if(c&&c.hasData) meshChunk(c); },
+  _remeshSection(cx,cz,s){ const c=this.getChunk(cx,cz); if(c&&c.hasData&&c.meshed) meshSection(c,s); },
 };
 
 function clearAllChunks(){
-  for(const [,c] of world.chunks){ disposeMesh(c.mesh); disposeMesh(c.waterMesh); disposeMesh(c.torchMesh); disposeMesh(c.lavaMesh); disposeMesh(c.plantMesh); }
+  for(const [,c] of world.chunks){ disposeChunkMeshes(c); }
   world.chunks.clear();
   lastCX=null; lastCZ=null; // erzwingt Neuaufbau in updateWorld
 }
@@ -1306,11 +1358,17 @@ function paintItemIcon(ctx, id, ts, ox, oy){
     case 'pick':
       handle(); arc(8,9,6.5,-1.25,-0.25,1.9,dark(col)); arc(8,9,6.5,-1.25,-0.25,0.8,lite(col)); break;
     case 'axe':
-      handle(); poly([[8.6,3],[12.6,4.2],[12.6,7.4],[8.6,8.2]], mid(col));
-      poly([[8.8,3.6],[11.8,4.6],[11.8,6.2],[9,5.6]], lite(col)); stroke(8.6,3,8.6,8.2,0.4,dark(col)); break;
+      // Axt: dicke Klinge die deutlich nach OBEN-LINKS auskragt (MC-Style, asymmetrisch)
+      handle();
+      poly([[10.2,7.6],[9.2,4.0],[5.4,4.8],[5.0,7.2],[8.2,8.6]], mid(col));
+      poly([[9.1,6.9],[8.5,5.0],[6.1,5.5],[5.9,6.7]], lite(col));
+      stroke(5.0,7.2,8.2,8.6, 0.5, dark(col)); break;
     case 'shovel':
-      handle(); poly([[8.4,3],[12.2,3],[12.2,6.6],[10.3,8.2],[8.4,6.6]], mid(col));
-      poly([[9.2,3.7],[11.4,3.7],[11.4,5.8],[10.3,6.9],[9.2,5.8]], lite(col)); break;
+      // Schaufel: schmaler Spaten mit spitzem Boden, nur an der OBEN-RECHTEN Stielspitze
+      handle();
+      poly([[9.4,2.6],[12.0,2.6],[12.0,5.2],[10.7,7.0],[9.4,5.2]], mid(col));
+      poly([[10.0,3.3],[11.4,3.3],[11.4,5.0],[10.7,6.0],[10.0,5.0]], lite(col));
+      stroke(9.4,2.6,9.4,5.2, 0.4, dark(col)); break;
     case 'sword':
       stroke(5.5,12.5,12,5, 2.6, dark(col)); stroke(5.5,12.5,12,5, 1.1, lite(col));
       stroke(3.8,11,7,14.2, 1.9, dark(0x7a6a4a)); box(3.6,12,1.7,1.7, mid(0x6a5a3a)); break;
@@ -1402,10 +1460,11 @@ function pushCross(P,N,C,U,I, x,y,z, tileIdx){
     I.push(base,base+1,base+2, base,base+2,base+3);
   }
 }
-function buildChunkGeometry(c){
+function buildSectionGeometry(c, s){
   const pos=[],nor=[],col=[],uv=[],idx=[], wpos=[],wnor=[],wcol=[],wuv=[],widx=[], tpos=[],tnor=[],tcol=[],tidx=[], lpos=[],lnor=[],lcol=[],luv=[],lidx=[], ppos=[],pnor=[],pcol=[],puv=[],pidx=[];
   const ox=c.cx*CHUNK_SIZE, oz=c.cz*CHUNK_SIZE;
-  for(let y=Y_MIN;y<Y_MAX;y++) for(let z=0;z<CHUNK_SIZE;z++) for(let x=0;x<CHUNK_SIZE;x++){
+  const yLo=Y_MIN+s*SECTION_H, yHi=Math.min(Y_MAX, yLo+SECTION_H);   // nur diese Sektion durchlaufen
+  for(let y=yLo;y<yHi;y++) for(let z=0;z<CHUNK_SIZE;z++) for(let x=0;x<CHUNK_SIZE;x++){
     const id=c.data[((y-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x];
     if(id===AIR) continue;
     if(id===TORCH){ pushTorch(tpos,tnor,tcol,tidx, x, y, z); continue; }
@@ -1442,15 +1501,29 @@ function makeMesh(P,N,C,U,I,material,cx,cz){
   return m;
 }
 function disposeMesh(m){ if(!m) return; scene.remove(m); m.geometry.dispose(); }
+function disposeSection(c, s){
+  disposeMesh(c.secMesh[s]);  c.secMesh[s]=null;
+  disposeMesh(c.secWater[s]); c.secWater[s]=null;
+  disposeMesh(c.secTorch[s]); c.secTorch[s]=null;
+  disposeMesh(c.secLava[s]);  c.secLava[s]=null;
+  disposeMesh(c.secPlant[s]); c.secPlant[s]=null;
+}
+function disposeChunkMeshes(c){ for(let s=0;s<NUM_SECTIONS;s++) disposeSection(c,s); }
+// Eine Sektion (64-hohe Scheibe) neu bauen. Leere Sektionen (nur Luft) erzeugen nichts.
+function meshSection(c, s){
+  disposeSection(c, s);
+  if(c.secCount[s]===0) return;            // leer (z.B. Himmel) -> kein Mesh, kein Draw-Call
+  const g=buildSectionGeometry(c, s);
+  c.secMesh[s] =makeMesh(g.pos,g.nor,g.col,g.uv,g.idx,opaqueMat,c.cx,c.cz);   if(c.secMesh[s])  scene.add(c.secMesh[s]);
+  c.secWater[s]=makeMesh(g.wpos,g.wnor,g.wcol,g.wuv,g.widx,waterMat,c.cx,c.cz); if(c.secWater[s]) scene.add(c.secWater[s]);
+  c.secTorch[s]=makeMesh(g.tpos,g.tnor,g.tcol,null,g.tidx,torchMat,c.cx,c.cz);  if(c.secTorch[s]) scene.add(c.secTorch[s]);
+  c.secLava[s] =makeMesh(g.lpos,g.lnor,g.lcol,g.luv,g.lidx,lavaMat,c.cx,c.cz);  if(c.secLava[s])  scene.add(c.secLava[s]);
+  c.secPlant[s]=makeMesh(g.ppos,g.pnor,g.pcol,g.puv,g.pidx,plantMat,c.cx,c.cz); if(c.secPlant[s]) scene.add(c.secPlant[s]);
+}
 function meshChunk(c){
-  const g=buildChunkGeometry(c);
-  disposeMesh(c.mesh); c.mesh=null; disposeMesh(c.waterMesh); c.waterMesh=null; disposeMesh(c.torchMesh); c.torchMesh=null; disposeMesh(c.lavaMesh); c.lavaMesh=null; disposeMesh(c.plantMesh); c.plantMesh=null;
-  c.mesh=makeMesh(g.pos,g.nor,g.col,g.uv,g.idx,opaqueMat,c.cx,c.cz); if(c.mesh) scene.add(c.mesh);
-  c.waterMesh=makeMesh(g.wpos,g.wnor,g.wcol,g.wuv,g.widx,waterMat,c.cx,c.cz); if(c.waterMesh) scene.add(c.waterMesh);
-  c.torchMesh=makeMesh(g.tpos,g.tnor,g.tcol,null,g.tidx,torchMat,c.cx,c.cz); if(c.torchMesh) scene.add(c.torchMesh);
-  c.lavaMesh=makeMesh(g.lpos,g.lnor,g.lcol,g.luv,g.lidx,lavaMat,c.cx,c.cz); if(c.lavaMesh) scene.add(c.lavaMesh);
-  c.plantMesh=makeMesh(g.ppos,g.pnor,g.pcol,g.puv,g.pidx,plantMat,c.cx,c.cz); if(c.plantMesh) scene.add(c.plantMesh);
-  c.dirty=false;
+  if(!c||!c.hasData) return;
+  for(let s=0;s<NUM_SECTIONS;s++) meshSection(c, s);
+  c.meshed=true; c.dirty=false;
 }
 
 // =====================================================================
@@ -1507,13 +1580,13 @@ function updateWorld(pcx,pcz){
     lastCX=pcx; lastCZ=pcz;
     for(const [k,c] of world.chunks){
       if(Math.max(Math.abs(c.cx-pcx),Math.abs(c.cz-pcz))>UNLOAD_DISTANCE){
-        disposeMesh(c.mesh); disposeMesh(c.waterMesh); disposeMesh(c.torchMesh); disposeMesh(c.lavaMesh); disposeMesh(c.plantMesh); world.chunks.delete(k);
+        disposeChunkMeshes(c); world.chunks.delete(k);
       }
     }
     chunkQueue=[];
     for(let dz=-RENDER_DISTANCE;dz<=RENDER_DISTANCE;dz++) for(let dx=-RENDER_DISTANCE;dx<=RENDER_DISTANCE;dx++){
       const cx=pcx+dx, cz=pcz+dz, c=world.getChunk(cx,cz);
-      if(c&&c.mesh&&!c.dirty) continue;
+      if(c&&c.meshed&&!c.dirty) continue;
       chunkQueue.push({cx,cz,d:dx*dx+dz*dz});
     }
     chunkQueue.sort((a,b)=>a.d-b.d);
@@ -1571,9 +1644,22 @@ function updatePlayer(dt){
   const tFov = sprinting?80:72;
   if(Math.abs(camera.fov-tFov)>0.1){ camera.fov+=(tFov-camera.fov)*0.2; camera.updateProjectionMatrix(); }
 
-  player.vy-=GRAVITY*dt;
-  if((keys.has('Space')||jumpHeld)&&player.onGround){ player.vy=JUMP_VELOCITY; player.onGround=false; }
-  if(player.vy<TERMINAL_VY) player.vy=TERMINAL_VY;
+  // Schwimmen: Koerper im Wasser (Fuesse oder Bauch) -> Auftrieb statt freiem Fall
+  const inWater = world.getBlock(Math.floor(player.x), Math.floor(player.y), Math.floor(player.z))===WATER
+               || world.getBlock(Math.floor(player.x), Math.floor(player.y+0.9), Math.floor(player.z))===WATER;
+  const wantUp = keys.has('Space')||jumpHeld;
+  if(inWater){
+    player.vy -= GRAVITY*0.16*dt;          // viel schwaechere Schwerkraft -> langsames Sinken
+    player.vy *= 0.86;                       // Wasser-Reibung daempft Fallen UND Steigen
+    if(wantUp) player.vy = SWIM_UP;          // hochpaddeln solange Sprung gehalten wird
+    if(player.vy < -3.2) player.vy = -3.2;   // Sink-Tempo deckeln
+    player.vx *= 0.7; player.vz *= 0.7;      // langsamer vorwaerts im Wasser
+    player.onGround = false;
+  } else {
+    player.vy-=GRAVITY*dt;
+    if(wantUp&&player.onGround){ player.vy=JUMP_VELOCITY; player.onGround=false; }
+    if(player.vy<TERMINAL_VY) player.vy=TERMINAL_VY;
+  }
 
   player.onGround=false;
   moveAxis(0,player.vx*dt); moveAxis(2,player.vz*dt);
@@ -1716,7 +1802,7 @@ function isActive(){ return (isTouch ? touchPlaying : locked) && !settingsOpen; 
 addEventListener('keydown', (e)=>{
   keys.add(e.code);
   if(e.code==='F3'){ e.preventDefault(); debugEl.style.display = debugEl.style.display==='none'?'':'none'; }
-  if(e.code.startsWith('Digit')){ const n=parseInt(e.code.slice(5),10)-1; if(n>=0&&n<HOTBAR_COUNT){ selectedSlot=n; renderHotbar(); } }
+  if(e.code.startsWith('Digit')){ const n=parseInt(e.code.slice(5),10)-1; if(n>=0&&n<HOTBAR_COUNT){ selectedSlot=n; renderHotbar(); showSelectedName(); } }
   if(e.code==='KeyE'){ e.preventDefault(); toggleInv(); }
   if(e.code==='KeyO'){ e.preventDefault(); toggleSettings(); }
   if(e.code==='Escape'){ if(invOpen) closeInv(); else if(settingsOpen) closeSettings(); }
@@ -1727,7 +1813,7 @@ document.addEventListener('mousemove', (e)=>{ if(!locked)return; yaw-=e.movement
 canvas.addEventListener('contextmenu', e=>e.preventDefault());
 canvas.addEventListener('mousedown', (e)=>{ if(!locked)return; if(e.button===0) startBreak(); else if(e.button===2) doPlace(); });
 document.addEventListener('mouseup', (e)=>{ if(e.button===0) breakHeld=false; });
-addEventListener('wheel', (e)=>{ if(!locked)return; selectedSlot=(selectedSlot+(e.deltaY>0?1:-1)+HOTBAR_COUNT)%HOTBAR_COUNT; renderHotbar(); }, {passive:true});
+addEventListener('wheel', (e)=>{ if(!locked)return; selectedSlot=(selectedSlot+(e.deltaY>0?1:-1)+HOTBAR_COUNT)%HOTBAR_COUNT; renderHotbar(); showSelectedName(); }, {passive:true});
 
 // ---- Start ----
 function startGame(){
@@ -1800,6 +1886,15 @@ btnPlace.addEventListener('touchstart', (e)=>{ e.preventDefault(); doPlace(); },
 //  HUD
 // =====================================================================
 const hotbarEl=document.getElementById('hotbar'), debugEl=document.getElementById('debug'), loadingEl=document.getElementById('loading');
+// ---- Item-Namen (MC-Style): kurzer Name ueber der Hotbar + Tooltip im Inventar ----
+const hotbarNameEl=document.getElementById('hotbarName'), slotTipEl=document.getElementById('slotTip');
+let _nameTimer=null;
+function showItemName(id){
+  if(!hotbarNameEl) return; const t=thing(id); if(!t) return;
+  hotbarNameEl.textContent=t.name||''; hotbarNameEl.classList.add('show');
+  clearTimeout(_nameTimer); _nameTimer=setTimeout(()=>hotbarNameEl.classList.remove('show'), 1400);
+}
+function showSelectedName(){ const s=inv[selectedSlot]; if(s) showItemName(s.id); else if(hotbarNameEl) hotbarNameEl.classList.remove('show'); }
 const ctrlHint=document.getElementById('ctrlHint');
 ctrlHint.innerHTML = isTouch
   ? '<b>Joystick</b> Bewegen (voll=Sprint) &nbsp; <b>Rechts wischen</b> Umsehen<br><b>ABBAU halten</b> Abbauen (tippen=Schlagen) &nbsp; <b>SETZEN</b> Setzen/Essen &nbsp; <b>ITEMS</b> Inventar'
@@ -1812,7 +1907,7 @@ function renderHotbar(){
     const slot=document.createElement('div');
     slot.className='slot'+(i===selectedSlot?' active':'');
     slot.innerHTML='<span class="num">'+(i+1)+'</span>'+(s?('<span class="swatch" style="'+swatchStyle(s.id)+'"></span>'+(s.count>1?'<span class="hcount">'+s.count+'</span>':'')+durBar(s)):'');
-    slot.addEventListener('click', ()=>{ selectedSlot=i; renderHotbar(); });
+    slot.addEventListener('click', ()=>{ selectedSlot=i; renderHotbar(); showSelectedName(); });
     hotbarEl.appendChild(slot);
   }
 }
@@ -1918,6 +2013,24 @@ function furnaceSlotClick(idx,split){
   if(split) splitClick(f.slots, idx); else slotClick(f.slots, idx);
 }
 invPanel.addEventListener('click', (e)=>{ const el=e.target.closest('.islot'); if(!el) return; setPointer(e); handleSlot(el.dataset.zone, +el.dataset.idx, splitMode); });
+// ---- Inventar-Tooltip: zeigt den Item-Namen unter dem Mauszeiger (Desktop) ----
+function slotItemAt(zone,idx){
+  if(zone==='inv') return inv[idx];
+  if(zone==='craft') return craftGrid[idx];
+  if(zone==='arm') return armor[idx];
+  if(zone==='off') return offhand;
+  if(zone==='out') return craftOutput;
+  if(zone==='fce'){ const f=furnaces.get(furnaceKey); return f?f.slots[idx]:null; }
+  return null;
+}
+invPanel.addEventListener('mousemove', (e)=>{
+  const el=e.target.closest('.islot');
+  if(el && !held){ const s=slotItemAt(el.dataset.zone, +el.dataset.idx);
+    if(s){ const t=thing(s.id); slotTipEl.textContent=t?t.name:''; slotTipEl.style.left=e.clientX+'px'; slotTipEl.style.top=e.clientY+'px'; slotTipEl.style.display='block'; return; }
+  }
+  slotTipEl.style.display='none';
+});
+invPanel.addEventListener('mouseleave', ()=>{ slotTipEl.style.display='none'; });
 invPanel.addEventListener('contextmenu', (e)=>{ const el=e.target.closest('.islot'); e.preventDefault(); if(!el) return; setPointer(e); handleSlot(el.dataset.zone, +el.dataset.idx, true); });
 invPanel.addEventListener('touchstart', (e)=>{ const el=e.target.closest('.islot'); if(!el) return; e.preventDefault(); setPointer(e.changedTouches[0]); handleSlot(el.dataset.zone, +el.dataset.idx, splitMode); }, {passive:false});
 document.addEventListener('mousemove', (e)=>{ if(invOpen && held){ setPointer(e); renderHeld(); } });
@@ -1971,6 +2084,7 @@ function openTable(){ if(invOpen) return; invMode='craft'; craftN=3; invOpen=tru
 function openFurnace(key){ furnaceAt(key); furnaceKey=key; invMode='furnace'; invOpen=true; invScreen.classList.add('open'); renderInventory(); if(!isTouch) document.exitPointerLock(); }
 function closeInv(){
   invOpen=false; invScreen.classList.remove('open');
+  if(slotTipEl) slotTipEl.style.display='none';
   if(invMode==='craft'){ for(let i=0;i<craftN*craftN;i++){ if(craftGrid[i]){ addItem(craftGrid[i].id, craftGrid[i].count); craftGrid[i]=null; } } } // Werkbank/Crafting leeren
   if(held){ addItem(held.id, held.count); held=null; }
   invMode='craft'; furnaceKey=null;
@@ -1986,6 +2100,7 @@ const settingsScreen=document.getElementById('settingsScreen');
 const setRD=document.getElementById('setRD'), setRDVal=document.getElementById('setRDVal');
 const setSD=document.getElementById('setSD'), setSDVal=document.getElementById('setSDVal');
 const setPresetEl=document.getElementById('setPreset'), setResEl=document.getElementById('setRes');
+const setKeepEl=document.getElementById('setKeepInv');
 const setCloseEl=document.getElementById('setClose');
 setRD.max = isTouch ? 8 : 16;   // Obergrenze hochgesetzt; Handy bitte vorsichtig hochdrehen
 setSD.max = isTouch ? 8 : 16;
@@ -2002,6 +2117,7 @@ function applyRenderScale(){
 function markSegButtons(){
   for(const b of setPresetEl.children) b.classList.toggle('active', b.dataset.preset===settings.preset);
   for(const b of setResEl.children) b.classList.toggle('active', +b.dataset.res===settings.blockRes);
+  for(const b of setKeepEl.children) b.classList.toggle('active', (b.dataset.keep==='1')===!!settings.keepInv);
 }
 function syncSettingsUI(){
   setRD.value=settings.renderDist; setRDVal.textContent=settings.renderDist;
@@ -2025,6 +2141,7 @@ setSD.addEventListener('input', ()=>{
 });
 setPresetEl.addEventListener('click', (e)=>{ const b=e.target.closest('button'); if(b) applyPreset(b.dataset.preset); });
 setResEl.addEventListener('click', (e)=>{ const b=e.target.closest('button'); if(!b) return; settings.blockRes=+b.dataset.res; applyBlockRes(); markSegButtons(); saveSettings(); });
+setKeepEl.addEventListener('click', (e)=>{ const b=e.target.closest('button'); if(!b) return; settings.keepInv=(b.dataset.keep==='1'); markSegButtons(); saveSettings(); });
 const setVol=document.getElementById('setVol'), setVolVal=document.getElementById('setVolVal');
 function syncVol(){ const v=Math.round((settings.volume!=null?settings.volume:0.7)*100); setVol.value=v; setVolVal.textContent=v+'%'; }
 setVol.addEventListener('input', ()=>{ settings.volume=+setVol.value/100; SFX.setVolume(settings.volume); setVolVal.textContent=setVol.value+'%'; saveSettings(); });
@@ -2345,11 +2462,14 @@ function die(){ dead=true; SFX.die(); invOpen=false; invScreen.classList.remove(
 function respawn(){
   dead=false; deathEl.classList.remove('open');
   health=HEALTH_MAX; hunger=HUNGER_MAX; air=AIR_MAX; burnT=0;
-  // Tod kostet alles: Inventar, Werkbank-Raster, Zweithand leeren. (Keine Item-Drops in der Welt zum Einsammeln.)
-  for(let i=0;i<SLOT_COUNT;i++) inv[i]=null;
-  for(let i=0;i<craftGrid.length;i++) craftGrid[i]=null;
-  for(let i=0;i<4;i++) armor[i]=null;
-  offhand=null; held=null; selectedSlot=0;
+  // Tod kostet alles - ausser Keep-Inventory ist an. (Keine Item-Drops in der Welt zum Einsammeln.)
+  if(!settings.keepInv){
+    for(let i=0;i<SLOT_COUNT;i++) inv[i]=null;
+    for(let i=0;i<craftGrid.length;i++) craftGrid[i]=null;
+    for(let i=0;i<4;i++) armor[i]=null;
+    offhand=null;
+  }
+  held=null; selectedSlot=0;
   saveInv();   // Tod sofort sichern, sonst laedt ein Rejoin das alte volle Inventar
   recomputeCraft(); renderHotbar(); renderHeld(); if(invOpen) renderInventory();
   player.x=8.5; player.z=8.5; player.vx=player.vy=player.vz=0;
@@ -2533,7 +2653,7 @@ function applyCrater(cx,cy,cz,r){
     const ccx=Math.floor(x/CHUNK_SIZE), ccz=Math.floor(z/CHUNK_SIZE);
     const c=world.ensureChunkData(ccx,ccz);
     const lx=x-ccx*CHUNK_SIZE, lz=z-ccz*CHUNK_SIZE;
-    c.data[((y-Y_MIN)*CHUNK_SIZE+lz)*CHUNK_SIZE+lx]=AIR;
+    writeData(c, ((y-Y_MIN)*CHUNK_SIZE+lz)*CHUNK_SIZE+lx, AIR);   // Daten + Sektions-Zaehler
     touched.add(ccx+','+ccz);
     if(lx===0) touched.add((ccx-1)+','+ccz); if(lx===CHUNK_SIZE-1) touched.add((ccx+1)+','+ccz);
     if(lz===0) touched.add(ccx+','+(ccz-1)); if(lz===CHUNK_SIZE-1) touched.add(ccx+','+(ccz+1));
