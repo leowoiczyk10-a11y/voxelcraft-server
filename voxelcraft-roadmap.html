@@ -119,7 +119,7 @@
   </header>
   <div id="list"></div>
   <footer>
-    <span class="hint">Sound + Lautstaerke sind erledigt.</span>
+    <span class="hint">Alle Punkte erledigt! 🎉</span>
     <button class="reset" id="reset">Alles zuruecksetzen</button>
   </footer>
 </div>
@@ -128,44 +128,44 @@
 // Datenmodell. done:true = Standard abgehakt. note/tag = Zusatzinfo.
 const DATA = [
   { cat:"Kern-Gameplay", items:[
-    { id:"drops",   label:"Zombie/Skelett droppen Items", note:"Kuh/Schaf/Huhn droppen schon Fleisch — fehlt nur fuer Gegner (Fleisch/Knochen/Pfeile)" },
-    { id:"arrowcraft", label:"Crafting-Rezept Pfeile + Bogen" },
-    { id:"sleep",   label:"Schlafen (Bett skippt die Nacht)" },
-    { id:"respawn", label:"Inventar-Reset beim Tod", note:"aktuell stirbst du, behaeltst aber alles" },
-    { id:"xp",      label:"Erfahrungssystem / Levelaufstieg" },
+    { id:"drops",   label:"Zombie/Skelett droppen Items", done:true, note:"Fleisch/Knochen/Pfeile + Schwarzpulver vom Creeper" },
+    { id:"arrowcraft", label:"Crafting-Rezept Pfeile + Bogen", done:true },
+    { id:"sleep",   label:"Schlafen (Bett skippt die Nacht)", done:true, note:"Bett craften (3 Leder + 3 Bretter), nachts antippen — setzt auch den Respawn-Punkt" },
+    { id:"respawn", label:"Inventar-Reset beim Tod", done:true, note:"Inventar + XP weg beim Tod (per Einstellung abschaltbar)" },
+    { id:"xp",      label:"Erfahrungssystem / Levelaufstieg", done:true, note:"XP-Kuegelchen von Mobs + Erzen, XP-Leiste + Level ueber der Hotbar" },
   ]},
   { cat:"Bloecke / Welt", items:[
-    { id:"waterflow", label:"Wasser-Fluss", note:"Wasser ist aktuell statisch" },
-    { id:"lava",    label:"Lava" },
-    { id:"redstone",label:"Redstone" },
-    { id:"caves",   label:"Hoehlen unter dem Terrain" },
-    { id:"nether",  label:"Nether / Dimensionen" },
-    { id:"structs", label:"Strukturen (Doerfer, Minen, Tempel)" },
+    { id:"waterflow", label:"Wasser-Fluss", done:true, note:"Aus dem Eimer gegossenes Wasser flutet runter + seitlich (begrenzt)" },
+    { id:"lava",    label:"Lava", done:true, note:"Lava-Seen in tiefen Hoehlen, Feuerschaden, Lava+Wasser=Obsidian" },
+    { id:"redstone",label:"Redstone", done:true, note:"Redstone-Erz, Draht, Hebel + Lampe — Hebel schaltet das Netz" },
+    { id:"caves",   label:"Hoehlen unter dem Terrain", done:true, note:"3D-Noise schnitzt Hoehlen + Erzadern ins Gestein" },
+    { id:"nether",  label:"Nether / Dimensionen", done:true, note:"Obsidian + Feuerzeug -> Portal in eine Netherrack/Lava-Dimension" },
+    { id:"structs", label:"Strukturen (Doerfer, Minen, Tempel)", done:true, note:"Oberflaechen-Huetten + unterirdische Loot-Dungeons mit Truhen" },
   ]},
   { cat:"Mobs", items:[
-    { id:"creeper", label:"Creeper", tag:"icon", note:"naechster dran — kriegt Zisch + Bumm aus der neuen Sound-Engine" },
-    { id:"farm",    label:"Schwein + Kuh mit Milch" },
-    { id:"mobai",   label:"Mob-KI die Hindernissen ausweicht" },
-    { id:"spawner", label:"Mob-Spawner-Block" },
+    { id:"creeper", label:"Creeper", tag:"icon", done:true, note:"laeuft ran, zischt + explodiert mit Krater" },
+    { id:"farm",    label:"Schwein + Kuh mit Milch", done:true, note:"Schwein (droppt Schwein) + Eimer auf Kuh = Milch" },
+    { id:"mobai",   label:"Mob-KI die Hindernissen ausweicht", done:true, note:"Schwarm-Trennung: Mobs weichen sich aus statt zu verklumpen" },
+    { id:"spawner", label:"Mob-Spawner-Block", done:true, note:"Craftbar (8 Eisen + Fleisch); spawnt Gegner, wenn ein Spieler nah ist" },
   ]},
   { cat:"Inventar / Items", items:[
-    { id:"armor",   label:"Ruestungssystem" },
-    { id:"bow",     label:"Bogen als Spieler-Waffe", note:"Pfeil-Logik existiert schon (Skelett schiesst) — Infra teils da" },
-    { id:"bucket",  label:"Eimer (Wasser/Lava aufnehmen)" },
-    { id:"compass", label:"Kompass / Karte" },
-    { id:"anvil",   label:"Amboss (Items reparieren)" },
-    { id:"enchant", label:"Zaubertisch" },
+    { id:"armor",   label:"Ruestungssystem", done:true, note:"Leder/Eisen/Gold/Diamant, 4 Slots, Schadensreduktion + Abnutzung" },
+    { id:"bow",     label:"Bogen als Spieler-Waffe", done:true, note:"Pfeil zielen + schiessen, trifft Mobs" },
+    { id:"bucket",  label:"Eimer (Wasser/Lava aufnehmen)", done:true },
+    { id:"compass", label:"Kompass / Karte", done:true, note:"Richtungsband oben + Haus-Marker zeigt zum Spawn" },
+    { id:"anvil",   label:"Amboss (Items reparieren)", done:true, note:"Zwei gleiche Teile -> Haltbarkeit summiert + Bonus, Verzauberung bleibt" },
+    { id:"enchant", label:"Zaubertisch", done:true, note:"Kostet XP-Level: Effizienz/Schaerfe/Staerke/Schutz, Stufe 1-3" },
   ]},
   { cat:"Multiplayer", items:[
-    { id:"chat",    label:"Chat-Funktion" },
-    { id:"pvp",     label:"PvP (Spieler-Schaden gegen Spieler)" },
-    { id:"chests",  label:"Truhen synchronisieren sich uebers Netz" },
+    { id:"chat",    label:"Chat-Funktion", done:true, note:"T zum Tippen (Touch: Sprechblasen-Button), Nachrichten an alle" },
+    { id:"pvp",     label:"PvP (Spieler-Schaden gegen Spieler)", done:true, note:"Nahkampf gegen andere Spieler, Waffenschaden zaehlt" },
+    { id:"chests",  label:"Truhen synchronisieren sich uebers Netz", done:true, note:"27 Slots, Inhalt geht ueber den Server an alle + wird gespeichert" },
   ]},
   { cat:"Sound", items:[
     { id:"sfx",     label:"Sound-Engine (Abbau, Platzieren, Schritte, Kampf, Tod, Essen)", done:true },
     { id:"volume",  label:"Lautstaerke-Regler im Menue", done:true },
-    { id:"ambient", label:"Tag/Nacht-Ambient", tag:"opt" },
-    { id:"boom",    label:"Creeper-Zischen + Explosions-Bumm", tag:"wait", note:"explode()-Klang ist schon in der Engine, wartet auf den Creeper" },
+    { id:"ambient", label:"Tag/Nacht-Ambient", tag:"opt", done:true, note:"Vogel-Zwitschern tagsueber, Grillen nachts" },
+    { id:"boom",    label:"Creeper-Zischen + Explosions-Bumm", done:true },
   ]},
 ];
 

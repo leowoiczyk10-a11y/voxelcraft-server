@@ -27,7 +27,7 @@
   .durbar { position: absolute; left: 4px; right: 4px; bottom: 3px; height: 3px; background: rgba(0,0,0,0.45); border-radius: 2px; overflow: hidden; }
 
   #hotbar { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; gap: 5px; padding: 5px; background: rgba(20,22,28,0.45); border-radius: 10px; backdrop-filter: blur(4px); pointer-events: auto; }
-  #hotbarName { position: absolute; left: 50%; bottom: 70px; transform: translateX(-50%); color: #fff; font-size: 15px; font-weight: 600; text-shadow: 0 1px 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.6); padding: 1px 8px; opacity: 0; transition: opacity 0.35s; pointer-events: none; white-space: nowrap; }
+  #hotbarName { position: absolute; left: 50%; bottom: 118px; transform: translateX(-50%); color: #fff; font-size: 15px; font-weight: 600; text-shadow: 0 1px 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.6); padding: 1px 8px; opacity: 0; transition: opacity 0.35s; pointer-events: none; white-space: nowrap; }
   #hotbarName.show { opacity: 1; }
   #slotTip { position: fixed; z-index: 30; background: rgba(12,14,20,0.95); color: #e8eefc; border: 1px solid rgba(255,255,255,0.16); border-radius: 6px; padding: 3px 9px; font-size: 13px; font-weight: 600; pointer-events: none; white-space: nowrap; transform: translate(-50%, -135%); display: none; box-shadow: 0 4px 14px rgba(0,0,0,0.55); }
   .slot { width: 46px; height: 46px; border-radius: 7px; background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
@@ -92,7 +92,7 @@
 
   #hurt { position: fixed; inset: 0; pointer-events: none; z-index: 4; background: radial-gradient(circle, rgba(170,0,0,0) 42%, rgba(170,0,0,0.6) 100%); opacity: 0; transition: opacity 0.08s; }
   #burn { position: fixed; inset: 0; pointer-events: none; z-index: 4; background: radial-gradient(circle, rgba(255,90,0,0) 36%, rgba(255,64,0,0.55) 100%); opacity: 0; transition: opacity 0.12s; }
-  #vitals { position: fixed; left: 50%; bottom: 74px; transform: translateX(-50%); z-index: 5; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  #vitals { position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%); z-index: 5; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 3px; }
   .vrow { display: flex; gap: 3px; }
   .pip { width: 12px; height: 12px; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.5); }
   .pip.hp  { background: #4a2020; } .pip.hp.on  { background: #e23b3b; }
@@ -136,6 +136,33 @@
   .ribox.out { border-color:rgba(120,200,130,0.6); }
   .rixn { font-size:11px; color:#cdd9f0; margin-right:3px; }
   .rarrow { color:#9fb0cc; font-size:13px; margin:0 2px; }
+  /* ---- XP-Leiste (ueber der Hotbar) ---- */
+  #xpbar { position: fixed; left: 50%; bottom: 74px; transform: translateX(-50%); width: min(360px, 78vw); height: 7px; background: rgba(0,0,0,0.55); border-radius: 4px; overflow: hidden; z-index: 5; pointer-events: none; box-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+  #xpfill { height: 100%; width: 0%; background: linear-gradient(90deg,#5fd35f,#9fe06a); transition: width 0.18s; }
+  #xplvl { position: fixed; left: 50%; bottom: 83px; transform: translateX(-50%); z-index: 6; color: #9fe06a; font-size: 13px; font-weight: 700; text-shadow: 0 1px 3px #000, 0 0 4px rgba(0,0,0,0.8); pointer-events: none; font-family: ui-monospace, monospace; }
+  #xplvl.hidden { display: none; }
+  /* ---- Kompass (oben mittig) ---- */
+  #compass { position: fixed; left: 50%; top: 8px; transform: translateX(-50%); width: 200px; height: 24px; overflow: hidden; z-index: 5; pointer-events: none; background: rgba(20,22,28,0.4); border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); }
+  #compass .cmark { position: absolute; left: 50%; top: 0; width: 2px; height: 100%; background: rgba(255,255,255,0.75); transform: translateX(-50%); }
+  #compass .clab { position: absolute; top: 4px; transform: translateX(-50%); font-size: 12px; font-weight: 700; color: #d8e2f4; text-shadow: 0 1px 2px #000; font-family: ui-monospace, monospace; white-space: nowrap; }
+  #compass .clab.card { color: #ffd87a; }
+  #compass .chome { position: absolute; top: 3px; transform: translateX(-50%); font-size: 14px; line-height: 18px; color: #6fd0ff; text-shadow: 0 1px 2px #000; }
+  /* ---- Chat ---- */
+  #chatLog { position: fixed; left: 12px; bottom: 210px; width: min(380px, 70vw); z-index: 6; pointer-events: none; display: flex; flex-direction: column; gap: 3px; font-family: ui-monospace, monospace; }
+  #chatLog .cmsg { font-size: 13px; color: #eef3ff; background: rgba(12,14,20,0.5); padding: 2px 8px; border-radius: 5px; align-self: flex-start; max-width: 100%; text-shadow: 0 1px 2px #000; transition: opacity 0.6s; word-break: break-word; }
+  #chatLog .cmsg b { color: #8fd0ff; }
+  #chatLog .cmsg.sys { color: #ffd87a; font-style: italic; }
+  #chatLog .cmsg.old { opacity: 0; }
+  #chatInput { position: fixed; left: 12px; bottom: 176px; width: min(380px, 70vw); z-index: 12; display: none; font-family: ui-monospace, monospace; font-size: 14px; padding: 8px 10px; border-radius: 7px; border: 2px solid rgba(120,180,255,0.6); background: rgba(12,14,20,0.94); color: #fff; outline: none; pointer-events: auto; }
+  #chatInput.open { display: block; }
+  #btnChat { left: 28px; bottom: 152px; width: 50px; height: 50px; font-size: 20px; }
+  /* ---- Schlaf-Blende ---- */
+  #sleepFade { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 9; transition: opacity 0.7s; }
+  #sleepFade.on { opacity: 1; }
+  /* ---- Verzauberungs-Glanz ---- */
+  .glint { position:absolute; inset:2px; border-radius:4px; pointer-events:none; box-shadow: inset 0 0 6px rgba(190,110,255,0.85); background: radial-gradient(circle at 50% 30%, rgba(205,130,255,0.22), transparent 72%); }
+  #enchBtn.ready { background:#7a3ad0; border-color:#b98af0; color:#fff; }
+  #chestGridEl { grid-auto-rows: 42px; }
 </style>
 </head>
 <body>
@@ -147,14 +174,21 @@
   <div id="debug"></div>
   <div id="hotbar"></div>
   <div id="hotbarName"></div>
+  <div id="xpbar"><div id="xpfill"></div></div>
+  <div id="xplvl" class="hidden">0</div>
+  <div id="compass"></div>
+  <div id="chatLog" class="dim"></div>
 </div>
 <div id="slotTip"></div>
+<input id="chatInput" maxlength="100" placeholder="Nachricht … (Enter senden, Esc abbrechen)">
+<div id="sleepFade"></div>
 
 <div id="joy"><div id="joyKnob"></div></div>
 <div id="btnJump" class="btn">SPRUNG</div>
 <div id="btnBreak" class="btn">ABBAU</div>
 <div id="btnPlace" class="btn">SETZEN</div>
 <div id="btnItems" class="btn">ITEMS</div>
+<div id="btnChat" class="btn">&#128172;</div>
 <div id="btnSettings" title="Einstellungen (O)">&#9881;</div>
 
 <div id="invScreen">
@@ -186,6 +220,18 @@
       </div>
       <div class="fceArrowWrap"><div id="fceProg" class="fceProg"></div></div>
       <div id="fceOutEl"></div>
+    </div>
+    <div id="chestRow" style="display:none"><div id="chestGridEl" class="invGrid"></div></div>
+    <div id="anvilRow" class="invFurnaceRow" style="display:none">
+      <div id="anvIn0El"></div>
+      <div id="anvIn1El"></div>
+      <div class="craftArrow">&#10142;</div>
+      <div id="anvOutEl"></div>
+    </div>
+    <div id="enchRow" class="invFurnaceRow" style="display:none">
+      <div id="enchInEl"></div>
+      <div class="craftArrow">&#10142;</div>
+      <div id="enchBtn" class="invToggleBtn">Verzaubern</div>
     </div>
     <div id="invMainEl" class="invGrid"></div>
     <div class="invHotRow">
@@ -227,9 +273,33 @@
       <div class="setHint">Pixel-Aufloesung der Block-Texturen. Wirkt sofort.</div>
     </div>
     <div class="setRow">
+      <div class="setLabel">Sichtfeld (FOV) <span id="setFovVal" class="setVal"></span></div>
+      <input id="setFov" type="range" min="60" max="110" step="1">
+      <div class="setHint">Blickwinkel der Kamera. Hoeher = mehr Uebersicht, staerkere Verzerrung.</div>
+    </div>
+    <div class="setRow">
+      <div class="setLabel">Maus-Empfindlichkeit <span id="setSensVal" class="setVal"></span></div>
+      <input id="setSens" type="range" min="20" max="300" step="5">
+      <div class="setHint">Wie schnell sich die Kamera beim Umsehen dreht.</div>
+    </div>
+    <div class="setRow">
       <div class="setLabel">Lautstaerke <span id="setVolVal" class="setVal"></span></div>
       <input id="setVol" type="range" min="0" max="100" step="1">
       <div class="setHint">Lautstaerke aller Spielgeraeusche. 0 = stumm. Wirkt sofort.</div>
+    </div>
+    <div class="setRow">
+      <div class="setLabel">Spieler-Skin (Farbe)</div>
+      <div class="setSeg" id="setSkin" style="flex-wrap:wrap;gap:6px;">
+        <button data-skin="4886233" style="background:#4a90d9;width:28px;"></button>
+        <button data-skin="14430763" style="background:#dc3a2b;width:28px;"></button>
+        <button data-skin="4231971" style="background:#408f63;width:28px;"></button>
+        <button data-skin="15903816" style="background:#f2c948;width:28px;"></button>
+        <button data-skin="10568126" style="background:#a134be;width:28px;"></button>
+        <button data-skin="15698432" style="background:#ef8b40;width:28px;"></button>
+        <button data-skin="3092271" style="background:#2f2f2f;width:28px;"></button>
+        <button data-skin="15921906" style="background:#f2f2f2;width:28px;"></button>
+      </div>
+      <div class="setHint">Deine Farbe — wird im Multiplayer für andere Spieler angezeigt.</div>
     </div>
     <div class="setRow">
       <div class="setLabel">Inventar bei Tod behalten</div>
@@ -252,7 +322,11 @@
   <div id="hungerRow" class="vrow"></div>
 </div>
 
-<div id="death"><div><h1>DU BIST GESTORBEN</h1><div id="respawnBtn">Wiederbeleben</div></div></div>
+<div id="death"><div><h1>DU BIST GESTORBEN</h1><div id="deathStats"></div><div id="respawnBtn">Wiederbeleben</div></div></div>
+
+<canvas id="minimap" width="150" height="150" style="position:fixed;top:10px;right:10px;width:150px;height:150px;border:2px solid rgba(0,0,0,.5);border-radius:6px;image-rendering:pixelated;background:#1a2030;z-index:30;display:none;"></canvas>
+<div id="achToast" style="position:fixed;top:18px;left:50%;transform:translateX(-50%) translateY(-120px);background:linear-gradient(180deg,#2a2436,#181420);border:2px solid #c084fc;border-radius:10px;padding:10px 16px;color:#e9f1df;font-family:ui-monospace,monospace;font-size:13px;z-index:60;transition:transform .4s cubic-bezier(.2,1.3,.4,1);box-shadow:0 6px 20px rgba(0,0,0,.5);max-width:280px;text-align:center;pointer-events:none;"></div>
+<div id="effects" style="position:fixed;left:10px;bottom:140px;display:flex;flex-direction:column;gap:4px;z-index:30;font-family:ui-monospace,monospace;font-size:11px;pointer-events:none;"></div>
 
 <div id="loading"></div>
 
@@ -305,10 +379,11 @@ const PRESETS = {
 };
 const SETTINGS_KEY = 'voxelcraft_settings_v1';
 const DEFAULT_PRESET = isTouch ? 'niedrig' : 'mittel';
-let settings = Object.assign({ preset: DEFAULT_PRESET, blockRes:16, volume:0.7, keepInv:false }, PRESETS[DEFAULT_PRESET]);
+let settings = Object.assign({ preset: DEFAULT_PRESET, blockRes:16, volume:0.7, keepInv:false, fov:72, sensitivity:1.0, skin:0x4a90d9 }, PRESETS[DEFAULT_PRESET]);
 try { const _raw = localStorage.getItem(SETTINGS_KEY); if(_raw){ Object.assign(settings, JSON.parse(_raw)); } } catch(_){}
 function saveSettings(){ try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch(_){} }
 let settingsOpen = false;
+let baseFov = settings.fov;
 let RENDER_DISTANCE = settings.renderDist;
 let SIM_DISTANCE = settings.simDist;
 let UNLOAD_DISTANCE = RENDER_DISTANCE + 2;
@@ -369,7 +444,7 @@ const SFX = (function(){
       case GRASS: case LEAVES: case SNOW: return 'grass';
       case SAND: case GRAVEL: return 'sand';
       case DIRT: return 'dirt';
-      case WOOD: case LOG: case CRAFTING_TABLE: case TORCH: return 'wood';
+      case WOOD: case LOG: case CRAFTING_TABLE: case TORCH: case BED: return 'wood';
       case GLASS: return 'glass';
       case WATER: return 'water';
       case STONE: case COBBLE: case BRICKS: case BEDROCK: case FURNACE:
@@ -468,7 +543,26 @@ const SFX = (function(){
     g.gain.exponentialRampToValueAtTime(0.0001,t+0.32);
     src.connect(filt); filt.connect(g); g.connect(master); src.start(t); src.stop(t+0.36);
   }
-  return { init, resume, setVolume, dig, place, step, land, hit, mobDie, pickup, hurt, die, eat, ui, fuse, explode, sizzle, bow };
+  function xp(){ // XP-Kuegelchen eingesammelt (kurzer heller Blip)
+    if(!ready) return; resume(); const t=ctx.currentTime;
+    tone(t, 880+Math.random()*120, 1500, 0.07, 0.10, 'sine');
+  }
+  function levelup(){ // Levelaufstieg (aufsteigender Dreiklang)
+    if(!ready) return; resume(); const t=ctx.currentTime;
+    const f=[523,659,784,1047];
+    for(let i=0;i<f.length;i++) tone(t+i*0.08, f[i], null, 0.16, 0.13, 'triangle');
+  }
+  function bird(){ // Tag-Ambient: zwei kurze Vogel-Zwitscher
+    if(!ready) return; resume(); const t=ctx.currentTime;
+    const b=1600+Math.random()*600;
+    tone(t,      b,      b*1.25, 0.07, 0.045, 'sine');
+    tone(t+0.10, b*1.15, b*0.9,  0.06, 0.04,  'sine');
+  }
+  function cricket(){ // Nacht-Ambient: feines Grillen-Zirpen
+    if(!ready) return; resume(); const t=ctx.currentTime;
+    for(let i=0;i<4;i++) burst(t+i*0.045, 5200+Math.random()*400, 9, 0.025, 0.05, 'bandpass');
+  }
+  return { init, resume, setVolume, dig, place, step, land, hit, mobDie, pickup, hurt, die, eat, ui, fuse, explode, sizzle, bow, xp, levelup, bird, cricket };
 })();
 let SEED = 1337;                 // Default; wird vom Server-Seed ueberschrieben
 const CHUNK_BUDGET_MS = isTouch ? 5 : 6;
@@ -486,6 +580,20 @@ const BEDROCK=15, COAL_ORE=16, COPPER_ORE=17, IRON_ORE=18, GOLD_ORE=19, DIAMOND_
 const LAVA=21, OBSIDIAN=22;
 const TALL_GRASS=23, FLOWER_RED=24, FLOWER_YELLOW=25, CACTUS=26, DEAD_BUSH=27;
 const FURNACE=28, TORCH=29;   // eigene IDs! (21/22 sind Lava/Obsidian - vorher kollidiert)
+const BED=30;                 // Schlafen -> Nacht ueberspringen, Spawn setzen
+// ---- Roadmap-Ausbau: Stationen, Nether, Redstone ----
+const SPAWNER=31, CHEST=32, ANVIL=33, ENCHANTER=34;
+const NETHERRACK=35, GLOWSTONE=36, PORTAL=37, SOUL_SAND=38;
+const REDSTONE_ORE=39;
+const REDSTONE_WIRE=40, REDSTONE_WIRE_ON=41, LEVER=42, LEVER_ON=43, REDSTONE_LAMP=44, REDSTONE_LAMP_ON=45;
+// ---- Roadmap v2: neue Bloecke ----
+const TNT=46, LANTERN=47, SOUL_LANTERN=48, CAMPFIRE=49, BOOKSHELF=50, BARREL=51, STONECUTTER=52;
+const FARMLAND=53, WHEAT_S0=54, WHEAT_S1=55, WHEAT_S2=56, WHEAT_S3=57, SAPLING=58;
+const ICE=59, KELP=60, CORAL=61, SNOW_LAYER=62, FIRE=63, COMPOSTER=64;
+const BREWING_STAND=65, ENDER_CHEST=66, GRINDSTONE=67;
+const RAIL=68, POWERED_RAIL=69;
+const END_PORTAL_FRAME=70, END_PORTAL=71, END_STONE=72, PURPUR=73, BEACON=74, DRAGON_EGG=75, SUGARCANE=76;
+function isWheat(id){ return id===WHEAT_S0||id===WHEAT_S1||id===WHEAT_S2||id===WHEAT_S3; }
 const BLOCKS = {
   [AIR]:   { name:'Air',    solid:false, opaque:false },
   [GRASS]: { name:'Gras',   solid:true,  opaque:true,  top:0x5fa83d, side:0x6e7b3c, bottom:0x8a6a43 },
@@ -517,10 +625,62 @@ const BLOCKS = {
   [FLOWER_YELLOW]:{ name:'Loewenzahn', solid:false, opaque:false, color:0xf2d24a },
   [CACTUS]:     { name:'Kaktus',    solid:true,  opaque:true,  color:0x4e8f3a },
   [DEAD_BUSH]:  { name:'Toter Busch', solid:false, opaque:false, color:0x9a6f3a },
+  [BED]:        { name:'Bett',  solid:true,  opaque:true,  top:0xd23b3b, side:0xb02e2e, bottom:0x7a5a32 },
+  [SPAWNER]:    { name:'Mob-Spawner', solid:true, opaque:true, color:0x24262c, top:0x2e3036 },
+  [CHEST]:      { name:'Truhe', solid:true,  opaque:true,  top:0x8a6a3a, side:0x7a5a2e, bottom:0x6f5126 },
+  [ANVIL]:      { name:'Amboss', solid:true, opaque:true,  color:0x3a3a40, top:0x55555c, bottom:0x2a2a30 },
+  [ENCHANTER]:  { name:'Zaubertisch', solid:true, opaque:true, top:0x6a3a8a, side:0x33263f, bottom:0x14121f },
+  [NETHERRACK]: { name:'Netherrack', solid:true, opaque:true, color:0x6e2b24 },
+  [GLOWSTONE]:  { name:'Glowstone', solid:true, opaque:true, color:0xe8c25a },
+  [PORTAL]:     { name:'Nether-Portal', solid:false, opaque:false, color:0x9a3ad8, transparent:true },
+  [SOUL_SAND]:  { name:'Seelensand', solid:true, opaque:true, color:0x4a3a2e },
+  [REDSTONE_ORE]:    { name:'Redstone-Erz', solid:true, opaque:true, color:0x9a3a30 },
+  [REDSTONE_WIRE]:   { name:'Redstone', solid:false, opaque:false, color:0x8a1a1a },
+  [REDSTONE_WIRE_ON]:{ name:'Redstone', solid:false, opaque:false, color:0xff2a2a },
+  [LEVER]:      { name:'Hebel', solid:false, opaque:false, color:0x6a5030 },
+  [LEVER_ON]:   { name:'Hebel', solid:false, opaque:false, color:0xc08a3a },
+  [REDSTONE_LAMP]:   { name:'Redstone-Lampe', solid:true, opaque:true, color:0x6a5530 },
+  [REDSTONE_LAMP_ON]:{ name:'Redstone-Lampe', solid:true, opaque:true, color:0xffd86a },
+  // ---- Roadmap v2 ----
+  [TNT]:        { name:'TNT', solid:true, opaque:true, top:0xc83a2a, side:0xc83a2a, bottom:0x8a6a3a },
+  [LANTERN]:    { name:'Laterne', solid:true, opaque:false, color:0xffce6a },
+  [SOUL_LANTERN]:{ name:'Seelenlaterne', solid:true, opaque:false, color:0x4ad0e0 },
+  [CAMPFIRE]:   { name:'Lagerfeuer', solid:true, opaque:false, top:0xff7a2a, side:0x6f5126, bottom:0x4a3826 },
+  [BOOKSHELF]:  { name:'Bücherregal', solid:true, opaque:true, top:0x9a7842, side:0x9a6a3a, bottom:0x9a7842 },
+  [BARREL]:     { name:'Fass', solid:true, opaque:true, top:0xc89a5a, side:0x8a6a3a, bottom:0x8a6a3a },
+  [STONECUTTER]:{ name:'Steinschneider', solid:true, opaque:true, top:0x9aa0a6, side:0x6e6e74, bottom:0x6e6e74 },
+  [FARMLAND]:   { name:'Ackerboden', solid:true, opaque:true, top:0x4a3220, side:0x6b4f2a, bottom:0x6b4f2a },
+  [WHEAT_S0]:   { name:'Weizen', solid:false, opaque:false, color:0x6a9a3a },
+  [WHEAT_S1]:   { name:'Weizen', solid:false, opaque:false, color:0x8aaa3a },
+  [WHEAT_S2]:   { name:'Weizen', solid:false, opaque:false, color:0xb0b040 },
+  [WHEAT_S3]:   { name:'Weizen', solid:false, opaque:false, color:0xd9c060 },
+  [SAPLING]:    { name:'Setzling', solid:false, opaque:false, color:0x3f8f2a },
+  [ICE]:        { name:'Eis', solid:true, opaque:false, color:0x9fcaf0, transparent:true },
+  [KELP]:       { name:'Seetang', solid:false, opaque:false, color:0x2f8f4a },
+  [CORAL]:      { name:'Koralle', solid:false, opaque:false, color:0xe85a8a },
+  [SNOW_LAYER]: { name:'Schneedecke', solid:false, opaque:false, color:0xeef3f8 },
+  [FIRE]:       { name:'Feuer', solid:false, opaque:false, color:0xff8a2a },
+  [COMPOSTER]:  { name:'Komposter', solid:true, opaque:true, top:0x3a2a18, side:0x8a6a3a, bottom:0x6f5126 },
+  [BREWING_STAND]:{ name:'Braustand', solid:false, opaque:false, color:0x8a8a90 },
+  [ENDER_CHEST]:{ name:'Endertruhe', solid:true, opaque:true, top:0x183a36, side:0x12302c, bottom:0x0d1f1c },
+  [GRINDSTONE]: { name:'Schleifstein', solid:true, opaque:true, top:0x9aa0a6, side:0x7a5a30, bottom:0x6e6e74 },
+  [RAIL]:       { name:'Schiene', solid:false, opaque:false, color:0xb0a070 },
+  [POWERED_RAIL]:{ name:'Antriebsschiene', solid:false, opaque:false, color:0xd0a040 },
+  [END_PORTAL_FRAME]:{ name:'Endportalrahmen', solid:true, opaque:true, top:0x2a3a30, side:0x202a24, bottom:0x202a24 },
+  [END_PORTAL]: { name:'Endportal', solid:false, opaque:false, color:0x0a1410, transparent:true },
+  [END_STONE]:  { name:'Endstein', solid:true, opaque:true, color:0xdadca0 },
+  [PURPUR]:     { name:'Purpur', solid:true, opaque:true, color:0xa868a8 },
+  [BEACON]:     { name:'Leuchtfeuer', solid:true, opaque:false, color:0x6fe0e0, transparent:true },
+  [DRAGON_EGG]: { name:'Drachenei', solid:true, opaque:true, color:0x140e1f },
+  [SUGARCANE]:  { name:'Zuckerrohr', solid:false, opaque:false, color:0x8ac060 },
 };
+// schnelle Block-Kategorien fuer Redstone
+function isWire(id){ return id===REDSTONE_WIRE||id===REDSTONE_WIRE_ON; }
+function isLever(id){ return id===LEVER||id===LEVER_ON; }
+function isLamp(id){ return id===REDSTONE_LAMP||id===REDSTONE_LAMP_ON; }
 const isSolid  = (id) => BLOCKS[id] ? BLOCKS[id].solid : true;
 const isOpaque = (id) => BLOCKS[id] ? BLOCKS[id].opaque : true;
-const isCrossPlant = (id) => id===TALL_GRASS||id===FLOWER_RED||id===FLOWER_YELLOW||id===DEAD_BUSH;
+const isCrossPlant = (id) => id===TALL_GRASS||id===FLOWER_RED||id===FLOWER_YELLOW||id===DEAD_BUSH||id===REDSTONE_WIRE||id===REDSTONE_WIRE_ON||id===LEVER||id===LEVER_ON||isWheat(id)||id===SAPLING||id===KELP||id===CORAL||id===SUGARCANE||id===FIRE||id===SNOW_LAYER;
 const HOTBAR_COUNT = 9;        // Hotbar = die ersten 9 Inventar-Slots
 let selectedSlot = 0;
 
@@ -543,7 +703,54 @@ const IRON_HELMET=147,    IRON_CHEST=148,    IRON_LEGS=149,    IRON_BOOTS=150;
 const GOLD_HELMET=151,    GOLD_CHEST=152,    GOLD_LEGS=153,    GOLD_BOOTS=154;
 const DIAMOND_HELMET=155, DIAMOND_CHEST=156, DIAMOND_LEGS=157, DIAMOND_BOOTS=158;
 const BOW=159;   // Fernkampfwaffe
+const PORK_RAW=160, PORK_COOKED=161, MILK_BUCKET=162, FLINT_AND_STEEL=163;
+// ---- Roadmap v2: neue Items ----
+const STRING=164, ENDER_PEARL=165, BLAZE_ROD=166, SPIDER_EYE=167, FEATHER=168;
+const WHEAT_SEEDS=169, WHEAT=170, BREAD=171, BONE_MEAL=172, APPLE=173, GOLDEN_APPLE=174;
+const FISHING_ROD=175, RAW_FISH=176, COOKED_FISH=177, PAPER=178, BOOK=179, MAP_ITEM=180;
+const NETHER_WART=181, BLAZE_POWDER=182, GLASS_BOTTLE=183, AWKWARD_POTION=184;
+const POTION_HEAL=185, POTION_STRENGTH=186, POTION_SPEED=187, POTION_POISON=188;
+const NETHER_STAR=189, ELYTRA=190, SADDLE=191, SHIELD_ITEM=192, CHARCOAL=193, SUGAR_CANE=194, GHAST_TEAR=195, ENDER_EYE=196;
+const WOOD_HOE=197, STONE_HOE=198, IRON_HOE=199, MINECART=200;
 const ITEM = {
+  [STRING]:        { name:'Faden',          color:0xe8e8e8 },
+  [ENDER_PEARL]:   { name:'Enderperle',     color:0x18a08a },
+  [BLAZE_ROD]:     { name:'Lohenrute',      color:0xf0a020 },
+  [SPIDER_EYE]:    { name:'Spinnenauge',    color:0xa33030 },
+  [FEATHER]:       { name:'Feder',          color:0xf0f0f0 },
+  [WHEAT_SEEDS]:   { name:'Weizensamen',    color:0x6a9a3a },
+  [WHEAT]:         { name:'Weizen',         color:0xd9c060 },
+  [BREAD]:         { name:'Brot',           color:0xc08a3a },
+  [BONE_MEAL]:     { name:'Knochenmehl',    color:0xf0f0e8 },
+  [APPLE]:         { name:'Apfel',          color:0xd83a3a },
+  [GOLDEN_APPLE]:  { name:'Goldener Apfel', color:0xf2d24a },
+  [FISHING_ROD]:   { name:'Angel',          color:0x9a7842 },
+  [RAW_FISH]:      { name:'Roher Fisch',    color:0x8aa0b0 },
+  [COOKED_FISH]:   { name:'Gebratener Fisch',color:0xc8a060 },
+  [PAPER]:         { name:'Papier',         color:0xf4f4ee },
+  [BOOK]:          { name:'Buch',           color:0x9a5030 },
+  [MAP_ITEM]:      { name:'Karte',          color:0xe8e0c0 },
+  [NETHER_WART]:   { name:'Netherwarze',    color:0xa01828 },
+  [BLAZE_POWDER]:  { name:'Lohenstaub',     color:0xf0b020 },
+  [GLASS_BOTTLE]:  { name:'Glasflasche',    color:0xbfe0ee },
+  [AWKWARD_POTION]:{ name:'Seltsamer Trank',color:0x6a6ad0 },
+  [POTION_HEAL]:   { name:'Heiltrank',      color:0xf03a6a },
+  [POTION_STRENGTH]:{ name:'Stärketrank',   color:0xd03020 },
+  [POTION_SPEED]:  { name:'Tempotrank',     color:0x30c0e0 },
+  [POTION_POISON]: { name:'Gifttrank',      color:0x40a030 },
+  [NETHER_STAR]:   { name:'Netherstern',    color:0xf0f0ff },
+  [ELYTRA]:        { name:'Elytra',         color:0x7a6a8a },
+  [SADDLE]:        { name:'Sattel',         color:0x7a4a2a },
+  [SHIELD_ITEM]:   { name:'Schild',         color:0x6a4a2a },
+  [CHARCOAL]:      { name:'Holzkohle',      color:0x303338 },
+  [SUGAR_CANE]:    { name:'Zuckerrohr',     color:0x8ac060 },
+  [GHAST_TEAR]:    { name:'Ghastträne',     color:0xd8e8e8 },
+  [ENDER_EYE]:     { name:'Auge des Endes', color:0x30b090 },
+  [MINECART]:      { name:'Lore',           color:0x9a9aa0 },
+  [PORK_RAW]:      { name:'Rohes Schwein', color:0xe09a8a },
+  [PORK_COOKED]:   { name:'Schweinebraten', color:0xb06a40 },
+  [MILK_BUCKET]:   { name:'Milcheimer',     color:0xf2f2f2 },
+  [FLINT_AND_STEEL]:{ name:'Feuerzeug',     color:0xb0b4bc },
   [STICK]:       { name:'Stock',        color:0x9a7842 },
   [BEEF]:        { name:'Rohes Rind',   color:0xc06050 },
   [CHICKEN_RAW]: { name:'Rohes Huhn',   color:0xe8b0a0 },
@@ -571,7 +778,8 @@ const ITEM = {
 };
 function thing(id){ return BLOCKS[id] || ITEM[id] || TOOL[id] || ARMOR[id]; }
 function thingColor(id){ const t=thing(id); return t ? (t.color??t.top??0x888888) : 0x888888; }
-const FOOD = { [BEEF]:3, [CHICKEN_RAW]:2, [MUTTON]:2, [COOKED_BEEF]:8, [COOKED_CHICKEN]:6, [COOKED_MUTTON]:6, [ROTTEN_FLESH]:2 }; // Hunger den es zurueckgibt
+const FOOD = { [BEEF]:3, [CHICKEN_RAW]:2, [MUTTON]:2, [PORK_RAW]:3, [COOKED_BEEF]:8, [COOKED_CHICKEN]:6, [COOKED_MUTTON]:6, [PORK_COOKED]:8, [ROTTEN_FLESH]:2, [MILK_BUCKET]:2,
+  [BREAD]:5, [APPLE]:4, [GOLDEN_APPLE]:4, [RAW_FISH]:2, [COOKED_FISH]:5, [SPIDER_EYE]:2 }; // Hunger den es zurueckgibt
 function isFood(id){ return FOOD[id]!==undefined; }
 
 // Werkzeuge: cat (pick/axe/shovel/sword), tier, speed (Abbau-Tempo), dur (Haltbarkeit), dmg
@@ -589,6 +797,10 @@ const TOOL = {
   [IRON_AXE]:      {cat:'axe',    tier:3, speed:8,   dur:250,        name:'Eisenaxt',        color:0xe6d8c8},
   [IRON_SHOVEL]:   {cat:'shovel', tier:3, speed:8,   dur:250,        name:'Eisenschaufel',   color:0xe6d8c8},
   [IRON_SWORD]:    {cat:'sword',  tier:3, speed:1,   dur:250, dmg:8, name:'Eisenschwert',    color:0xe6d8c8},
+  // Hacken (zum Ackerboden umgraben)
+  [WOOD_HOE]:      {cat:'hoe',    tier:1, speed:1,   dur:60,         name:'Holzhacke',       color:0xb0a060},
+  [STONE_HOE]:     {cat:'hoe',    tier:2, speed:1,   dur:132,        name:'Steinhacke',      color:0x9aa0a6},
+  [IRON_HOE]:      {cat:'hoe',    tier:3, speed:1,   dur:250,        name:'Eisenhacke',      color:0xe6d8c8},
   // Gold (Tier 2: sehr schnell, aber zerbrechlich, kann KEIN Gold/Diamant abbauen - wie echtes MC)
   [GOLD_PICKAXE]:  {cat:'pick',   tier:2, speed:12,  dur:32,         name:'Goldspitzhacke',  color:0xf2d24a},
   [GOLD_AXE]:      {cat:'axe',    tier:2, speed:12,  dur:32,         name:'Goldaxt',         color:0xf2d24a},
@@ -657,6 +869,49 @@ const BLOCK_MINE = {
   [FLOWER_YELLOW]:{hard:0, tool:null,   needsTool:false},
   [DEAD_BUSH]:  {hard:0,   tool:null,   needsTool:false},
   [CACTUS]:     {hard:0.4, tool:null,   needsTool:false},
+  [BED]:        {hard:0.5, tool:null,   needsTool:false},
+  [SPAWNER]:    {hard:4.0, tool:'pick', needsTool:true, minTier:1},
+  [CHEST]:      {hard:1.5, tool:'axe',  needsTool:false},
+  [ANVIL]:      {hard:4.0, tool:'pick', needsTool:true, minTier:1},
+  [ENCHANTER]:  {hard:4.0, tool:'pick', needsTool:true, minTier:1},
+  [NETHERRACK]: {hard:0.6, tool:'pick', needsTool:false},
+  [GLOWSTONE]:  {hard:0.4, tool:null,   needsTool:false},
+  [SOUL_SAND]:  {hard:0.6, tool:'shovel', needsTool:false},
+  [REDSTONE_ORE]:{hard:3.0, tool:'pick', needsTool:true, minTier:2},
+  [REDSTONE_WIRE]:   {hard:0, tool:null, needsTool:false},
+  [REDSTONE_WIRE_ON]:{hard:0, tool:null, needsTool:false},
+  [LEVER]:      {hard:0.1, tool:null,   needsTool:false},
+  [LEVER_ON]:   {hard:0.1, tool:null,   needsTool:false},
+  [REDSTONE_LAMP]:   {hard:0.4, tool:null, needsTool:false},
+  [REDSTONE_LAMP_ON]:{hard:0.4, tool:null, needsTool:false},
+  // ---- Roadmap v2 ----
+  [TNT]:        {hard:0.1, tool:null,   needsTool:false},
+  [LANTERN]:    {hard:0.5, tool:'pick', needsTool:false},
+  [SOUL_LANTERN]:{hard:0.5,tool:'pick', needsTool:false},
+  [CAMPFIRE]:   {hard:0.8, tool:'axe',  needsTool:false},
+  [BOOKSHELF]:  {hard:1.2, tool:'axe',  needsTool:false},
+  [BARREL]:     {hard:1.5, tool:'axe',  needsTool:false},
+  [STONECUTTER]:{hard:2.5, tool:'pick', needsTool:true, minTier:1},
+  [FARMLAND]:   {hard:0.6, tool:'shovel', needsTool:false},
+  [WHEAT_S0]:   {hard:0, tool:null, needsTool:false}, [WHEAT_S1]:{hard:0, tool:null, needsTool:false},
+  [WHEAT_S2]:   {hard:0, tool:null, needsTool:false}, [WHEAT_S3]:{hard:0, tool:null, needsTool:false},
+  [SAPLING]:    {hard:0, tool:null, needsTool:false},
+  [ICE]:        {hard:0.5, tool:'pick', needsTool:false},
+  [KELP]:       {hard:0, tool:null, needsTool:false}, [CORAL]:{hard:0, tool:null, needsTool:false},
+  [SNOW_LAYER]: {hard:0.1, tool:'shovel', needsTool:false},
+  [FIRE]:       {hard:0, tool:null, needsTool:false},
+  [COMPOSTER]:  {hard:0.6, tool:'axe', needsTool:false},
+  [BREWING_STAND]:{hard:0.5, tool:'pick', needsTool:false},
+  [ENDER_CHEST]:{hard:22, tool:'pick', needsTool:true, minTier:3},
+  [GRINDSTONE]: {hard:2.0, tool:'pick', needsTool:true, minTier:1},
+  [RAIL]:       {hard:0.7, tool:'pick', needsTool:false}, [POWERED_RAIL]:{hard:0.7, tool:'pick', needsTool:false},
+  [END_PORTAL_FRAME]:{hard:1e9, tool:'pick', needsTool:true, minTier:99},
+  [END_PORTAL]: {hard:1e9, tool:null, needsTool:false},
+  [END_STONE]:  {hard:3.0, tool:'pick', needsTool:true, minTier:1},
+  [PURPUR]:     {hard:1.5, tool:'pick', needsTool:true, minTier:1},
+  [BEACON]:     {hard:3.0, tool:'pick', needsTool:false},
+  [DRAGON_EGG]: {hard:3.0, tool:null, needsTool:false},
+  [SUGARCANE]:  {hard:0, tool:null, needsTool:false},
 };
 function mineInfo(id){ return BLOCK_MINE[id] || {hard:1, tool:null, needsTool:false}; }
 
@@ -666,6 +921,7 @@ const craftGrid = new Array(9).fill(null);
 let held=null, craftOutput=null, invOpen=false, invMode='craft', furnaceKey=null, offhand=null;
 const armor = [null,null,null,null];   // angelegte Ruestung: 0 Helm, 1 Brust, 2 Hose, 3 Schuhe
 function armorPoints(){ let p=0; for(let i=0;i<4;i++){ const a=armor[i]; if(a) p+=ARMOR[a.id].points; } return p; }
+function protPoints(){ let p=0; for(let i=0;i<4;i++){ const a=armor[i]; if(a && a.ench && a.ench.kind==='prot') p+=a.ench.lvl; } return p; }  // Schutz-Verzauberung
 let craftN=2, splitMode=false;   // craftN: 2 = Inventar-Crafting, 3 = Werkbank. splitMode: Einzeln-Modus (Touch)
 inv[0]={id:LOG,count:8}; inv[1]={id:DIRT,count:16}; inv[2]={id:COBBLE,count:8}; // Start-Kit
 
@@ -678,7 +934,12 @@ function addItem(id,count){
   if(!invOpen && count<start) showItemName(id);   // beim Aufnehmen in der Welt kurz den Namen zeigen
   return count;
 }
-function dropFor(id){ if(id===GRASS) return DIRT; if(id===STONE) return COBBLE; if(id===COAL_ORE) return COAL; if(id===COPPER_ORE) return RAW_COPPER; if(id===IRON_ORE) return RAW_IRON; if(id===GOLD_ORE) return RAW_GOLD; if(id===DIAMOND_ORE) return DIAMOND; if(id===LEAVES||id===GLASS||id===BEDROCK||id===TALL_GRASS||id===DEAD_BUSH) return AIR; return id; }
+function dropFor(id){ if(id===GRASS) return DIRT; if(id===STONE) return COBBLE; if(id===COAL_ORE) return COAL; if(id===COPPER_ORE) return RAW_COPPER; if(id===IRON_ORE) return RAW_IRON; if(id===GOLD_ORE) return RAW_GOLD; if(id===DIAMOND_ORE) return DIAMOND; if(id===REDSTONE_ORE) return REDSTONE_WIRE; if(id===REDSTONE_WIRE_ON) return REDSTONE_WIRE; if(id===LEVER_ON) return LEVER; if(id===REDSTONE_LAMP_ON) return REDSTONE_LAMP; if(id===PORTAL) return AIR;
+  if(id===FARMLAND) return DIRT; if(id===ICE) return AIR; if(id===SNOW_LAYER) return BONE_MEAL; if(id===FIRE||id===END_PORTAL) return AIR;
+  if(id===WHEAT_S3) return WHEAT; if(id===WHEAT_S0||id===WHEAT_S1||id===WHEAT_S2) return WHEAT_SEEDS;
+  if(id===SAPLING) return SAPLING; if(id===KELP) return KELP; if(id===CORAL) return CORAL; if(id===SUGARCANE) return SUGAR_CANE;
+  if(id===CAMPFIRE) return CHARCOAL; if(id===END_PORTAL_FRAME) return AIR;
+  if(id===LEAVES||id===GLASS||id===BEDROCK||id===TALL_GRASS||id===DEAD_BUSH) return (id===LEAVES&&Math.random()<0.05)?SAPLING:AIR; return id; }
 
 // Crafting: shapeless (in:{...}, Position egal) ODER shaped (shape:[...], key:{...})
 const RECIPES = [
@@ -734,6 +995,62 @@ const RECIPES = [
   // ---- Bogen + Pfeile (Leder statt Sehne/Feder, da kein Faden/keine Feder im Spiel) ----
   { shape:[".XL","X.L",".XL"], key:{X:STICK, L:LEATHER},          out:{id:BOW,        count:1} },
   { shape:["C","S","L"],       key:{C:COBBLE, S:STICK, L:LEATHER}, out:{id:ARROW_ITEM, count:4} },
+  // ---- Bett (Leder statt Wolle, da keine Schafwolle im Spiel) ----
+  { shape:["LLL","XXX"],       key:{L:LEATHER, X:WOOD},            out:{id:BED,        count:1} },
+  // ---- Stationen ----
+  { shape:["XXX","X.X","XXX"], key:{X:WOOD},                       out:{id:CHEST,      count:1} },
+  { shape:["III",".I.","III"], key:{I:IRON_INGOT},                 out:{id:ANVIL,      count:1} },
+  { shape:["DDD",".O.","OOO"], key:{D:DIAMOND, O:OBSIDIAN},        out:{id:ENCHANTER,  count:1} },
+  // ---- Redstone ----
+  { shape:["S","C"],           key:{S:STICK, C:COBBLE},            out:{id:LEVER,      count:1} },
+  { shape:[".R.","RIR",".R."], key:{R:REDSTONE_WIRE, I:IRON_INGOT},out:{id:REDSTONE_LAMP, count:1} },
+  // ---- Feuerzeug (Portal anzuenden) ----
+  { shape:["I.",".C"],         key:{I:IRON_INGOT, C:COBBLE},       out:{id:FLINT_AND_STEEL, count:1} },
+  // ---- Mob-Spawner ----
+  { shape:["III","IRI","III"], key:{I:IRON_INGOT, R:ROTTEN_FLESH}, out:{id:SPAWNER, count:1} },
+  // ==== Roadmap v2 ====
+  // Hacken
+  { shape:["XX",".S",".S"], key:{X:WOOD,S:STICK},       out:{id:WOOD_HOE,  count:1} },
+  { shape:["XX",".S",".S"], key:{X:COBBLE,S:STICK},     out:{id:STONE_HOE, count:1} },
+  { shape:["XX",".S",".S"], key:{X:IRON_INGOT,S:STICK}, out:{id:IRON_HOE,  count:1} },
+  // TNT (Schwarzpulver + Sand)
+  { shape:["GSG","SGS","GSG"], key:{G:GUNPOWDER,S:SAND}, out:{id:TNT, count:1} },
+  // Licht
+  { shape:["I","T","I"],       key:{I:IRON_INGOT,T:TORCH}, out:{id:LANTERN, count:1} },
+  { in:{[LANTERN]:1,[SOUL_SAND]:1},                        out:{id:SOUL_LANTERN, count:1} },
+  { shape:[".S.","SCS","WWW"], key:{S:STICK,C:COAL,W:WOOD}, out:{id:CAMPFIRE, count:1} },
+  // Lager
+  { shape:["WSW","W.W","WSW"], key:{W:WOOD,S:STICK},     out:{id:BARREL, count:1} },
+  { shape:["WWW","BBB","WWW"], key:{W:WOOD,B:BOOK},      out:{id:BOOKSHELF, count:1} },
+  { shape:["W.W","W.W","WWW"], key:{W:WOOD},             out:{id:COMPOSTER, count:1} },
+  { shape:[".I.","SSS"],       key:{I:IRON_INGOT,S:STONE}, out:{id:STONECUTTER, count:1} },
+  { shape:["SCS","W.W"],       key:{S:STICK,C:STONE,W:WOOD}, out:{id:GRINDSTONE, count:1} },
+  // Papier/Buch/Karte
+  { shape:["SSS"],             key:{S:SUGAR_CANE},       out:{id:PAPER, count:3} },
+  { in:{[PAPER]:3,[LEATHER]:1},                          out:{id:BOOK, count:1} },
+  { shape:["PPP","PPP","PPP"], key:{P:PAPER},            out:{id:MAP_ITEM, count:1} },
+  // Schild
+  { shape:["WIW","WWW",".W."], key:{W:WOOD,I:IRON_INGOT}, out:{id:SHIELD_ITEM, count:1} },
+  // Nahrung
+  { shape:["WWW"],             key:{W:WHEAT},            out:{id:BREAD, count:1} },
+  { shape:["GGG","GAG","GGG"], key:{G:GOLD_INGOT,A:APPLE}, out:{id:GOLDEN_APPLE, count:1} },
+  { in:{[BONE]:1},                                       out:{id:BONE_MEAL, count:3} },
+  // Angel
+  { shape:["..S",".ST","S.T"], key:{S:STICK,T:STRING},   out:{id:FISHING_ROD, count:1} },
+  // Schienen + Lore
+  { shape:["I.I","III"],       key:{I:IRON_INGOT},        out:{id:MINECART, count:1} },
+  { shape:["I.I","ISI","I.I"], key:{I:IRON_INGOT,S:STICK}, out:{id:RAIL, count:16} },
+  { shape:["G.G","GSG","GRG"], key:{G:GOLD_INGOT,S:STICK,R:REDSTONE_WIRE}, out:{id:POWERED_RAIL, count:6} },
+  // Brauen / End / Beacon
+  { shape:["G.G",".G."],       key:{G:GLASS},            out:{id:GLASS_BOTTLE, count:3} },
+  { shape:[".B.","CCC"],       key:{B:BLAZE_ROD,C:COBBLE}, out:{id:BREWING_STAND, count:1} },
+  { in:{[BLAZE_ROD]:1},                                  out:{id:BLAZE_POWDER, count:2} },
+  { in:{[ENDER_PEARL]:1,[BLAZE_POWDER]:1},               out:{id:ENDER_EYE, count:1} },
+  { shape:["OOO","OEO","OOO"], key:{O:OBSIDIAN,E:ENDER_EYE}, out:{id:ENDER_CHEST, count:1} },
+  { shape:["GGG","GNG","OOO"], key:{G:GLASS,N:NETHER_STAR,O:OBSIDIAN}, out:{id:BEACON, count:1} },
+  // End-Portalrahmen (im Overworld baubar) + Endsteinziegel/Purpur ueber Steinschneider
+  { shape:["EEE","E.E"],       key:{E:END_STONE},            out:{id:END_PORTAL_FRAME, count:2} },
+  { shape:["OO","OO"],         key:{O:OBSIDIAN},             out:{id:END_PORTAL_FRAME, count:1} },
 ];
 function craftCounts(){ const c={}; for(let i=0;i<craftN*craftN;i++){ const s=craftGrid[i]; if(s) c[s.id]=(c[s.id]||0)+s.count; } return c; }
 function gridIds(){ const a=[]; for(let r=0;r<craftN;r++){ a.push([]); for(let c=0;c<craftN;c++){ const s=craftGrid[r*craftN+c]; a[r].push(s?s.id:null); } } return a; }
@@ -754,7 +1071,8 @@ function recomputeCraft(){ const r=matchRecipe(); craftOutput = r ? {id:r.out.id
 const SMELT = {
   [RAW_IRON]:IRON_INGOT, [RAW_COPPER]:COPPER_INGOT, [RAW_GOLD]:GOLD_INGOT,
   [SAND]:GLASS, [COBBLE]:STONE,
-  [BEEF]:COOKED_BEEF, [CHICKEN_RAW]:COOKED_CHICKEN, [MUTTON]:COOKED_MUTTON,
+  [BEEF]:COOKED_BEEF, [CHICKEN_RAW]:COOKED_CHICKEN, [MUTTON]:COOKED_MUTTON, [PORK_RAW]:PORK_COOKED,
+  [RAW_FISH]:COOKED_FISH, [LOG]:CHARCOAL, [WOOD]:CHARCOAL,
 };
 // Brennstoff -> Brenndauer in Sekunden (ein Schmelzvorgang = cookMax 6s). Etwas Puffer, damit die letzte
 // Schmelzung sicher fertig wird: Kohle=8 Items, Holz/Stamm/Werkbank=2, Stock=1.
@@ -847,7 +1165,17 @@ function terrainHeight(wx,wz){
 // Biom-Rauschen (grosse Regionen) -> Wueste, wenn ueber Schwelle. 0..1
 const DESERT_T = 0.62;
 function biomeNoise(wx,wz){ return (perlin(wx/240+1000, wz/240-1000)+1)*0.5; }
+// Temperatur-Rauschen fuer Biome (kalt -> Schnee/Eis). 0..1
+function tempNoise(wx,wz){ return (perlin(wx/300-2000, wz/300+2000)+1)*0.5; }
+function isCold(wx,wz){ return terrainHeight(wx,wz) > WATER_LEVEL+16 || tempNoise(wx,wz) < 0.32; }
+function biomeAt(wx,wz){ const h=terrainHeight(wx,wz); if(h<=WATER_LEVEL+1) return 'ocean'; if(isCold(wx,wz)) return 'snow'; if(biomeNoise(wx,wz)>DESERT_T) return 'desert'; if(tempNoise(wx,wz)>0.7 && biomeNoise(wx,wz)<0.4) return 'savanna'; return 'plains'; }
+// ---- Dimensionen (0 = Oberwelt, 1 = Nether) ----
+let dimension=0, genDim=0;
+const NETHER_TOP=48, NETHER_LAVA=8;
+const lootChests=new Set();   // Welt-Positionen von Struktur-Truhen (bekommen beim ersten Oeffnen Beute)
 function generateChunkData(cx,cz){
+  if(genDim===1) return generateNetherData(cx,cz);
+  if(genDim===2) return generateEndData(cx,cz);
   const data=new Uint8Array(CHUNK_SIZE*WORLD_HEIGHT*CHUNK_SIZE);
   const ox=cx*CHUNK_SIZE, oz=cz*CHUNK_SIZE;
   for(let z=0;z<CHUNK_SIZE;z++) for(let x=0;x<CHUNK_SIZE;x++){
@@ -869,7 +1197,7 @@ function generateChunkData(cx,cz){
         }
         // Erze nur falls noch Gestein
         if(b===STONE){ const o=oreAt(wx,y,wz); if(o) b=o; }
-      } else if(y<=WATER_LEVEL){ b=WATER; }
+      } else if(y<=WATER_LEVEL){ b = (snowy && y===WATER_LEVEL) ? ICE : WATER; }   // gefrorene Seen in kalten Biomen
       data[((y-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=b;
     }
     // Oberflaechen-Bewuchs: eine Zelle ueberm Boden, deterministisch, nur auf Land
@@ -879,10 +1207,20 @@ function generateChunkData(cx,cz){
       if(desert){
         if(pr<0.010){ const ch=1+((hash2(wx-9,wz+9)*3)|0); for(let k=0;k<ch && top+k<Y_MAX;k++) data[((top+k-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=CACTUS; }
         else if(pr<0.020){ data[((top-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=DEAD_BUSH; }
-      } else if(!snowy){
+      } else if(snowy){
+        if(pr<0.6) data[((top-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=SNOW_LAYER;   // Schneedecke
+      } else {
         if(pr<0.10){ data[((top-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=TALL_GRASS; }
         else if(pr<0.115){ data[((top-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=(hash2(wx+5,wz+5)<0.5)?FLOWER_RED:FLOWER_YELLOW; }
       }
+    } else if(h===WATER_LEVEL+1 && top<Y_MAX){
+      // Strand-Rand: Zuckerrohr am Wasser
+      if(hash2(wx*2.3+7, wz*2.3-7)<0.06){ const ch=1+((hash2(wx,wz)*3)|0); for(let k=0;k<ch && top+k<Y_MAX;k++) data[((top+k-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=SUGARCANE; }
+    } else if(h<=WATER_LEVEL && h>WATER_LEVEL-13){
+      // Meeresgrund: Kelp + Korallen
+      const pr=hash2(wx*2.1+11, wz*2.1-11);
+      if(pr<0.05){ const kh=1+((hash2(wx-3,wz+3)*4)|0); for(let k=0;k<kh && h+1+k<=WATER_LEVEL;k++) data[((h+1+k-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=KELP; }
+      else if(pr<0.075 && h+1<=WATER_LEVEL){ data[((h+1-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=CORAL; }
     }
   }
   // Baeume: deterministisch, chunk-uebergreifend (Rand-Spalten mit-scannen, M=Kronenradius)
@@ -904,7 +1242,102 @@ function generateChunkData(cx,cz){
       }
     }
   }
+  placeStructures(data, cx, cz, ox, oz);
   return data;
+}
+
+// ---- Nether-Generierung (Netherrack-Schicht mit Hoehlen + Lava-See) ----
+function generateNetherData(cx,cz){
+  const data=new Uint8Array(CHUNK_SIZE*WORLD_HEIGHT*CHUNK_SIZE);
+  const ox=cx*CHUNK_SIZE, oz=cz*CHUNK_SIZE;
+  for(let z=0;z<CHUNK_SIZE;z++) for(let x=0;x<CHUNK_SIZE;x++){
+    const wx=ox+x, wz=oz+z;
+    for(let y=Y_MIN;y<NETHER_TOP;y++){
+      let b;
+      if(y===Y_MIN || y===NETHER_TOP-1) b=BEDROCK;
+      else {
+        const cave = noise3(wx*0.07, y*0.09, wz*0.07) > 0.62;   // grosse offene Hoehlen
+        b = cave ? ((y<=NETHER_LAVA)?LAVA:AIR) : NETHERRACK;
+      }
+      if(b===NETHERRACK && y===NETHER_TOP-2 && hash2(wx*3+1, wz*3-1) < 0.03) b=GLOWSTONE;  // Glowstone an der Decke
+      if(b===NETHERRACK && y<NETHER_LAVA+6 && noise3(wx*0.2+9, y*0.2, wz*0.2-9) > 0.8) b=SOUL_SAND;
+      data[((y-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=b;
+    }
+  }
+  return data;
+}
+
+// ---- End-Generierung (schwebende Endstein-Insel + Obsidiansaeulen + aeussere Purpur-Inseln) ----
+const END_Y=64, END_PILLARS=[];
+(function(){ for(let i=0;i<8;i++){ const a=i/8*6.283, r=26; END_PILLARS.push({x:Math.round(Math.cos(a)*r), z:Math.round(Math.sin(a)*r), h:12+(i%4)*5}); } })();
+function generateEndData(cx,cz){
+  const data=new Uint8Array(CHUNK_SIZE*WORLD_HEIGHT*CHUNK_SIZE);
+  const ox=cx*CHUNK_SIZE, oz=cz*CHUNK_SIZE;
+  const setE=(wx,wy,wz,id)=>{ const lx=wx-ox, lz=wz-oz; if(lx<0||lx>=CHUNK_SIZE||lz<0||lz>=CHUNK_SIZE||wy<Y_MIN||wy>=Y_MAX) return; data[((wy-Y_MIN)*CHUNK_SIZE+lz)*CHUNK_SIZE+lx]=id; };
+  for(let z=0;z<CHUNK_SIZE;z++) for(let x=0;x<CHUNK_SIZE;x++){
+    const wx=ox+x, wz=oz+z, dc=Math.hypot(wx,wz);
+    let island=false, outer=false;
+    if(dc<42) island=true;                                         // zentrale Hauptinsel
+    else if(dc>72){ const n=(noise3(wx*0.018, 4.5, wz*0.018)); if(n>0.70) { island=true; outer=true; } }  // aeussere Inseln
+    if(island){
+      const dome = dc<42 ? Math.floor((1-dc/42)*6) : 0;            // zentrale Insel leicht gewoelbt
+      const top = END_Y + dome;
+      const thick = 4 + Math.floor(noise3(wx*0.08,5,wz*0.08)*5);
+      for(let y=top-thick;y<=top;y++) setE(wx,y,wz, END_STONE);
+      if(outer && noise3(wx*0.3,9,wz*0.3)>0.85){ setE(wx,top+1,wz, PURPUR); }   // Purpur-Tupfer auf Aussen-Inseln
+    }
+  }
+  // Obsidiansaeulen nahe Zentrum
+  for(const p of END_PILLARS){ if(p.x>=ox-1 && p.x<ox+CHUNK_SIZE+1 && p.z>=oz-1 && p.z<oz+CHUNK_SIZE+1){
+    for(let y=END_Y; y<=END_Y+p.h; y++) for(let dx=-1;dx<=1;dx++) for(let dz=-1;dz<=1;dz++) setE(p.x+dx,y,p.z+dz, OBSIDIAN);
+  } }
+  // End-Stadt (Purpurturm) auf einer bestimmten Aussen-Insel
+  const cityX=140, cityZ=20;
+  if(cityX>=ox-3 && cityX<ox+CHUNK_SIZE+3 && cityZ>=oz-3 && cityZ<oz+CHUNK_SIZE+3){
+    for(let y=END_Y; y<END_Y+14; y++) for(let dx=-3;dx<=3;dx++) for(let dz=-3;dz<=3;dz++){ const edge=Math.abs(dx)===3||Math.abs(dz)===3; if(edge) setE(cityX+dx,y,cityZ+dz, PURPUR); }
+    for(let dx=-3;dx<=3;dx++) for(let dz=-3;dz<=3;dz++) setE(cityX+dx,END_Y+14,cityZ+dz, PURPUR);   // Dach
+    setE(cityX,END_Y+15,cityZ, DRAGON_EGG);   // kleiner Schatz oben (Elytra-Drop kommt vom Drachen)
+  }
+  return data;
+}
+
+// ---- Strukturen: Oberflaechen-Huetten + unterirdische Loot-Dungeons (deterministisch je Zelle) ----
+function placeStructures(data,cx,cz,ox,oz){
+  const CELL=40, M=8;
+  for(let gz=Math.floor((oz-M)/CELL); gz<=Math.floor((oz+CHUNK_SIZE+M)/CELL); gz++)
+  for(let gx=Math.floor((ox-M)/CELL); gx<=Math.floor((ox+CHUNK_SIZE+M)/CELL); gx++){
+    const r=hash2(gx*131+7, gz*197-3);
+    if(r>0.5) continue;                                        // ~50% der Zellen haben eine Struktur
+    const ax=gx*CELL + 6 + ((hash2(gx*31+1,gz*17+5)*(CELL-12))|0);
+    const az=gz*CELL + 6 + ((hash2(gx*13-2,gz*29+9)*(CELL-12))|0);
+    if(r<0.24) buildHut(data,ox,oz,ax,az); else buildDungeon(data,ox,oz,ax,az);
+  }
+}
+function buildHut(data,ox,oz,ax,az){
+  const base=terrainHeight(ax,az);
+  if(base<=WATER_LEVEL+1 || base>WATER_LEVEL+30) return;       // nicht im Wasser / nicht zu hoch
+  const W=2;
+  for(let dz=-W;dz<=W;dz++) for(let dx=-W;dx<=W;dx++){
+    setTreeBlock(data,ox,oz, ax+dx, base, az+dz, WOOD, false);          // Boden
+    if(Math.abs(dx)===W||Math.abs(dz)===W){ for(let h=1;h<=3;h++) setTreeBlock(data,ox,oz, ax+dx, base+h, az+dz, (h===3?WOOD:COBBLE), false); }
+  }
+  setTreeBlock(data,ox,oz, ax, base+1, az+W, AIR, false);              // Tuer-Oeffnung
+  setTreeBlock(data,ox,oz, ax, base+2, az+W, AIR, false);
+  for(let dz=-W;dz<=W;dz++) for(let dx=-W;dx<=W;dx++) setTreeBlock(data,ox,oz, ax+dx, base+4, az+dz, WOOD, false); // Dach
+  setTreeBlock(data,ox,oz, ax, base+3, az, TORCH, false);
+  setTreeBlock(data,ox,oz, ax+1, base+1, az-1, CHEST, false);
+  lootChests.add((ax+1)+'_'+(base+1)+'_'+(az-1));
+}
+function buildDungeon(data,ox,oz,ax,az){
+  const gh=terrainHeight(ax,az);
+  const fy = Math.max(Y_MIN+6, gh - 14 - ((hash2(ax,az)*10)|0));        // Tiefe unter der Oberflaeche
+  const W=2;
+  for(let dz=-W;dz<=W;dz++) for(let dx=-W;dx<=W;dx++) for(let h=0;h<=3;h++){
+    const edge=(Math.abs(dx)===W||Math.abs(dz)===W||h===0||h===3);
+    setTreeBlock(data,ox,oz, ax+dx, fy+h, az+dz, edge?COBBLE:AIR, false);
+  }
+  setTreeBlock(data,ox,oz, ax, fy+1, az, CHEST, false);
+  lootChests.add(ax+'_'+(fy+1)+'_'+az);
 }
 
 // =====================================================================
@@ -912,7 +1345,7 @@ function generateChunkData(cx,cz){
 //  Pro Chunk indiziert, damit sie bei JEDER Chunk-Generierung drueber-
 //  gelegt werden -> ueberleben das Aus-/Wieder-Laden von Chunks.
 // =====================================================================
-const overridesByChunk = new Map(); // "cx,cz" -> Map<localIdx, id>
+let overridesByChunk = new Map(); // "cx,cz" -> Map<localIdx, id>  (let: wird bei Dimensionswechsel getauscht)
 function setOverride(wx,wy,wz,id){
   const cx=Math.floor(wx/CHUNK_SIZE), cz=Math.floor(wz/CHUNK_SIZE);
   const lx=wx-cx*CHUNK_SIZE, lz=wz-cz*CHUNK_SIZE, key=cx+','+cz;
@@ -992,7 +1425,7 @@ const world = {
     if(lx===CHUNK_SIZE-1)   this._remeshSection(cx+1,cz,s);
     if(lz===0)              this._remeshSection(cx,cz-1,s);
     if(lz===CHUNK_SIZE-1)   this._remeshSection(cx,cz+1,s);
-    if(!fromNet) net.sendBlock(wx,wy,wz,id);
+    if(!fromNet && dimension===0) net.sendBlock(wx,wy,wz,id);   // Nether-Aenderungen bleiben lokal (Server kennt nur die Oberwelt)
   },
   _remesh(cx,cz){ const c=this.getChunk(cx,cz); if(c&&c.hasData) meshChunk(c); },
   _remeshSection(cx,cz,s){ const c=this.getChunk(cx,cz); if(c&&c.hasData&&c.meshed) meshSection(c,s); },
@@ -1019,7 +1452,16 @@ const KIND_LIST = [
   'glass','bricks','log_top','bark','leaves','snow','gravel','crafting_top',
   'crafting_side','bedrock','coal_ore','copper_ore','iron_ore','gold_ore',
   'diamond_ore','furnace_top','furnace_side','lava','obsidian',
-  'tall_grass','flower_red','flower_yellow','cactus','dead_bush'
+  'tall_grass','flower_red','flower_yellow','cactus','dead_bush',
+  // Roadmap-Ausbau
+  'bed_top','bed_side','spawner','chest_top','chest_side','anvil_top','anvil_side',
+  'enchant_top','enchant_side','netherrack','glowstone','portal','soul_sand',
+  'redstone_ore','redstone_wire','redstone_wire_on','lever','lever_on','lamp','lamp_on',
+  // Roadmap v2
+  'tnt_top','tnt_side','lantern','soul_lantern','campfire_top','bookshelf','barrel_top','barrel_side',
+  'stonecutter_top','stonecutter_side','farmland','wheat0','wheat1','wheat2','wheat3','sapling',
+  'ice','kelp','coral','snow_layer','fire','composter','brewing','enderchest','grindstone_top',
+  'rail','powered_rail','end_frame','end_portal','end_stone','purpur','beacon','dragon_egg','sugarcane'
 ];
 
 function hashStr(s){ let h=2166136261>>>0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
@@ -1207,6 +1649,93 @@ function paintTile(ctx, kind, ts, ox, oy){
       for(let y=0;y<ts;y++) px(ctx,ox,oy,1,y,shadeHex(0x6fb050,1.05));
       for(let i=0;i<Math.round(5*s*s);i++){ const x=(rng()*ts)|0,y=(rng()*ts)|0; px(ctx,ox,oy,x,y,shadeHex(0xdfe8c0,1.1)); }
       break; }
+    case 'bed_top': {
+      noiseFill(ctx,ox,oy,ts,rng,0xd23b3b,0.08);
+      rect(ctx,ox,oy,0,0,ts,Math.max(2,Math.round(ts*0.28)),shadeHex(0xf2f2f2,1.0)); break; }
+    case 'bed_side': {
+      const woodH=Math.max(2,Math.round(ts*0.35));
+      noiseFill(ctx,ox,oy,ts,rng,0xd23b3b,0.08);
+      rect(ctx,ox,oy,0,ts-woodH,ts,woodH,shadeHex(0x7a5a32,1.0)); break; }
+    case 'spawner': {
+      rect(ctx,ox,oy,0,0,ts,ts,shadeHex(0x1a1c20,1.0));
+      const g=Math.max(3,Math.round(ts/4));
+      for(let i=g;i<ts;i+=g) for(let j=0;j<ts;j++){ px(ctx,ox,oy,i,j,shadeHex(0x4a4e56,1.0)); px(ctx,ox,oy,j,i,shadeHex(0x4a4e56,1.0)); }
+      break; }
+    case 'chest_top': {
+      noiseFill(ctx,ox,oy,ts,rng,0x8a6a3a,0.08);
+      rect(ctx,ox,oy,0,Math.round(ts*0.45),ts,Math.max(1,s),shadeHex(0x4a3416,1.0)); break; }
+    case 'chest_side': {
+      noiseFill(ctx,ox,oy,ts,rng,0x7a5a2e,0.10);
+      rect(ctx,ox,oy,0,Math.round(ts*0.32),ts,Math.max(1,s),shadeHex(0x4a3416,1.0));
+      const cw=Math.max(2,Math.round(ts*0.18)); rect(ctx,ox,oy,Math.round(ts*0.42),Math.round(ts*0.28),cw,Math.round(ts*0.3),shadeHex(0x3a3a40,1.0)); break; }
+    case 'anvil_top': {
+      noiseFill(ctx,ox,oy,ts,rng,0x55555c,0.10);
+      rect(ctx,ox,oy,Math.round(ts*0.2),Math.round(ts*0.3),Math.round(ts*0.6),Math.round(ts*0.4),shadeHex(0x33333a,1.0)); break; }
+    case 'anvil_side': {
+      rect(ctx,ox,oy,0,0,ts,ts,shadeHex(0x2a2a30,1.0));
+      rect(ctx,ox,oy,Math.round(ts*0.1),0,Math.round(ts*0.8),Math.round(ts*0.25),shadeHex(0x4a4a52,1.0));
+      rect(ctx,ox,oy,Math.round(ts*0.32),Math.round(ts*0.25),Math.round(ts*0.36),Math.round(ts*0.4),shadeHex(0x3a3a42,1.0));
+      rect(ctx,ox,oy,Math.round(ts*0.15),Math.round(ts*0.7),Math.round(ts*0.7),Math.round(ts*0.3),shadeHex(0x44444c,1.0)); break; }
+    case 'enchant_top': {
+      noiseFill(ctx,ox,oy,ts,rng,0x6a3a8a,0.12);
+      for(let i=0;i<Math.round(6*s*s);i++){ const x=(rng()*ts)|0,y=(rng()*ts)|0; px(ctx,ox,oy,x,y,shadeHex(0xd8a8f0,1.2)); } break; }
+    case 'enchant_side': {
+      noiseFill(ctx,ox,oy,ts,rng,0x33263f,0.14);
+      rect(ctx,ox,oy,0,0,ts,Math.max(2,Math.round(ts*0.25)),shadeHex(0x6a3a8a,1.0)); break; }
+    case 'netherrack': {
+      noiseFill(ctx,ox,oy,ts,rng,0x6e2b24,0.22);
+      specks(ctx,ox,oy,ts,rng,0x6e2b24,Math.round(10*s*s),Math.max(1,s|0),0.6,1.25); break; }
+    case 'glowstone': {
+      noiseFill(ctx,ox,oy,ts,rng,0xb8862a,0.10);
+      for(let i=0;i<Math.round(9*s*s);i++){ const x=(rng()*ts)|0,y=(rng()*ts)|0; rect(ctx,ox,oy,x,y,Math.max(1,s|0),Math.max(1,s|0),shadeHex(0xffe89a,1.2)); } break; }
+    case 'portal': {
+      noiseFill(ctx,ox,oy,ts,rng,0x9a3ad8,0.25);
+      for(let i=0;i<Math.round(8*s*s);i++){ const x=(rng()*ts)|0,y=(rng()*ts)|0; px(ctx,ox,oy,x,y,shadeHex(0xe0a0ff,1.2)); } break; }
+    case 'soul_sand': {
+      noiseFill(ctx,ox,oy,ts,rng,0x4a3a2e,0.16);
+      for(let i=0;i<3;i++){ const x=2+((rng()*(ts-4))|0),y=2+((rng()*(ts-4))|0),r=Math.max(1,Math.round(ts*0.12)); rect(ctx,ox,oy,x,y,r,r,shadeHex(0x2a2018,1.0)); } break; }
+    case 'redstone_ore': return ore(ctx,ox,oy,ts,rng,0xd83a30,0.6);
+    case 'redstone_wire':    { rect(ctx,ox,oy,0,Math.round(ts*0.45),ts,Math.max(1,Math.round(ts*0.12)),shadeHex(0x8a1a1a,1.0)); rect(ctx,ox,oy,Math.round(ts*0.45),0,Math.max(1,Math.round(ts*0.12)),ts,shadeHex(0x8a1a1a,1.0)); break; }
+    case 'redstone_wire_on': { rect(ctx,ox,oy,0,Math.round(ts*0.45),ts,Math.max(1,Math.round(ts*0.12)),shadeHex(0xff2a2a,1.1)); rect(ctx,ox,oy,Math.round(ts*0.45),0,Math.max(1,Math.round(ts*0.12)),ts,shadeHex(0xff2a2a,1.1)); break; }
+    case 'lever':    { rect(ctx,ox,oy,Math.round(ts*0.35),Math.round(ts*0.7),Math.round(ts*0.3),Math.round(ts*0.3),shadeHex(0x6a6a6a,1.0)); rect(ctx,ox,oy,Math.round(ts*0.55),Math.round(ts*0.2),Math.max(1,Math.round(ts*0.12)),Math.round(ts*0.55),shadeHex(0x8a6a3a,1.0)); break; }
+    case 'lever_on': { rect(ctx,ox,oy,Math.round(ts*0.35),Math.round(ts*0.7),Math.round(ts*0.3),Math.round(ts*0.3),shadeHex(0x6a6a6a,1.0)); rect(ctx,ox,oy,Math.round(ts*0.33),Math.round(ts*0.2),Math.max(1,Math.round(ts*0.12)),Math.round(ts*0.55),shadeHex(0xc0903a,1.1)); break; }
+    case 'lamp':    { noiseFill(ctx,ox,oy,ts,rng,0x6a5530,0.10); const g=Math.max(3,Math.round(ts/4)); for(let i=g;i<ts;i+=g) for(let j=0;j<ts;j++){ px(ctx,ox,oy,i,j,shadeHex(0x3a2e18,1.0)); px(ctx,ox,oy,j,i,shadeHex(0x3a2e18,1.0)); } break; }
+    case 'lamp_on': { noiseFill(ctx,ox,oy,ts,rng,0xffd86a,0.08); const g=Math.max(3,Math.round(ts/4)); for(let i=g;i<ts;i+=g) for(let j=0;j<ts;j++){ px(ctx,ox,oy,i,j,shadeHex(0xc89a3a,1.0)); px(ctx,ox,oy,j,i,shadeHex(0xc89a3a,1.0)); } break; }
+    // ---- Roadmap v2 ----
+    case 'tnt_side': { noiseFill(ctx,ox,oy,ts,rng,0xc83a2a,0.08); rect(ctx,ox,oy,0,Math.round(ts*0.42),ts,Math.round(ts*0.16),shadeHex(0xf0f0f0,1.0)); for(let x=0;x<ts;x+=Math.max(2,Math.round(ts*0.18))) rect(ctx,ox,oy,x,Math.round(ts*0.44),Math.max(1,Math.round(ts*0.08)),Math.round(ts*0.12),shadeHex(0x1a1a1a,1.0)); break; }
+    case 'tnt_top': { noiseFill(ctx,ox,oy,ts,rng,0xc83a2a,0.06); const c=(ts/2)|0; rect(ctx,ox,oy,c-1,c-1,Math.max(2,Math.round(ts*0.2)),Math.max(2,Math.round(ts*0.2)),shadeHex(0x1a1a1a,1.0)); break; }
+    case 'lantern': { ctx.clearRect(ox,oy,ts,ts); const c=(ts/2)|0,w=Math.round(ts*0.5); rect(ctx,ox,oy,c-w/2,Math.round(ts*0.25),w,Math.round(ts*0.55),shadeHex(0x6a4a2a,1.0)); rect(ctx,ox,oy,c-w/2+1,Math.round(ts*0.32),w-2,Math.round(ts*0.42),shadeHex(0xffd86a,1.3)); px(ctx,ox,oy,c,Math.round(ts*0.15),shadeHex(0x4a3a2a,1.0)); break; }
+    case 'soul_lantern': { ctx.clearRect(ox,oy,ts,ts); const c=(ts/2)|0,w=Math.round(ts*0.5); rect(ctx,ox,oy,c-w/2,Math.round(ts*0.25),w,Math.round(ts*0.55),shadeHex(0x4a4a52,1.0)); rect(ctx,ox,oy,c-w/2+1,Math.round(ts*0.32),w-2,Math.round(ts*0.42),shadeHex(0x4ad0e0,1.3)); break; }
+    case 'campfire_top': { noiseFill(ctx,ox,oy,ts,rng,0x5f4a2e,0.2); for(let i=0;i<ts;i+=Math.max(2,Math.round(ts*0.3))) rect(ctx,ox,oy,0,i,ts,Math.max(1,Math.round(ts*0.1)),shadeHex(0x3a2a18,1.0)); const c=(ts/2)|0; for(let i=0;i<Math.round(6*s*s);i++){ const a=rng()*6.28,r=rng()*ts*0.25; px(ctx,ox,oy,Math.round(c+Math.cos(a)*r),Math.round(c+Math.sin(a)*r),shadeHex(rng()<0.5?0xff7a2a:0xffd24a,1.3)); } break; }
+    case 'bookshelf': { paintTile(ctx,'planks',ts,ox,oy); const bh=Math.max(3,Math.round(ts*0.36)); for(let row=0;row<2;row++){ const y=Math.round(ts*0.08)+row*Math.round(ts*0.46); for(let x=Math.round(ts*0.1);x<ts*0.9;x+=Math.max(2,Math.round(ts*0.12))){ rect(ctx,ox,oy,x,y,Math.max(1,Math.round(ts*0.08)),bh,shadeHex([0xc83a3a,0x3a6fb0,0xd9b53a,0x3a8f4a][(x+row)%4],1.0)); } } break; }
+    case 'barrel_top': { noiseFill(ctx,ox,oy,ts,rng,0x8a6a3a,0.1); const c=(ts/2)|0,r=Math.round(ts*0.32); for(let yy=-r;yy<=r;yy++)for(let xx=-r;xx<=r;xx++){ if(xx*xx+yy*yy<=r*r) px(ctx,ox,oy,c+xx,c+yy,shadeHex(0x5a4226,1.0)); } break; }
+    case 'barrel_side': { for(let y=0;y<ts;y++){ const f=0.9+0.1*Math.sin(y*0.8); for(let x=0;x<ts;x++) px(ctx,ox,oy,x,y,shadeHex(0x8a6a3a,f*(1+(rng()*2-1)*0.05))); } rect(ctx,ox,oy,0,Math.round(ts*0.18),ts,Math.max(1,Math.round(ts*0.1)),shadeHex(0x4a3520,1.0)); rect(ctx,ox,oy,0,Math.round(ts*0.72),ts,Math.max(1,Math.round(ts*0.1)),shadeHex(0x4a3520,1.0)); break; }
+    case 'stonecutter_top': { paintTile(ctx,'stone',ts,ox,oy); const c=(ts/2)|0; for(let x=2;x<ts-2;x++) px(ctx,ox,oy,x,c,shadeHex(0xd8dce0,1.2)); break; }
+    case 'stonecutter_side': { paintTile(ctx,'stone',ts,ox,oy); rect(ctx,ox,oy,0,0,ts,Math.round(ts*0.45),shadeHex(0x6e6e74,0.8)); break; }
+    case 'farmland': { noiseFill(ctx,ox,oy,ts,rng,0x4a3220,0.12); for(let i=1;i<3;i++){ const x=Math.round(ts*i/3); for(let y=0;y<ts;y++) px(ctx,ox,oy,x,y,shadeHex(0x2a1c10,1.0)); } break; }
+    case 'wheat0': case 'wheat1': case 'wheat2': case 'wheat3': {
+      ctx.clearRect(ox,oy,ts,ts); const stage=+kind.slice(5); const grow=(stage+1)/4;
+      const cols=[0x6a9a3a,0x8aaa3a,0xb0b040,0xd9c060][stage];
+      for(let i=0;i<4;i++){ const x=Math.round(ts*(0.2+i*0.2)); const top=Math.round(ts*(1-grow)); for(let y=top;y<ts;y++) px(ctx,ox,oy,x,y,shadeHex(cols, 0.85+rng()*0.25)); if(stage>=2){ px(ctx,ox,oy,x-1,top+1,shadeHex(cols,1.1)); px(ctx,ox,oy,x+1,top+1,shadeHex(cols,1.1)); } } break; }
+    case 'sapling': { ctx.clearRect(ox,oy,ts,ts); const c=(ts/2)|0; for(let y=Math.round(ts*0.5);y<ts;y++) px(ctx,ox,oy,c,y,shadeHex(0x6a4a2a,1.0)); const r=Math.round(ts*0.22); for(let yy=-r;yy<=r;yy++)for(let xx=-r;xx<=r;xx++){ if(xx*xx+yy*yy<=r*r) px(ctx,ox,oy,c+xx,Math.round(ts*0.32)+yy,shadeHex(0x3f8f2a,0.85+rng()*0.3)); } break; }
+    case 'ice': { noiseFill(ctx,ox,oy,ts,rng,0x9fcaf0,0.08); for(let i=0;i<Math.round(3*s);i++){ const x=(rng()*ts)|0,y=(rng()*ts)|0,l=2+((rng()*ts*0.4)|0); for(let k=0;k<l;k++) px(ctx,ox,oy,Math.min(ts-1,x+k),y,shadeHex(0xe0f0ff,1.2)); } break; }
+    case 'kelp': { ctx.clearRect(ox,oy,ts,ts); const c=(ts/2)|0; for(let y=0;y<ts;y++){ const x=c+Math.round(Math.sin(y*0.6)*ts*0.18); px(ctx,ox,oy,x,y,shadeHex(0x2f8f4a,0.8+rng()*0.4)); px(ctx,ox,oy,x+1,y,shadeHex(0x247040,1.0)); } break; }
+    case 'coral': { ctx.clearRect(ox,oy,ts,ts); const c=(ts/2)|0; for(let b=0;b<3;b++){ let x=c+(b-1)*Math.round(ts*0.22),y=ts-1; const col=[0xe85a8a,0xf0a040,0x9a5ad0][b]; for(let k=0;k<Math.round(ts*0.7);k++){ px(ctx,ox,oy,x,y,shadeHex(col,0.9+rng()*0.2)); y--; if(rng()<0.3) x+=rng()<0.5?1:-1; } } break; }
+    case 'snow_layer': { ctx.clearRect(ox,oy,ts,ts); rect(ctx,ox,oy,0,Math.round(ts*0.7),ts,Math.round(ts*0.3),shadeHex(0xeef3f8,1.0)); for(let x=0;x<ts;x++) px(ctx,ox,oy,x,Math.round(ts*0.7),shadeHex(0xffffff,1.1)); break; }
+    case 'fire': { ctx.clearRect(ox,oy,ts,ts); for(let x=0;x<ts;x++){ const h=Math.round(ts*(0.4+0.5*Math.abs(Math.sin(x*0.7+rng())))); for(let y=ts-h;y<ts;y++){ const f=(y-(ts-h))/h; px(ctx,ox,oy,x,y,shadeHex(f<0.4?0xffe24a:(f<0.7?0xff8a2a:0xd83a1a),1.1)); } } break; }
+    case 'composter': { paintTile(ctx,'barrel_side',ts,ox,oy); rect(ctx,ox,oy,Math.round(ts*0.2),Math.round(ts*0.2),Math.round(ts*0.6),Math.round(ts*0.6),shadeHex(0x3a2a18,1.0)); rect(ctx,ox,oy,Math.round(ts*0.25),Math.round(ts*0.25),Math.round(ts*0.5),Math.round(ts*0.3),shadeHex(0x4a6a2a,1.0)); break; }
+    case 'brewing': { ctx.clearRect(ox,oy,ts,ts); const c=(ts/2)|0; for(let y=Math.round(ts*0.3);y<ts;y++) px(ctx,ox,oy,c,y,shadeHex(0x9a9aa0,1.0)); rect(ctx,ox,oy,c-2,Math.round(ts*0.2),4,4,shadeHex(0xd83a3a,1.2)); rect(ctx,ox,oy,Math.round(ts*0.3),ts-Math.round(ts*0.3),3,Math.round(ts*0.3),shadeHex(0xbfe0ee,1.0)); break; }
+    case 'enderchest': { noiseFill(ctx,ox,oy,ts,rng,0x12302c,0.18); const c=(ts/2)|0; rect(ctx,ox,oy,c-Math.round(ts*0.12),c-Math.round(ts*0.12),Math.round(ts*0.24),Math.round(ts*0.24),shadeHex(0x6fe0c0,1.4)); break; }
+    case 'grindstone_top': { paintTile(ctx,'stone',ts,ox,oy); const c=(ts/2)|0,r=Math.round(ts*0.3); for(let yy=-r;yy<=r;yy++)for(let xx=-r;xx<=r;xx++){ if(xx*xx+yy*yy<=r*r) px(ctx,ox,oy,c+xx,c+yy,shadeHex(0x6e6e74, (xx*xx+yy*yy>r*r*0.6)?0.7:1.0)); } break; }
+    case 'rail': { ctx.clearRect(ox,oy,ts,ts); rect(ctx,ox,oy,Math.round(ts*0.25),0,Math.max(1,Math.round(ts*0.08)),ts,shadeHex(0xb0b0b0,1.1)); rect(ctx,ox,oy,Math.round(ts*0.67),0,Math.max(1,Math.round(ts*0.08)),ts,shadeHex(0xb0b0b0,1.1)); for(let y=1;y<ts;y+=Math.max(2,Math.round(ts*0.25))) rect(ctx,ox,oy,Math.round(ts*0.2),y,Math.round(ts*0.55),Math.max(1,Math.round(ts*0.08)),shadeHex(0x7a5a30,1.0)); break; }
+    case 'powered_rail': { paintTile(ctx,'rail',ts,ox,oy); rect(ctx,ox,oy,0,Math.round(ts*0.45),ts,Math.max(1,Math.round(ts*0.1)),shadeHex(0xd0a040,1.2)); break; }
+    case 'end_frame': { noiseFill(ctx,ox,oy,ts,rng,0x2a3a30,0.1); rect(ctx,ox,oy,Math.round(ts*0.25),Math.round(ts*0.25),Math.round(ts*0.5),Math.round(ts*0.5),shadeHex(0x1a261e,1.0)); break; }
+    case 'end_portal': { noiseFill(ctx,ox,oy,ts,rng,0x0a1410,0.3); for(let i=0;i<Math.round(10*s*s);i++){ px(ctx,ox,oy,(rng()*ts)|0,(rng()*ts)|0,shadeHex(rng()<0.5?0x2fe0a0:0xa0f0d0,1.3)); } break; }
+    case 'end_stone': { noiseFill(ctx,ox,oy,ts,rng,0xdadca0,0.08); specks(ctx,ox,oy,ts,rng,0xc0c080,Math.round(6*s),Math.max(1,s|0),0.85,1.1); break; }
+    case 'purpur': { noiseFill(ctx,ox,oy,ts,rng,0xa868a8,0.1); specks(ctx,ox,oy,ts,rng,0xc888c8,Math.round(8*s),Math.max(1,s|0),0.85,1.15); break; }
+    case 'beacon': { noiseFill(ctx,ox,oy,ts,rng,0x6fe0e0,0.1); const c=(ts/2)|0; rect(ctx,ox,oy,c-Math.round(ts*0.2),c-Math.round(ts*0.2),Math.round(ts*0.4),Math.round(ts*0.4),shadeHex(0xffffff,1.4)); break; }
+    case 'dragon_egg': { noiseFill(ctx,ox,oy,ts,rng,0x140e1f,0.15); for(let i=0;i<Math.round(5*s);i++) px(ctx,ox,oy,(rng()*ts)|0,(rng()*ts)|0,shadeHex(0x5a3a7a,1.3)); break; }
+    case 'sugarcane': { ctx.clearRect(ox,oy,ts,ts); const c=(ts/2)|0; for(let y=0;y<ts;y++) { px(ctx,ox,oy,c,y,shadeHex(0x8ac060,0.85+rng()*0.25)); px(ctx,ox,oy,c+1,y,shadeHex(0x6a9a40,1.0)); } for(let y=Math.round(ts*0.3);y<ts;y+=Math.round(ts*0.3)) px(ctx,ox,oy,c,y,shadeHex(0x4a6a2a,1.0)); break; }
     default: { noiseFill(ctx,ox,oy,ts,rng,0x888d92,0.12); }
   }
 }
@@ -1246,6 +1775,32 @@ const TEX = {
   [BEDROCK]:'bedrock', [COAL_ORE]:'coal_ore', [COPPER_ORE]:'copper_ore',
   [IRON_ORE]:'iron_ore', [GOLD_ORE]:'gold_ore', [DIAMOND_ORE]:'diamond_ore',
   [FURNACE]:{top:'furnace_top',side:'furnace_side',bottom:'stone'},
+  [BED]:{top:'bed_top',side:'bed_side',bottom:'planks'},
+  [SPAWNER]:'spawner',
+  [CHEST]:{top:'chest_top',side:'chest_side',bottom:'planks'},
+  [ANVIL]:{top:'anvil_top',side:'anvil_side',bottom:'anvil_side'},
+  [ENCHANTER]:{top:'enchant_top',side:'enchant_side',bottom:'obsidian'},
+  [NETHERRACK]:'netherrack', [GLOWSTONE]:'glowstone', [PORTAL]:'portal', [SOUL_SAND]:'soul_sand',
+  [REDSTONE_ORE]:'redstone_ore',
+  [REDSTONE_WIRE]:'redstone_wire', [REDSTONE_WIRE_ON]:'redstone_wire_on',
+  [LEVER]:'lever', [LEVER_ON]:'lever_on',
+  [REDSTONE_LAMP]:'lamp', [REDSTONE_LAMP_ON]:'lamp_on',
+  // Roadmap v2
+  [TNT]:{top:'tnt_top',side:'tnt_side',bottom:'sand'},
+  [LANTERN]:'lantern', [SOUL_LANTERN]:'soul_lantern',
+  [CAMPFIRE]:{top:'campfire_top',side:'log_top',bottom:'log_top'},
+  [BOOKSHELF]:{top:'planks',side:'bookshelf',bottom:'planks'},
+  [BARREL]:{top:'barrel_top',side:'barrel_side',bottom:'barrel_side'},
+  [STONECUTTER]:{top:'stonecutter_top',side:'stonecutter_side',bottom:'cobble'},
+  [FARMLAND]:{top:'farmland',side:'dirt',bottom:'dirt'},
+  [WHEAT_S0]:'wheat0', [WHEAT_S1]:'wheat1', [WHEAT_S2]:'wheat2', [WHEAT_S3]:'wheat3',
+  [SAPLING]:'sapling', [ICE]:'ice', [KELP]:'kelp', [CORAL]:'coral', [SNOW_LAYER]:'snow_layer',
+  [FIRE]:'fire', [COMPOSTER]:{top:'composter',side:'barrel_side',bottom:'planks'},
+  [BREWING_STAND]:'brewing', [ENDER_CHEST]:{top:'enderchest',side:'enderchest',bottom:'enderchest'},
+  [GRINDSTONE]:{top:'grindstone_top',side:'stonecutter_side',bottom:'cobble'},
+  [RAIL]:'rail', [POWERED_RAIL]:'powered_rail',
+  [END_PORTAL_FRAME]:{top:'end_frame',side:'end_stone',bottom:'end_stone'}, [END_PORTAL]:'end_portal',
+  [END_STONE]:'end_stone', [PURPUR]:'purpur', [BEACON]:'beacon', [DRAGON_EGG]:'dragon_egg', [SUGARCANE]:'sugarcane',
 };
 const ATLAS_N = Math.ceil(Math.sqrt(KIND_LIST.length));
 const KIND_INDEX = {}; KIND_LIST.forEach((k,i)=>{ KIND_INDEX[k]=i; });
@@ -1299,6 +1854,10 @@ function itemIconSpec(id){
     case EMPTY_BUCKET: return {type:'bucket',    col:0xb8bcc4};
     case WATER_BUCKET: return {type:'bucket',    col:0xb8bcc4, liquid:0x3a6fd0};
     case LAVA_BUCKET:  return {type:'bucket',    col:0xb8bcc4, liquid:0xe2531a};
+    case MILK_BUCKET:  return {type:'bucket',    col:0xb8bcc4, liquid:0xf4f4f4};
+    case PORK_RAW:     return {type:'meat',      col:0xe09a8a};
+    case PORK_COOKED:  return {type:'meat',      col:0xb06a40};
+    case FLINT_AND_STEEL: return {type:'ingot',  col:0xb0b4bc};
     case SWORD_WOOD:   return {type:'sword',     col:0xb0a060};
   }
   return null;
@@ -1563,7 +2122,11 @@ addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.up
 // Tag/Nacht: lokal laufende Uhr; bei Multiplayer snappt der Server-Tick drauf.
 let dayTime = 0.3;
 const DAY_SKY=new THREE.Color(0x87b8e8), NIGHT_SKY=new THREE.Color(0x0a1130), _sky=new THREE.Color();
+const NETHER_SKY=new THREE.Color(0x2a0d0d);
+const END_SKY=new THREE.Color(0x0a0814);
 function applyDayNight(){
+  if(dimension===1){ scene.background.copy(NETHER_SKY); scene.fog.color.copy(NETHER_SKY); hemi.intensity=0.6; sun.intensity=0.12; return; }
+  if(dimension===2){ scene.background.copy(END_SKY); scene.fog.color.copy(END_SKY); hemi.intensity=0.45; sun.intensity=0.15; return; }
   const b=(Math.sin(dayTime*Math.PI*2 - Math.PI/2)+1)/2; // 0 Nacht .. 1 Tag
   _sky.copy(NIGHT_SKY).lerp(DAY_SKY, b);
   scene.background.copy(_sky); scene.fog.color.copy(_sky);
@@ -1628,6 +2191,7 @@ function stepAxis(axis,d){
   return hit;
 }
 let stepAcc=0, _wasAir=false;   // fuer Schrittgeraeusche / Landung
+let gliding=false;              // Elytra
 function updatePlayer(dt){
   let fwd=(keys.has('KeyW')?1:0)-(keys.has('KeyS')?1:0);
   let str=(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0);
@@ -1639,9 +2203,13 @@ function updatePlayer(dt){
   const joyMag=Math.hypot(joyVec.x,joyVec.y);
   const wantSprint=(!isTouch && keys.has('ShiftLeft')) || (isTouch && joyMag>0.85);
   sprinting = wantSprint && len>0.1 && !(net.connected && hunger<=3); // KEIN Fly, nur Sprint
-  const speed = sprinting ? WALK_SPEED*1.4 : WALK_SPEED;
+  // Pferd: Shift steigt ab; sonst Tempo-/Sprungbonus
+  if(mountedHorse){ if(!mobsMap.has(mountedHorse)) dismountHorse(); else if(keys.has('ShiftLeft')) dismountHorse(); }
+  let speed = sprinting ? WALK_SPEED*1.4 : WALK_SPEED;
+  if(buffSpeed>0) speed*=1.4;                       // Tempotrank / Beacon
+  if(mountedHorse) speed=WALK_SPEED*1.9;            // Pferd ist schneller
   player.vx=dirX*speed; player.vz=dirZ*speed;
-  const tFov = sprinting?80:72;
+  const tFov = sprinting?baseFov+8:baseFov;
   if(Math.abs(camera.fov-tFov)>0.1){ camera.fov+=(tFov-camera.fov)*0.2; camera.updateProjectionMatrix(); }
 
   // Schwimmen: Koerper im Wasser (Fuesse oder Bauch) -> Auftrieb statt freiem Fall
@@ -1657,15 +2225,26 @@ function updatePlayer(dt){
     player.onGround = false;
   } else {
     player.vy-=GRAVITY*dt;
-    if(wantUp&&player.onGround){ player.vy=JUMP_VELOCITY; player.onGround=false; }
+    if(wantUp&&player.onGround){ player.vy=JUMP_VELOCITY*(mountedHorse?1.3:1); player.onGround=false; }
     if(player.vy<TERMINAL_VY) player.vy=TERMINAL_VY;
+  }
+
+  // ---- Elytra-Gleiten: Elytra im Offhand-Slot + in der Luft + fallend + Sprung gehalten ----
+  gliding=false;
+  if((offhand&&offhand.id===ELYTRA) && !player.onGround && !inWater && player.vy<1.0 && wantUp){
+    gliding=true;
+    const gd=new THREE.Vector3(); camera.getWorldDirection(gd);
+    const gs=14;                                       // Gleit-Tempo
+    player.vx=gd.x*gs; player.vz=gd.z*gs;
+    player.vy = gd.y*gs;                                // Blick nach unten = sinken, nach oben = kurz steigen
+    if(player.vy<-10) player.vy=-10;
   }
 
   player.onGround=false;
   moveAxis(0,player.vx*dt); moveAxis(2,player.vz*dt);
   const impactVy=player.vy;
   moveAxis(1,player.vy*dt);
-  if(player.onGround && impactVy<-16){ const dmg=Math.floor((-impactVy-16)/3); if(dmg>0) damagePlayer(dmg); }
+  if(player.onGround && impactVy<-16 && !gliding){ const dmg=Math.floor((-impactVy-16)/3); if(dmg>0) damagePlayer(dmg); }
 
   // Schritte + Landung
   const _hsp=Math.hypot(player.vx,player.vz);
@@ -1678,6 +2257,8 @@ function updatePlayer(dt){
 
   camera.position.set(player.x,player.y+EYE_HEIGHT,player.z);
   camera.rotation.set(pitch,yaw,0);
+  // gerittenes Pferd unter den Spieler ziehen + ausrichten
+  if(mountedHorse){ const m=mobsMap.get(mountedHorse); if(m){ m.group.position.set(player.x, player.y-0.7, player.z); m.group.rotation.y=yaw; m.tx=player.x; m.tz=player.z; m.vx=m.vz=0; } }
 }
 
 // =====================================================================
@@ -1743,6 +2324,8 @@ function tryObsidian(x,y,z,liquid){
 }
 function useBucket(id){
   if(id===EMPTY_BUCKET){
+    const mh=mobInView(REACH);                          // Eimer auf Kuh -> Milch
+    if(mh){ const mm=mobsMap.get(mh.id); if(mm && mm.kind==='cow'){ swapSelected(MILK_BUCKET); SFX.pickup(); return; } }
     const L=liquidRay(); if(!L) return;
     world.setBlock(L.x,L.y,L.z,AIR);
     if(L.b===WATER){ swapSelected(WATER_BUCKET); SFX.place(WATER,{x:L.x+0.5,y:L.y+0.5,z:L.z+0.5}); }
@@ -1753,7 +2336,7 @@ function useBucket(id){
   const px=h.x+h.nx, py=h.y+h.ny, pz=h.z+h.nz;
   if(!canPlaceAt(px,py,pz)) return;
   const liquid = (id===WATER_BUCKET)?WATER:LAVA;
-  if(!tryObsidian(px,py,pz,liquid)){ world.setBlock(px,py,pz,liquid); SFX.place(liquid,{x:px+0.5,y:py+0.5,z:pz+0.5}); }
+  if(!tryObsidian(px,py,pz,liquid)){ world.setBlock(px,py,pz,liquid); SFX.place(liquid,{x:px+0.5,y:py+0.5,z:pz+0.5}); if(liquid===WATER) floodWater(px,py,pz); }
   swapSelected(EMPTY_BUCKET);
 }
 function canPlaceAt(x,y,z){
@@ -1767,8 +2350,10 @@ function canPlaceAt(x,y,z){
 function startBreak(){
   if(!isActive()||dead||invOpen){ breakHeld=false; return; }
   const block=raycast();
-  const hit=mobInView(block ? block.t : REACH);   // Mob naeher als Block -> ein Schlag
-  if(hit){ attackMob(hit.id); breakHeld=false; return; }
+  const reach=block ? block.t : REACH;
+  const mh=mobInView(reach), ph=avatarInView(reach);  // Mob/Spieler naeher als Block -> ein Schlag
+  if(mh && (!ph || mh.t<=ph.t)){ attackMob(mh.id); breakHeld=false; return; }
+  if(ph){ attackPlayer(ph.id); breakHeld=false; return; }
   breakHeld=true;                                  // sonst: gedrueckt halten zum Abbauen
 }
 function doPlace(){
@@ -1777,14 +2362,67 @@ function doPlace(){
   const tb=world.getBlock(h.x,h.y,h.z);
   if(tb===FURNACE){ openFurnace(h.x+'_'+h.y+'_'+h.z); return; }
   if(tb===CRAFTING_TABLE){ openTable(); return; }
+  if(tb===BED){ trySleep(h.x,h.y,h.z); return; }
+  if(tb===CHEST){ openChest(h.x+'_'+h.y+'_'+h.z); return; }
+  if(tb===BARREL){ openChest(h.x+'_'+h.y+'_'+h.z); return; }
+  if(tb===ANVIL){ openAnvil(); return; }
+  if(tb===ENCHANTER){ openEnchanter(h.x,h.y,h.z); return; }
+  if(tb===ENDER_CHEST){ openEnderChest(); return; }
+  if(tb===STONECUTTER){ openStonecutter(); return; }
+  if(tb===GRINDSTONE){ openGrindstone(); return; }
+  if(tb===BREWING_STAND){ openBrewing(); return; }
+  if(tb===BEACON){ openBeacon(); return; }
+  if(tb===CAMPFIRE){ cookOnCampfire(); return; }
+  if(isLever(tb)){ toggleLever(h.x,h.y,h.z); return; }
+  // Pferd reiten (nicht beim Fuettern mit Weizen)
+  { const sel0=inv[selectedSlot]; if(!(sel0&&sel0.id===WHEAT)){ const mh=mobInView(4.5); if(mh){ const m=mobsMap.get(mh.id); if(m&&m.kind==='horse'&&m.local){ if(mountedHorse===mh.id) dismountHorse(); else mountHorse(mh.id); return; } } } }
   const s=inv[selectedSlot]; if(!s) return;
+  // Komposter: kompostierbares Item einwerfen
+  if(tb===COMPOSTER && COMPOSTABLE.has(s.id)){ fillComposter(h.x,h.y,h.z); return; }
+  // Feuerzeug: TNT zuenden / Portal / Feuer legen
+  if(s.id===FLINT_AND_STEEL){
+    if(tb===TNT){ igniteTNT(h.x,h.y,h.z); damageHeldTool(); return; }
+    if(tb===SOUL_SAND){ if(summonWither(h.x,h.y,h.z)) damageHeldTool(); return; }
+    if(tb===OBSIDIAN){ createPortal(h); return; }
+    const fx=h.x+h.nx, fy=h.y+h.ny, fz=h.z+h.nz;
+    if(world.getBlock(fx,fy,fz)===AIR && isSolid(tb) && tb!==WATER){ world.setBlock(fx,fy,fz,FIRE); fires.set(fx+'_'+fy+'_'+fz,0); SFX.place(TORCH,{x:fx+0.5,y:fy+0.5,z:fz+0.5}); damageHeldTool(); }
+    return;
+  }
+  // Hacke: Gras/Erde -> Ackerboden
+  if(isTool(s.id) && TOOL[s.id].cat==='hoe'){
+    if((tb===GRASS||tb===DIRT) && world.getBlock(h.x,h.y+1,h.z)===AIR){ world.setBlock(h.x,h.y,h.z,FARMLAND); SFX.dig(DIRT,{x:h.x+0.5,y:h.y+0.5,z:h.z+0.5}); damageHeldTool(); }
+    return;
+  }
+  // Weizensamen auf Ackerboden saeen
+  if(s.id===WHEAT_SEEDS){ if(tb===FARMLAND && world.getBlock(h.x,h.y+1,h.z)===AIR){ world.setBlock(h.x,h.y+1,h.z,WHEAT_S0); crops.set((h.x)+'_'+(h.y+1)+'_'+(h.z), 0); consumeSelected(1); SFX.place(GRASS,{x:h.x+0.5,y:h.y+1.5,z:h.z+0.5}); } return; }
+  // Knochenmehl: Wachstum beschleunigen
+  if(s.id===BONE_MEAL){ if(useBoneMeal(h.x,h.y,h.z,tb)){ consumeSelected(1); } return; }
+  // Auge des Endes: Portalrahmen fuellen
+  if(s.id===ENDER_EYE){ if(tb===END_PORTAL_FRAME){ fillEndFrame(h.x,h.y,h.z); consumeSelected(1); } return; }
+  // Angel auswerfen
+  if(s.id===FISHING_ROD){ useFishingRod(); return; }
+  // Tier fuettern: Weizen -> Liebesmodus (Zucht)
+  if(s.id===WHEAT){ if(feedAnimal()){ consumeSelected(1); return; } }
+  // Knochen: Wolf zaehmen
+  if(s.id===BONE){ if(tameWolf()){ consumeSelected(1); return; } }
+  if(s.id===POTION_HEAL||s.id===POTION_STRENGTH||s.id===POTION_SPEED||s.id===POTION_POISON){ drinkPotion(s.id); return; }
+  if(s.id===GOLDEN_APPLE){ health=Math.min(HEALTH_MAX,health+4); hunger=Math.min(HUNGER_MAX,hunger+4); buffStrength=Math.max(buffStrength,60); consumeSelected(1); SFX.eat(); spawnHeartParticles(player.x,player.y+1.5,player.z); return; }
+  if(s.id===MAP_ITEM){ toggleMinimap(); flashMsg(minimapOn?'🗺️ Karte geöffnet':'Karte geschlossen'); return; }
+  if(s.id===MINECART){ const rb=world.getBlock(h.x,h.y,h.z); if(rb===RAIL||rb===POWERED_RAIL){ boardCart(h.x,h.y,h.z); } else flashMsg('Lore auf eine Schiene setzen'); return; }
   if(isFood(s.id)){ eat(); return; }
   if(isBucket(s.id)){ useBucket(s.id); return; }
   if(isBow(s.id)){ shootBow(); return; }
   if(!BLOCKS[s.id]) return;                  // nicht platzierbar (Stock, Schwert)
   const px=h.x+h.nx,py=h.y+h.ny,pz=h.z+h.nz;
-  if(canPlaceAt(px,py,pz)){ world.setBlock(px,py,pz,s.id); SFX.place(s.id,{x:px+0.5,y:py+0.5,z:pz+0.5}); consumeSelected(1); }
+  // Setzling/Weizen/Zuckerrohr nur auf gueltigem Untergrund
+  if(s.id===SAPLING && world.getBlock(px,py-1,pz)!==GRASS && world.getBlock(px,py-1,pz)!==DIRT) return;
+  if(canPlaceAt(px,py,pz)){ world.setBlock(px,py,pz,s.id); SFX.place(s.id,{x:px+0.5,y:py+0.5,z:pz+0.5});
+    if(isWire(s.id)||isLever(s.id)||isLamp(s.id)) updateRedstone(px,py,pz);
+    if(s.id===SAPLING) saplings.set(px+'_'+py+'_'+pz, 30+Math.random()*40);   // waechst nach ~30-70s
+    if(s.id===BEACON) checkBeacon(px,py,pz);
+    consumeSelected(1); }
 }
+function damageHeldTool(){ const t=inv[selectedSlot]; if(t&&isTool(t.id)&&t.dur!=null){ t.dur--; if(t.dur<=0) inv[selectedSlot]=null; renderHotbar(); if(invOpen) renderInventory(); } }
 function consumeSelected(n){ const s=inv[selectedSlot]; if(!s) return; s.count-=n; if(s.count<=0) inv[selectedSlot]=null; renderHotbar(); if(invOpen) renderInventory(); }
 
 // =====================================================================
@@ -1796,20 +2434,23 @@ const joyVec={x:0,y:0};
 const overlay=document.getElementById('overlay');
 const nameInput=document.getElementById('nameInput');
 let playerName='';
-function isActive(){ return (isTouch ? touchPlaying : locked) && !settingsOpen; }
+function isActive(){ return (isTouch ? touchPlaying : locked) && !settingsOpen && !chatOpen; }
 
 // ---- Desktop: Tastatur + Maus + Pointer Lock ----
 addEventListener('keydown', (e)=>{
+  if(chatOpen) return;                               // beim Tippen keine Spielsteuerung
   keys.add(e.code);
   if(e.code==='F3'){ e.preventDefault(); debugEl.style.display = debugEl.style.display==='none'?'':'none'; }
   if(e.code.startsWith('Digit')){ const n=parseInt(e.code.slice(5),10)-1; if(n>=0&&n<HOTBAR_COUNT){ selectedSlot=n; renderHotbar(); showSelectedName(); } }
   if(e.code==='KeyE'){ e.preventDefault(); toggleInv(); }
   if(e.code==='KeyO'){ e.preventDefault(); toggleSettings(); }
+  if(e.code==='KeyT'){ e.preventDefault(); if((isTouch?touchPlaying:locked) && !invOpen && !settingsOpen) openChat(); }
+  if(e.code==='KeyM'){ e.preventDefault(); toggleMinimap(); }
   if(e.code==='Escape'){ if(invOpen) closeInv(); else if(settingsOpen) closeSettings(); }
 });
 addEventListener('keyup', (e)=>keys.delete(e.code));
 document.addEventListener('pointerlockchange', ()=>{ locked=document.pointerLockElement===canvas; if(!invOpen) overlay.classList.toggle('hidden',locked); if(!locked) keys.clear(); });
-document.addEventListener('mousemove', (e)=>{ if(!locked)return; yaw-=e.movementX*0.0024; pitch-=e.movementY*0.0024; const l=Math.PI/2-0.01; pitch=Math.max(-l,Math.min(l,pitch)); });
+document.addEventListener('mousemove', (e)=>{ if(!locked)return; const sv=0.0024*settings.sensitivity; yaw-=e.movementX*sv; pitch-=e.movementY*sv; const l=Math.PI/2-0.01; pitch=Math.max(-l,Math.min(l,pitch)); });
 canvas.addEventListener('contextmenu', e=>e.preventDefault());
 canvas.addEventListener('mousedown', (e)=>{ if(!locked)return; if(e.button===0) startBreak(); else if(e.button===2) doPlace(); });
 document.addEventListener('mouseup', (e)=>{ if(e.button===0) breakHeld=false; });
@@ -1821,7 +2462,7 @@ function startGame(){
   playerName=(nameInput.value||'').trim().slice(0,16);
   overlay.classList.add('hidden');
   const _sp=loadPos(); if(_sp){ player.x=_sp.x; player.y=_sp.y; player.z=_sp.z; player.vx=player.vy=player.vz=0; if(typeof _sp.yaw==='number') camera.rotation.y=_sp.yaw; if(typeof _sp.pitch==='number') camera.rotation.x=_sp.pitch; }
-  loadInv();
+  loadInv(); loadChestsLocal();
   if(isTouch) touchPlaying=true; else canvas.requestPointerLock();
   if(net.connected&&playerName) net.sendStat({name:playerName});
 }
@@ -1837,16 +2478,17 @@ addEventListener('beforeunload', savePos);
 
 // ---- Inventar + Ruestung speichern (lokal, pro Geraet) -> nach Rejoin behalten ----
 const INV_KEY='voxelcraft_inv_v1';
-function serializeSlot(s){ if(!s) return null; const o={id:s.id, count:s.count}; if(s.dur!=null) o.dur=s.dur; return o; }
+function serializeSlot(s){ if(!s) return null; const o={id:s.id, count:s.count}; if(s.dur!=null) o.dur=s.dur; if(s.ench) o.ench=s.ench; return o; }
 function validSlot(o){
   if(!o || typeof o.id!=='number' || !thing(o.id)) return null;
   const count=Math.max(1, Math.min(STACK_MAX, (o.count|0)||1));
   const slot={id:o.id, count};
   if(typeof o.dur==='number' && o.dur>0) slot.dur=o.dur;   // Haltbarkeit erhalten
+  if(o.ench && typeof o.ench.lvl==='number') slot.ench={kind:String(o.ench.kind), lvl:Math.max(1,Math.min(3,o.ench.lvl|0))};
   return slot;
 }
 function saveInv(){ try{
-  localStorage.setItem(INV_KEY, JSON.stringify({ inv: inv.map(serializeSlot), armor: armor.map(serializeSlot), sel: selectedSlot }));
+  localStorage.setItem(INV_KEY, JSON.stringify({ inv: inv.map(serializeSlot), armor: armor.map(serializeSlot), sel: selectedSlot, xp, xpLevel, bedSpawn }));
 }catch(_){} }
 function loadInv(){ try{
   const r=localStorage.getItem(INV_KEY); if(!r) return;
@@ -1854,7 +2496,10 @@ function loadInv(){ try{
   if(Array.isArray(d.inv)) for(let i=0;i<SLOT_COUNT;i++) inv[i]=validSlot(d.inv[i]);
   if(Array.isArray(d.armor)) for(let i=0;i<4;i++){ const s=validSlot(d.armor[i]); armor[i]=(s && isArmor(s.id) && ARMOR[s.id].slot===i)?s:null; }
   if(typeof d.sel==='number' && d.sel>=0 && d.sel<HOTBAR_COUNT) selectedSlot=d.sel;
-  renderHotbar(); if(invOpen) renderInventory();
+  if(typeof d.xp==='number' && d.xp>=0) xp=d.xp;
+  if(typeof d.xpLevel==='number' && d.xpLevel>=0) xpLevel=d.xpLevel;
+  if(d.bedSpawn && typeof d.bedSpawn.x==='number') bedSpawn=d.bedSpawn;
+  renderXP(); renderHotbar(); if(invOpen) renderInventory();
 }catch(_){} }
 setInterval(()=>{ if(overlay.classList.contains('hidden') && !dead) saveInv(); }, 3000);
 addEventListener('beforeunload', saveInv);
@@ -1870,7 +2515,7 @@ joy.addEventListener('touchend', joyEnd); joy.addEventListener('touchcancel', jo
 // ---- Touch: Umsehen (Finger auf freier Flaeche = Canvas) ----
 let lookId=null, lookX=0, lookY=0;
 canvas.addEventListener('touchstart', (e)=>{ if(!isTouch)return; for(const t of e.changedTouches){ if(lookId===null){ lookId=t.identifier; lookX=t.clientX; lookY=t.clientY; } } }, {passive:false});
-canvas.addEventListener('touchmove', (e)=>{ if(!isTouch||!touchPlaying)return; for(const t of e.changedTouches){ if(t.identifier!==lookId)continue; const dx=t.clientX-lookX, dy=t.clientY-lookY; lookX=t.clientX; lookY=t.clientY; yaw-=dx*0.005; pitch-=dy*0.005; const l=Math.PI/2-0.01; pitch=Math.max(-l,Math.min(l,pitch)); } e.preventDefault(); }, {passive:false});
+canvas.addEventListener('touchmove', (e)=>{ if(!isTouch||!touchPlaying)return; for(const t of e.changedTouches){ if(t.identifier!==lookId)continue; const dx=t.clientX-lookX, dy=t.clientY-lookY; lookX=t.clientX; lookY=t.clientY; const sv=0.005*settings.sensitivity; yaw-=dx*sv; pitch-=dy*sv; const l=Math.PI/2-0.01; pitch=Math.max(-l,Math.min(l,pitch)); } e.preventDefault(); }, {passive:false});
 function lookEnd(e){ for(const t of e.changedTouches){ if(t.identifier===lookId) lookId=null; } }
 canvas.addEventListener('touchend', lookEnd); canvas.addEventListener('touchcancel', lookEnd);
 
@@ -1920,11 +2565,18 @@ const invMainEl=document.getElementById('invMainEl'), invHotEl=document.getEleme
 const heldEl=document.getElementById('held'), btnItems=document.getElementById('btnItems');
 const craftRow=document.getElementById('craftRow'), furnaceRow=document.getElementById('furnaceRow'), invTitle=document.getElementById('invTitle');
 const fceInEl=document.getElementById('fceInEl'), fceFuelEl=document.getElementById('fceFuelEl'), fceOutEl=document.getElementById('fceOutEl'), fceFlame=document.getElementById('fceFlame'), fceProg=document.getElementById('fceProg'), offhandEl=document.getElementById('offhandEl');
+const chestRow=document.getElementById('chestRow'), chestGridEl=document.getElementById('chestGridEl');
+const anvilRow=document.getElementById('anvilRow'), anvIn0El=document.getElementById('anvIn0El'), anvIn1El=document.getElementById('anvIn1El'), anvOutEl=document.getElementById('anvOutEl');
+const enchRow=document.getElementById('enchRow'), enchInEl=document.getElementById('enchInEl'), enchBtn=document.getElementById('enchBtn');
 const armorEls=[...document.querySelectorAll('#armorRowInv .islot.armor')];
 const pointer={x:innerWidth/2, y:innerHeight/2};
 function setPointer(e){ if(e){ pointer.x=e.clientX; pointer.y=e.clientY; } }
 function durBar(s){ if(!s||s.dur==null) return ''; const md = isTool(s.id)?TOOL[s.id].dur : (isArmor(s.id)?ARMOR[s.id].dur:null); if(md==null) return ''; const f=Math.max(0,s.dur/md); const col=f>0.5?'#5fd35f':(f>0.25?'#e0c040':'#e24b4b'); return '<div class="durbar"><div style="width:'+Math.round(f*100)+'%;height:100%;background:'+col+'"></div></div>'; }
-function slotInner(s){ return s?('<div class="iswatch" style="'+swatchStyle(s.id)+'"></div>'+(s.count>1?'<span class="icount">'+s.count+'</span>':'')+durBar(s)):''; }
+function slotInner(s){ return s?('<div class="iswatch" style="'+swatchStyle(s.id)+'"></div>'+(s.ench?'<div class="glint"></div>':'')+(s.count>1?'<span class="icount">'+s.count+'</span>':'')+durBar(s)):''; }
+// ---- Verzauberungen: pro Item-Kategorie genau eine Verzauberung, Stufe waechst beim erneuten Verzaubern ----
+function enchKindFor(id){ if(isArmor(id)) return 'prot'; if(isTool(id)){ const c=TOOL[id].cat; if(c==='sword')return 'sharp'; if(c==='bow')return 'power'; return 'eff'; } return null; }
+function enchLvl(slot,kind){ return (slot && slot.ench && (!kind||slot.ench.kind===kind))?slot.ench.lvl:0; }
+const ENCH_NAME = { eff:'Effizienz', sharp:'Schärfe', power:'Stärke', prot:'Schutz' };
 function slotDiv(zone,idx,s){ return '<div class="islot" data-zone="'+zone+'" data-idx="'+idx+'">'+slotInner(s)+'</div>'; }
 function renderHeld(){ if(held){ heldEl.style.display='block'; heldEl.style.left=pointer.x+'px'; heldEl.style.top=pointer.y+'px'; heldEl.innerHTML=slotInner(held); } else heldEl.style.display='none'; }
 function renderInventory(){
@@ -1932,16 +2584,31 @@ function renderInventory(){
   for(let i=0;i<4;i++){ if(armorEls[i]) armorEls[i].innerHTML = slotInner(armor[i]); }
   let mn=''; for(let i=9;i<SLOT_COUNT;i++) mn+=slotDiv('inv',i,inv[i]); invMainEl.innerHTML=mn;
   let hb=''; for(let i=0;i<HOTBAR_COUNT;i++) hb+=slotDiv('inv',i,inv[i]); invHotEl.innerHTML=hb;
+  craftRow.style.display='none'; furnaceRow.style.display='none'; chestRow.style.display='none'; anvilRow.style.display='none'; enchRow.style.display='none';
   if(invMode==='furnace'){
-    craftRow.style.display='none'; furnaceRow.style.display='flex'; invTitle.textContent='OFEN';
+    furnaceRow.style.display='flex'; invTitle.textContent='OFEN';
     const f=furnaces.get(furnaceKey);
     fceInEl.innerHTML  ='<div class="islot" data-zone="fce" data-idx="0">'+slotInner(f?f.slots[0]:null)+'</div>';
     fceFuelEl.innerHTML='<div class="islot" data-zone="fce" data-idx="1">'+slotInner(f?f.slots[1]:null)+'</div>';
     fceOutEl.innerHTML ='<div class="islot out" data-zone="fce" data-idx="2">'+slotInner(f?f.slots[2]:null)+'</div>';
     fceFlame.classList.toggle('lit', !!(f && f.burn>0));
     fceProg.style.width = (f ? Math.round(Math.min(1,f.cook/f.cookMax)*100) : 0)+'%';
+  } else if(invMode==='chest'){
+    chestRow.style.display='block'; invTitle.textContent='TRUHE';
+    const arr=chestAt(chestKey); let cg=''; for(let i=0;i<CHEST_SIZE;i++) cg+=slotDiv('chest',i,arr[i]); chestGridEl.innerHTML=cg;
+  } else if(invMode==='anvil'){
+    anvilRow.style.display='flex'; invTitle.textContent='AMBOSS';
+    anvIn0El.innerHTML='<div class="islot" data-zone="anv" data-idx="0">'+slotInner(anvilIn[0])+'</div>';
+    anvIn1El.innerHTML='<div class="islot" data-zone="anv" data-idx="1">'+slotInner(anvilIn[1])+'</div>';
+    anvOutEl.innerHTML='<div class="islot out" data-zone="anv" data-idx="2">'+slotInner(anvilOut())+'</div>';
+  } else if(invMode==='ench'){
+    enchRow.style.display='flex'; invTitle.textContent='ZAUBERTISCH';
+    enchInEl.innerHTML='<div class="islot" data-zone="ench" data-idx="0">'+slotInner(enchIn)+'</div>';
+    const cost=enchCost(), ok=enchReady();
+    enchBtn.textContent = enchIn?('Verzaubern ('+cost+' Lvl)'):'Verzaubern';
+    enchBtn.classList.toggle('ready', ok);
   } else {
-    craftRow.style.display='flex'; furnaceRow.style.display='none'; invTitle.textContent = craftN===3?'WERKBANK':'INVENTAR';
+    craftRow.style.display='flex'; invTitle.textContent = craftN===3?'WERKBANK':'INVENTAR';
     craftGridEl.style.gridTemplateColumns='repeat('+craftN+', 42px)';
     let cg=''; for(let i=0;i<craftN*craftN;i++) cg+=slotDiv('craft',i,craftGrid[i]); craftGridEl.innerHTML=cg;
     craftOutEl.innerHTML='<div class="islot out" data-zone="out" data-idx="0">'+slotInner(craftOutput)+'</div>';
@@ -1980,12 +2647,16 @@ function takeCraftOutput(){
   else { const need={...r.in}; for(let i=0;i<craftN*craftN;i++){ const s=craftGrid[i]; if(!s) continue; if(need[s.id]){ const tk=Math.min(s.count,need[s.id]); s.count-=tk; need[s.id]-=tk; if(s.count<=0) craftGrid[i]=null; } } }
   if(isTool(r.out.id)) addToolItem(r.out.id); else if(isArmor(r.out.id)) addArmorItem(r.out.id); else addItem(r.out.id, r.out.count);
   recomputeCraft(); renderInventory();
+  unlockAch('first_craft');
 }
 function handleSlot(zone,idx,split){
   if(zone==='out'){ takeCraftOutput(); return; }
   if(zone==='off'){ offhandClick(); return; }
   if(zone==='arm'){ armorClick(idx); return; }
   if(zone==='fce'){ furnaceSlotClick(idx,split); return; }
+  if(zone==='chest'){ chestSlotClick(idx,split); return; }
+  if(zone==='anv'){ anvilSlotClick(idx,split); return; }
+  if(zone==='ench'){ enchSlotClick(); return; }
   const arr = zone==='craft'?craftGrid:inv;
   if(split) splitClick(arr,idx); else slotClick(arr,idx);
 }
@@ -2021,6 +2692,9 @@ function slotItemAt(zone,idx){
   if(zone==='off') return offhand;
   if(zone==='out') return craftOutput;
   if(zone==='fce'){ const f=furnaces.get(furnaceKey); return f?f.slots[idx]:null; }
+  if(zone==='chest'){ return chestAt(chestKey)[idx]; }
+  if(zone==='anv'){ return idx===2?anvilOut():anvilIn[idx]; }
+  if(zone==='ench'){ return enchIn; }
   return null;
 }
 invPanel.addEventListener('mousemove', (e)=>{
@@ -2082,12 +2756,68 @@ invCloseEl.addEventListener('touchstart', (e)=>{ e.preventDefault(); e.stopPropa
 function openInv(){ invMode='craft'; craftN=2; invOpen=true; invScreen.classList.add('open'); recomputeCraft(); renderInventory(); if(!isTouch) document.exitPointerLock(); }
 function openTable(){ if(invOpen) return; invMode='craft'; craftN=3; invOpen=true; invScreen.classList.add('open'); recomputeCraft(); renderInventory(); if(!isTouch) document.exitPointerLock(); }
 function openFurnace(key){ furnaceAt(key); furnaceKey=key; invMode='furnace'; invOpen=true; invScreen.classList.add('open'); renderInventory(); if(!isTouch) document.exitPointerLock(); }
+
+// ---- Truhen (mit Netz-Sync) ----
+const CHEST_SIZE=27;
+const chests=new Map();            // "x_y_z" -> Array(27)
+let chestKey=null;
+function chestAt(key){ let a=chests.get(key); if(!a){ a=new Array(CHEST_SIZE).fill(null); chests.set(key,a); } return a; }
+function chestSlotClick(idx,split){ const arr=chestAt(chestKey); if(split) splitClick(arr,idx); else slotClick(arr,idx); syncChest(chestKey); }
+function syncChest(key){ if(net.connected && dimension===0) net.send({t:'chest', pos:key, slots:chestAt(key).map(serializeSlot)}); else saveChestsLocal(); }
+function saveChestsLocal(){ try{ const o={}; for(const [k,a] of chests) o[k]=a.map(serializeSlot); localStorage.setItem('voxelcraft_chests_v1', JSON.stringify(o)); }catch(_){} }
+function loadChestsLocal(){ try{ const r=localStorage.getItem('voxelcraft_chests_v1'); if(!r)return; const o=JSON.parse(r); for(const k in o) if(Array.isArray(o[k])) chests.set(k, o[k].map(validSlot)); }catch(_){} }
+function openChest(key){ if(lootChests.has(key) && !chests.has(key)){ fillLoot(chestAt(key), key); lootChests.delete(key); } chestAt(key); chestKey=key; invMode='chest'; invOpen=true; invScreen.classList.add('open'); renderInventory(); if(!isTouch) document.exitPointerLock(); }
+
+// ---- Amboss (zwei gleiche Teile reparieren -> Haltbarkeit summiert + Bonus) ----
+const anvilIn=[null,null];
+function maxDurOf(id){ return isTool(id)?TOOL[id].dur : (isArmor(id)?ARMOR[id].dur:null); }
+function anvilOut(){
+  const a=anvilIn[0], b=anvilIn[1]; if(!a||!b||a.id!==b.id) return null;
+  const md=maxDurOf(a.id); if(md==null) return null;
+  const da=(a.dur!=null?a.dur:md), db=(b.dur!=null?b.dur:md);
+  const out={id:a.id, count:1, dur:Math.min(md, da+db+Math.floor(md*0.12))};
+  const ea=enchLvl(a), eb=enchLvl(b); if(ea||eb){ out.ench={kind:(ea>=eb?a:b).ench.kind, lvl:Math.min(3,Math.max(ea,eb))}; }
+  return out;
+}
+function anvilSlotClick(idx,split){
+  if(idx===2){ const o=anvilOut(); if(!o||held) return; held=o; anvilIn[0]=null; anvilIn[1]=null; SFX.ui(); renderInventory(); return; }
+  if(split) splitClick(anvilIn,idx); else slotClick(anvilIn,idx);
+}
+function openAnvil(){ invMode='anvil'; invOpen=true; invScreen.classList.add('open'); renderInventory(); if(!isTouch) document.exitPointerLock(); }
+
+// ---- Zaubertisch (kostet XP-Level; eine Verzauberung pro Item-Typ, Stufe waechst) ----
+let enchIn=null;
+function enchCost(){ return enchIn ? (enchLvl(enchIn)+1)*3 : 3; }
+function enchReady(){ return !!(enchIn && enchKindFor(enchIn.id) && enchLvl(enchIn)<3 && xpLevel>=enchCost()); }
+function enchSlotClick(){
+  if(held===null){ if(enchIn){ held=enchIn; enchIn=null; } }
+  else if(isTool(held.id)||isArmor(held.id)){ const t=enchIn; enchIn=held; held=t; }   // nur Werkzeug/Ruestung rein
+  renderInventory();
+}
+let enchPos=null;
+function bookshelvesNear(){ if(!enchPos) return 0; let n=0; const [x,y,z]=enchPos; for(let dx=-2;dx<=2;dx++)for(let dy=0;dy<=1;dy++)for(let dz=-2;dz<=2;dz++){ if(Math.abs(dx)<2&&Math.abs(dz)<2) continue; if(world.getBlock(x+dx,y+dy,z+dz)===BOOKSHELF) n++; } return n; }
+function maxEnchLevel(){ const b=bookshelvesNear(); return b>=8?3:(b>=3?2:1); }
+function doEnchant(){
+  if(!enchReady()){ SFX.ui(); return; }
+  const cost=enchCost(), kind=enchKindFor(enchIn.id), lvl=Math.min(maxEnchLevel(), enchLvl(enchIn)+1);
+  if(lvl<=enchLvl(enchIn)){ flashMsg('Mehr Bücherregale für höhere Stufen!'); SFX.ui(); return; }
+  xpLevel=Math.max(0, xpLevel-cost); renderXP();
+  enchIn.ench={kind, lvl}; SFX.levelup(); unlockAch('enchanter');
+  flashMsg(thing(enchIn.id).name+' → '+ENCH_NAME[kind]+' '+lvl);
+  renderInventory(); renderHotbar();
+}
+function openEnchanter(x,y,z){ enchPos=(x!=null)?[x,y,z]:null; invMode='ench'; invOpen=true; invScreen.classList.add('open'); renderInventory(); if(!isTouch) document.exitPointerLock(); }
+enchBtn.addEventListener('click', doEnchant);
+enchBtn.addEventListener('touchstart', (e)=>{ e.preventDefault(); e.stopPropagation(); doEnchant(); }, {passive:false});
+
 function closeInv(){
   invOpen=false; invScreen.classList.remove('open');
   if(slotTipEl) slotTipEl.style.display='none';
   if(invMode==='craft'){ for(let i=0;i<craftN*craftN;i++){ if(craftGrid[i]){ addItem(craftGrid[i].id, craftGrid[i].count); craftGrid[i]=null; } } } // Werkbank/Crafting leeren
+  if(invMode==='anvil'){ for(let i=0;i<2;i++){ if(anvilIn[i]){ addItem(anvilIn[i].id, anvilIn[i].count); anvilIn[i]=null; } } } // Amboss leeren
+  if(invMode==='ench' && enchIn){ addItem(enchIn.id, enchIn.count); enchIn=null; }                                                // Zaubertisch leeren
   if(held){ addItem(held.id, held.count); held=null; }
-  invMode='craft'; furnaceKey=null;
+  invMode='craft'; furnaceKey=null; chestKey=null;
   recomputeCraft(); renderHotbar();
   if(!isTouch) canvas.requestPointerLock();
 }
@@ -2101,6 +2831,7 @@ const setRD=document.getElementById('setRD'), setRDVal=document.getElementById('
 const setSD=document.getElementById('setSD'), setSDVal=document.getElementById('setSDVal');
 const setPresetEl=document.getElementById('setPreset'), setResEl=document.getElementById('setRes');
 const setKeepEl=document.getElementById('setKeepInv');
+const setSkinEl=document.getElementById('setSkin');
 const setCloseEl=document.getElementById('setClose');
 setRD.max = isTouch ? 8 : 16;   // Obergrenze hochgesetzt; Handy bitte vorsichtig hochdrehen
 setSD.max = isTouch ? 8 : 16;
@@ -2118,10 +2849,13 @@ function markSegButtons(){
   for(const b of setPresetEl.children) b.classList.toggle('active', b.dataset.preset===settings.preset);
   for(const b of setResEl.children) b.classList.toggle('active', +b.dataset.res===settings.blockRes);
   for(const b of setKeepEl.children) b.classList.toggle('active', (b.dataset.keep==='1')===!!settings.keepInv);
+  for(const b of setSkinEl.children) b.style.outline = (+b.dataset.skin===settings.skin)?'2px solid #fff':'none';
 }
 function syncSettingsUI(){
   setRD.value=settings.renderDist; setRDVal.textContent=settings.renderDist;
   setSD.value=settings.simDist;    setSDVal.textContent=settings.simDist;
+  setFov.value=settings.fov;       setFovVal.textContent=settings.fov+'°';
+  setSens.value=Math.round(settings.sensitivity*100); setSensVal.textContent=Math.round(settings.sensitivity*100)+'%';
   markSegButtons(); syncVol();
 }
 function applyPreset(name){
@@ -2143,8 +2877,12 @@ setPresetEl.addEventListener('click', (e)=>{ const b=e.target.closest('button');
 setResEl.addEventListener('click', (e)=>{ const b=e.target.closest('button'); if(!b) return; settings.blockRes=+b.dataset.res; applyBlockRes(); markSegButtons(); saveSettings(); });
 setKeepEl.addEventListener('click', (e)=>{ const b=e.target.closest('button'); if(!b) return; settings.keepInv=(b.dataset.keep==='1'); markSegButtons(); saveSettings(); });
 const setVol=document.getElementById('setVol'), setVolVal=document.getElementById('setVolVal');
+const setFov=document.getElementById('setFov'), setFovVal=document.getElementById('setFovVal');
+const setSens=document.getElementById('setSens'), setSensVal=document.getElementById('setSensVal');
 function syncVol(){ const v=Math.round((settings.volume!=null?settings.volume:0.7)*100); setVol.value=v; setVolVal.textContent=v+'%'; }
 setVol.addEventListener('input', ()=>{ settings.volume=+setVol.value/100; SFX.setVolume(settings.volume); setVolVal.textContent=setVol.value+'%'; saveSettings(); });
+setFov.addEventListener('input', ()=>{ settings.fov=+setFov.value; setFovVal.textContent=settings.fov+'°'; baseFov=settings.fov; camera.fov=settings.fov; camera.updateProjectionMatrix(); saveSettings(); });
+setSens.addEventListener('input', ()=>{ settings.sensitivity=+setSens.value/100; setSensVal.textContent=setSens.value+'%'; saveSettings(); });
 
 function openSettings(){ settingsOpen=true; settingsScreen.classList.add('open'); syncSettingsUI(); if(!isTouch) document.exitPointerLock(); }
 function closeSettings(){ settingsOpen=false; settingsScreen.classList.remove('open'); }
@@ -2193,6 +2931,7 @@ function onWelcome(m){
   clearMobs();
   clearArrows();
   if(Array.isArray(m.mobs)) for(const mob of m.mobs) addMob(mob);
+  if(Array.isArray(m.chests)) for(const [k,slots] of m.chests){ const arr=chestAt(k); for(let i=0;i<CHEST_SIZE;i++) arr[i]=validSlot(slots[i]); }
   if(playerName) net.sendStat({name:playerName});
 }
 
@@ -2215,6 +2954,8 @@ const net={
   sendBlockBulk(blocks){ this.send({t:'blockbulk',blocks}); },
   sendMove(x,y,z,ry){ this.send({t:'move',x,y,z,ry}); },
   sendStat(o){ this.send(Object.assign({t:'stat'},o)); },
+  sendChat(text){ this.send({t:'chat', text:String(text).slice(0,100)}); },
+  sendSleep(){ this.send({t:'sleep'}); },
   handle(raw){
     let m; try{ m=JSON.parse(raw); }catch{ return; }
     switch(m.t){
@@ -2223,13 +2964,17 @@ const net={
       case 'leave':   removeAvatar(m.id); break;
       case 'move':    moveAvatar(m.id,m.x,m.y,m.z,m.ry); break;
       case 'stat':    statAvatar(m.id,m); break;
-      case 'block':    world.setBlock(m.x,m.y,m.z,m.id,true); break;
-      case 'blockbulk': if(Array.isArray(m.blocks)) for(const b of m.blocks) world.setBlock(b.x,b.y,b.z,b.id,true); break;
-      case 'mobspawn': addMob(m.mob); break;
+      case 'block':    if(dimension===0) world.setBlock(m.x,m.y,m.z,m.id,true); else setOverrideInto(DIM[0].ov,m.x,m.y,m.z,m.id); break;
+      case 'blockbulk': if(Array.isArray(m.blocks)){ if(dimension===0) for(const b of m.blocks) world.setBlock(b.x,b.y,b.z,b.id,true); else for(const b of m.blocks) setOverrideInto(DIM[0].ov,b.x,b.y,b.z,b.id); } break;
+      case 'chest':    { if(Array.isArray(m.slots)){ const arr=chestAt(m.pos); for(let i=0;i<CHEST_SIZE;i++) arr[i]=validSlot(m.slots[i]); if(invOpen&&invMode==='chest'&&chestKey===m.pos) renderInventory(); } } break;
+      case 'mobspawn': if(dimension===0) addMob(m.mob); break;
       case 'mobdead':  onMobDead(m.mobId); break;
       case 'mobhp':    onMobHp(m.mobId, m.hp); break; // Mob getroffen -> Balken + Blitz
       case 'explode':  onExplode(m); break;
-      case 'tick':     if(typeof m.time==='number') dayTime=m.time; updateMobsFromTick(m.mobs); updateArrowsFromTick(m.arrows); break;
+      case 'chat':     addChatMsg(m.name, m.text); break;
+      case 'hurt':     if(!dead) damagePlayer(m.dmg||0); break;     // von einem anderen Spieler getroffen
+      case 'slept':    flashMsg((m.name||'Jemand')+' schläft — der Morgen kommt.'); break;
+      case 'tick':     if(typeof m.time==='number') dayTime=m.time; if(dimension===0){ updateMobsFromTick(m.mobs); updateArrowsFromTick(m.arrows); } break;
     }
   }
 };
@@ -2254,11 +2999,21 @@ const MOB_DEF = {
   cow:     { hostile:false, hw:0.5,  hh:0.95 },
   sheep:   { hostile:false, hw:0.5,  hh:0.9  },
   chicken: { hostile:false, hw:0.3,  hh:0.6  },
+  pig:     { hostile:false, hw:0.45, hh:0.85 },
   zombie:  { hostile:true,  hw:0.35, hh:0.95 },
   skeleton:{ hostile:true,  hw:0.35, hh:0.95 },
   creeper: { hostile:true,  hw:0.35, hh:0.95 },
+  spider:  { hostile:true,  hw:0.55, hh:0.5  },
+  enderman:{ hostile:true,  hw:0.35, hh:1.45 },
+  wolf:    { hostile:false, hw:0.4,  hh:0.7  },
+  horse:   { hostile:false, hw:0.5,  hh:1.3  },
+  ghast:   { hostile:true,  hw:1.0,  hh:1.0,  fly:true },
+  blaze:   { hostile:true,  hw:0.4,  hh:0.9,  fly:true },
+  ender_dragon:{ hostile:true, hw:2.0, hh:1.2, fly:true, boss:true },
+  wither:  { hostile:true,  hw:0.9,  hh:1.8,  fly:true, boss:true },
+  end_crystal:{ hostile:true, hw:0.6, hh:1.2, fly:true },
 };
-const MOB_HP_MAX = { cow:8, sheep:6, chicken:4, zombie:10, skeleton:8, creeper:10 }; // muss zum Server passen
+const MOB_HP_MAX = { cow:8, sheep:6, chicken:4, pig:8, zombie:10, skeleton:8, creeper:10, spider:9, enderman:20, wolf:8, horse:15, ghast:10, blaze:12, ender_dragon:120, wither:80, end_crystal:5 }; // muss zum Server passen
 function makeMobModel(kind){
   const g=new THREE.Group(); const legs=[], arms=[];
   if(kind==='zombie' || kind==='skeleton'){
@@ -2287,6 +3042,73 @@ function makeMobModel(kind){
     const l1=legPivot(0.18,0.34,0.2, drk, -off,0.34, fz), l2=legPivot(0.18,0.34,0.2, drk, off,0.34, fz);
     const l3=legPivot(0.18,0.34,0.2, drk, -off,0.34,-fz), l4=legPivot(0.18,0.34,0.2, drk, off,0.34,-fz);
     g.add(l1); g.add(l2); g.add(l3); g.add(l4); legs.push(l1,l2,l3,l4);
+  } else if(kind==='spider'){
+    const dk=0x2a2326, hairy=0x1c1719;
+    g.add(boxMesh(0.6,0.34,0.7, dk, 0,0.42,-0.1));            // Hinterleib
+    g.add(boxMesh(0.36,0.3,0.36, hairy, 0,0.42,0.42));        // Kopf/Vorderleib
+    g.add(boxMesh(0.08,0.08,0.02, 0xd83030, -0.09,0.5,0.6));  // Augen rot
+    g.add(boxMesh(0.08,0.08,0.02, 0xd83030,  0.09,0.5,0.6));
+    const lg=0x16080a;
+    for(let s=0;s<4;s++){ const zz=0.28-s*0.22; const lL=legPivot(0.06,0.5,0.06, lg, -0.32,0.42, zz); lL.rotation.z=0.9; const lR=legPivot(0.06,0.5,0.06, lg, 0.32,0.42, zz); lR.rotation.z=-0.9; g.add(lL); g.add(lR); legs.push(lL,lR); }
+  } else if(kind==='enderman'){
+    const blk=0x0d0d12;
+    g.add(boxMesh(0.4,0.95,0.28, blk, 0,1.55,0));            // schmaler langer Rumpf
+    g.add(boxMesh(0.4,0.4,0.4, blk, 0,2.25,0));              // Kopf
+    g.add(boxMesh(0.32,0.08,0.02, 0xd66af0, 0,2.3,0.2));     // Magenta-Augen
+    const aL=legPivot(0.1,0.95,0.1, blk, -0.26,2.0,0); const aR=legPivot(0.1,0.95,0.1, blk, 0.26,2.0,0);
+    g.add(aL); g.add(aR); arms.push(aL,aR);
+    const lL=legPivot(0.12,1.0,0.12, blk, -0.12,1.0,0); const lR=legPivot(0.12,1.0,0.12, blk, 0.12,1.0,0);
+    g.add(lL); g.add(lR); legs.push(lL,lR);
+  } else if(kind==='horse'){
+    const body=0x7a5230, mane=0x3a2616;
+    g.add(boxMesh(0.5,0.6,1.1, body, 0,1.0,0));             // Rumpf
+    g.add(boxMesh(0.36,0.7,0.3, body, 0,1.4,0.55));         // Hals
+    g.add(boxMesh(0.34,0.36,0.5, body, 0,1.7,0.7));         // Kopf
+    g.add(boxMesh(0.1,0.5,0.34, mane, 0,1.55,0.45));        // Maehne
+    g.add(boxMesh(0.08,0.4,0.08, mane, 0,1.0,-0.6));        // Schwanz
+    const off=0.32;
+    const l1=legPivot(0.14,0.7,0.14, body, -0.18,0.7, off), l2=legPivot(0.14,0.7,0.14, body, 0.18,0.7, off);
+    const l3=legPivot(0.14,0.7,0.14, body, -0.18,0.7,-off), l4=legPivot(0.14,0.7,0.14, body, 0.18,0.7,-off);
+    g.add(l1); g.add(l2); g.add(l3); g.add(l4); legs.push(l1,l2,l3,l4);
+  } else if(kind==='wolf'){
+    const fur=0xc8c4bc, ear=0xa8a49c;
+    g.add(boxMesh(0.4,0.42,0.7, fur, 0,0.62,0));             // Koerper
+    g.add(boxMesh(0.34,0.34,0.34, fur, 0,0.78,0.42));        // Kopf
+    g.add(boxMesh(0.14,0.12,0.1, 0x2a2622, 0,0.74,0.6));     // Schnauze
+    g.add(boxMesh(0.1,0.14,0.04, ear, -0.1,1.0,0.4)); g.add(boxMesh(0.1,0.14,0.04, ear, 0.1,1.0,0.4)); // Ohren
+    g.add(boxMesh(0.1,0.32,0.1, fur, 0,0.62,-0.42));         // Schwanz (grob)
+    const off=0.22;
+    const l1=legPivot(0.12,0.42,0.12, fur, -0.13,0.42, off), l2=legPivot(0.12,0.42,0.12, fur, 0.13,0.42, off);
+    const l3=legPivot(0.12,0.42,0.12, fur, -0.13,0.42,-off), l4=legPivot(0.12,0.42,0.12, fur, 0.13,0.42,-off);
+    g.add(l1); g.add(l2); g.add(l3); g.add(l4); legs.push(l1,l2,l3,l4);
+  } else if(kind==='ghast'){
+    g.add(boxMesh(1.6,1.6,1.6, 0xeae6e0, 0,2.0,0));          // grosser weisser Wuerfel
+    g.add(boxMesh(0.2,0.12,0.02, 0x803030, -0.35,2.0,0.82)); g.add(boxMesh(0.2,0.12,0.02, 0x803030, 0.35,2.0,0.82)); // Augen
+    g.add(boxMesh(0.35,0.18,0.02, 0x803030, 0,1.65,0.82));   // Mund
+    for(let i=0;i<6;i++){ const a=i/6*6.28; const tl=boxMesh(0.16,0.7,0.16, 0xd8d4ce, Math.cos(a)*0.5, 1.0, Math.sin(a)*0.5); g.add(tl); legs.push(tl); }  // Tentakel
+  } else if(kind==='blaze'){
+    g.add(boxMesh(0.4,0.7,0.4, 0xf0a020, 0,1.0,0));          // gelber Kern
+    g.add(boxMesh(0.42,0.42,0.42, 0xf8c840, 0,1.5,0));       // Kopf
+    g.add(boxMesh(0.12,0.1,0.02, 0xffffff, -0.1,1.55,0.22)); g.add(boxMesh(0.12,0.1,0.02, 0xffffff, 0.1,1.55,0.22));
+    for(let i=0;i<8;i++){ const a=i/8*6.28, r=0.45; const rod=boxMesh(0.08,0.5,0.08, 0xffb030, Math.cos(a)*r, 1.0, Math.sin(a)*r); rod.rotation.z=Math.cos(a)*0.5; rod.rotation.x=Math.sin(a)*0.5; g.add(rod); legs.push(rod); }
+  } else if(kind==='ender_dragon'){
+    const blk=0x16121f;
+    g.add(boxMesh(1.4,1.0,2.6, blk, 0,1.4,0));               // Rumpf
+    g.add(boxMesh(0.8,0.8,1.0, blk, 0,1.6,1.7));             // Hals
+    g.add(boxMesh(0.9,0.7,1.1, blk, 0,1.7,2.6));             // Kopf
+    g.add(boxMesh(0.18,0.14,0.04, 0xd66af0, -0.28,1.85,3.1)); g.add(boxMesh(0.18,0.14,0.04, 0xd66af0, 0.28,1.85,3.1)); // Augen
+    const wL=boxMesh(2.6,0.1,1.4, 0x241a30, -1.8,1.7,0); wL.rotation.z=0.2; const wR=boxMesh(2.6,0.1,1.4, 0x241a30, 1.8,1.7,0); wR.rotation.z=-0.2;
+    g.add(wL); g.add(wR); arms.push(wL,wR);
+    g.add(boxMesh(0.6,0.5,1.6, blk, 0,1.3,-1.9));            // Schwanz
+  } else if(kind==='wither'){
+    const dk=0x2a2a30;
+    g.add(boxMesh(0.5,1.4,0.4, dk, 0,1.8,0));                // Wirbelsaeule
+    for(let i=-1;i<=1;i++){ const sk=boxMesh(0.5,0.5,0.5, 0x3a3a40, i*0.55, 2.7, 0); g.add(sk); g.add(boxMesh(0.12,0.08,0.02, 0xff4040, i*0.55-0.1, 2.75, 0.26)); g.add(boxMesh(0.12,0.08,0.02, 0xff4040, i*0.55+0.1, 2.75, 0.26)); }
+    g.add(boxMesh(0.3,0.9,0.3, dk, -0.5,1.6,0)); g.add(boxMesh(0.3,0.9,0.3, dk, 0.5,1.6,0)); // Rippen
+  } else if(kind==='end_crystal'){
+    const cr=boxMesh(0.5,0.5,0.5, 0xe0a0ff, 0,1.2,0); cr.rotation.set(0.4,0.4,0); g.add(cr);
+    g.add(boxMesh(0.7,0.2,0.7, 0x6a3a8a, 0,0.3,0));          // Sockel (Grundgestein-Look)
+    legs.push(cr);
   } else if(kind==='chicken'){
     g.add(boxMesh(0.34,0.36,0.46, 0xf2f2ec, 0,0.5,0));        // Koerper
     g.add(boxMesh(0.26,0.28,0.26, 0xf6f6f0, 0,0.82,0.16));    // Kopf
@@ -2298,11 +3120,12 @@ function makeMobModel(kind){
     const lR=legPivot(0.06,0.25,0.06, 0xe0a020,  0.09,0.3,0);
     g.add(lL); g.add(lR); legs.push(lL,lR);
   } else {
-    const body = kind==='sheep'?0xe8e8e0:0x5a4632;
-    const head = kind==='sheep'?0xd8c8b0:0x4a3826;
+    const body = kind==='sheep'?0xe8e8e0:(kind==='pig'?0xe79a9a:0x5a4632);
+    const head = kind==='sheep'?0xd8c8b0:(kind==='pig'?0xdd7e7e:0x4a3826);
     g.add(boxMesh(0.72,0.72,1.18, body, 0,0.92,0));           // Koerper
     g.add(boxMesh(0.46,0.46,0.46, head, 0,1.02,0.74));        // Kopf
     if(kind==='cow'){ g.add(boxMesh(0.5,0.28,0.3, 0xd9bfae, 0,0.88,0.86)); g.add(boxMesh(0.36,0.16,0.24, 0xe8a0b0, 0,0.52,-0.45)); } // Schnauze + Euter
+    if(kind==='pig'){ g.add(boxMesh(0.26,0.18,0.1, 0xc86a6a, 0,0.96,0.98)); }  // Ruessel
     g.add(boxMesh(0.12,0.18,0.06, head, -0.2,1.2,0.74)); g.add(boxMesh(0.12,0.18,0.06, head, 0.2,1.2,0.74)); // Ohren
     const off=0.42;
     const l1=legPivot(0.2,0.62,0.2, head, -0.24,0.62, off), l2=legPivot(0.2,0.62,0.2, head, 0.24,0.62, off);
@@ -2338,7 +3161,7 @@ function addMob(mob){
   mdl.group.position.set(mob.x, mobGroundY(mob.x,mob.z), mob.z);
   scene.add(mdl.group);
   const tint=[]; mdl.group.traverse(o=>{ if(o.isMesh && o.material && o.material.emissive) tint.push(o.material); }); // fuer Treffer-Blitz
-  mobsMap.set(mob.id, { group:mdl.group, legs:mdl.legs, arms:mdl.arms, phase:0, kind:mob.kind, hostile:def.hostile, hw:def.hw, hh:def.hh, tx:mob.x, tz:mob.z, dir:mob.dir||0, lastAttack:0, hp:(MOB_HP_MAX[mob.kind]||8), maxHp:(MOB_HP_MAX[mob.kind]||8), tint, flash:0, hpShow:0, hpBar:null });
+  mobsMap.set(mob.id, { group:mdl.group, legs:mdl.legs, arms:mdl.arms, phase:0, kind:mob.kind, hostile:def.hostile, hw:def.hw, hh:def.hh, tx:mob.x, tz:mob.z, dir:mob.dir||0, lastAttack:0, hp:(MOB_HP_MAX[mob.kind]||8), maxHp:(MOB_HP_MAX[mob.kind]||8), tint, flash:0, hpShow:0, hpBar:null, fly:!!def.fly, boss:!!def.boss });
 }
 function removeMob(id){ const m=mobsMap.get(id); if(!m) return; scene.remove(m.group); m.group.traverse(o=>{ if(o.geometry) o.geometry.dispose(); if(o.material) o.material.dispose(); }); if(m.hpBar){ if(m.hpBar.material.map) m.hpBar.material.map.dispose(); m.hpBar.material.dispose(); } mobsMap.delete(id); }
 function clearMobs(){ for(const id of [...mobsMap.keys()]) removeMob(id); }
@@ -2353,6 +3176,12 @@ function onMobHp(id, hp){
   const m=mobsMap.get(id); if(!m) return;
   if(typeof hp==='number') m.hp=hp;
   m.flash=0.28; m.hpShow=4.0;
+  if(m.kind==='enderman' && m.local && m.hp>0){   // Enderman teleportiert bei Schaden weg
+    const ang=Math.random()*6.283, r=6+Math.random()*8;
+    const nx=player.x+Math.cos(ang)*r, nz=player.z+Math.sin(ang)*r;
+    m.group.position.x=nx; m.group.position.z=nz; m.tx=nx; m.tz=nz;
+    spawnPoof(nx, m.group.position.y+0.6, nz, 'enderman');
+  }
   if(!m.hpBar){ m.hpBar=makeHpBar(); m.group.add(m.hpBar); }
   drawHpBar(m.hpBar.userData.ctx, Math.max(0,m.hp)/m.maxHp); m.hpBar.material.map.needsUpdate=true;
 }
@@ -2363,9 +3192,19 @@ const MOB_DROP = {
   cow:     [{id:BEEF,        min:1, max:2}, {id:LEATHER, min:0, max:2}],
   sheep:   [{id:MUTTON,      min:1, max:2}],
   chicken: [{id:CHICKEN_RAW, min:1, max:1}],
+  pig:     [{id:PORK_RAW,    min:1, max:3}],
   zombie:  [{id:ROTTEN_FLESH,min:1, max:2}],
   skeleton:[{id:BONE,        min:1, max:2}, {id:ARROW_ITEM, min:0, max:2}],
   creeper: [{id:GUNPOWDER,   min:1, max:2}],   // nur beim normalen Erschlagen, nicht bei der Explosion
+  spider:  [{id:STRING,      min:1, max:2}, {id:SPIDER_EYE, min:0, max:1}],
+  enderman:[{id:ENDER_PEARL, min:0, max:1}],
+  wolf:    [],
+  horse:   [{id:LEATHER,     min:0, max:2}],
+  ghast:   [{id:GHAST_TEAR,  min:0, max:1}, {id:GUNPOWDER, min:1, max:2}],
+  blaze:   [{id:BLAZE_ROD,   min:1, max:1}],
+  wither:  [{id:NETHER_STAR, min:1, max:1}],
+  ender_dragon:[],
+  end_crystal:[],
 };
 function rollDrops(kind){
   const tbl=MOB_DROP[kind]; if(!tbl) return;
@@ -2379,20 +3218,23 @@ function attackMob(id){
   lastAtk=now;
   const sel=inv[selectedSlot];
   let dmg=3; if(sel && isTool(sel.id)){ const td=TOOL[sel.id]; dmg = td.dmg || (td.cat==='axe'?4:3); }  // Schwert/Axt mehr Schaden
+  if(sel) dmg += enchLvl(sel,'sharp');                            // Schaerfe-Verzauberung
+  if(buffStrength>0) dmg += 3;                                    // Stärketrank / goldener Apfel
   net.send({t:'mobhit', mobId:id, dmg});
   myHits.set(id, now);
   SFX.hit();
-  const mm=mobsMap.get(id); if(mm){ mm.hp=Math.max(0, mm.hp-dmg); onMobHp(id, mm.hp); } // sofortiges Feedback, Server korrigiert per 'mobhp'
+  const mm=mobsMap.get(id); if(mm){ if(bossInvulnerable(mm)){ flashMsg('Zerstöre erst die End-Kristalle!'); SFX.ui(); } else { mm.hp=Math.max(0, mm.hp-dmg); onMobHp(id, mm.hp); if(mm.local && mm.hp<=0) onMobDead(id); } } // sofortiges Feedback; lokal: direkt sterben
   if(sel && isTool(sel.id)) damageTool();                      // Werkzeug nutzt sich ab
 }
 // ---- Bogen: Pfeil abschiessen ----
 function countItem(id){ let n=0; for(const s of inv){ if(s&&s.id===id) n+=s.count; } return n; }
 function removeItem(id,n){ for(let i=0;i<inv.length&&n>0;i++){ const s=inv[i]; if(s&&s.id===id){ const take=Math.min(n,s.count); s.count-=take; n-=take; if(s.count<=0) inv[i]=null; } } renderHotbar(); if(invOpen) renderInventory(); }
-let lastShot=0;
+let lastShot=0, lastBowPower=0;
 function shootBow(){
   const now=performance.now(); if(now-lastShot<350) return;     // Schuss-Cooldown
   if(countItem(ARROW_ITEM)<=0){ SFX.ui(); return; }             // keine Pfeile -> nur Klick-Sound
   lastShot=now;
+  lastBowPower = enchLvl(inv[selectedSlot],'power');            // Staerke-Verzauberung des Bogens merken
   const dir=new THREE.Vector3(); camera.getWorldDirection(dir);
   const o=camera.position;
   const sx=o.x+dir.x*0.6, sy=o.y+dir.y*0.6, sz=o.z+dir.z*0.6;   // knapp vor dem Kopf starten
@@ -2404,22 +3246,32 @@ function shootBow(){
 }
 // Eigener Pfeil trifft Mob (client-seitig, weil Server keine Mob-Hoehe kennt) -> bestehende mobhit-Infra
 function arrowHitMob(id){
-  const dmg=4;
+  const dmg=4+lastBowPower;
   net.send({t:'mobhit', mobId:id, dmg});
   myHits.set(id, performance.now());
-  const mm=mobsMap.get(id); if(mm){ mm.hp=Math.max(0, mm.hp-dmg); onMobHp(id, mm.hp); }
+  const mm=mobsMap.get(id); if(mm){ if(bossInvulnerable(mm)){ flashMsg('Zerstöre erst die End-Kristalle!'); } else { mm.hp=Math.max(0, mm.hp-dmg); onMobHp(id, mm.hp); if(mm.local && mm.hp<=0) onMobDead(id); } }
   SFX.hit();
 }
 function eat(){
   const s=inv[selectedSlot]; if(!s||!isFood(s.id)) return;
   const now=performance.now();
-  if(now-lastEat<1000 || hunger>=HUNGER_MAX) return;          // Ess-Cooldown, nicht wenn voll
-  lastEat=now; hunger=Math.min(HUNGER_MAX, hunger+FOOD[s.id]); consumeSelected(1); SFX.eat();
+  if(now-lastEat<1000 || (hunger>=HUNGER_MAX && s.id!==MILK_BUCKET)) return;   // Ess-Cooldown, nicht wenn voll (Milch immer)
+  lastEat=now;
+  if(s.id===MILK_BUCKET){ hunger=Math.min(HUNGER_MAX,hunger+FOOD[s.id]); burnT=0; swapSelected(EMPTY_BUCKET); SFX.eat(); return; } // Milch loescht Feuer + leerer Eimer zurueck
+  hunger=Math.min(HUNGER_MAX, hunger+FOOD[s.id]); consumeSelected(1); SFX.eat();
 }
 function onMobDead(id){
   const m=mobsMap.get(id), t=myHits.get(id);
   if(m){ spawnPoof(m.group.position.x, m.group.position.y+0.6, m.group.position.z, m.kind); SFX.mobDie(m.kind, m.group.position); }
-  if(m && t && performance.now()-t<4000){ rollDrops(m.kind); }   // nur wer kurz vorher traf, kriegt den Drop
+  if(m && m.boss){                                                // Bosse: Belohnung immer (egal wer killt)
+    spawnXPOrbs(m.group.position.x, m.group.position.y+0.6, m.group.position.z, MOB_XP[m.kind]||1);
+    gameStats.mobsKilled++; unlockAch('first_kill');
+    if(m.kind==='ender_dragon'){ unlockAch('dragon'); onDragonDead(m); }
+    else if(m.kind==='wither'){ rollDrops('wither'); }
+  } else if(m && t && performance.now()-t<4000){ rollDrops(m.kind);   // nur wer kurz vorher traf, kriegt Drop + XP
+    spawnXPOrbs(m.group.position.x, m.group.position.y+0.6, m.group.position.z, MOB_XP[m.kind]||1);
+    gameStats.mobsKilled++; unlockAch('first_kill'); }
+  if(m && m.kind==='end_crystal'){ spawnExplosion(m.group.position.x, m.group.position.y, m.group.position.z); }
   myHits.delete(id);
   removeMob(id);
 }
@@ -2449,16 +3301,20 @@ function mobInView(maxT){
 
 // ---- Schaden / Tod / Respawn ----
 function degradeArmor(by){ let broke=false; for(let i=0;i<4;i++){ const a=armor[i]; if(a){ a.dur-=by; if(a.dur<=0){ armor[i]=null; broke=true; } } } if(broke) SFX.hit(); if(invOpen) renderInventory(); }
+let shieldCd=0;
 function damagePlayer(amount, bypassArmor){
   if(dead) return;
+  if(!bypassArmor && amount>0 && offhand && offhand.id===SHIELD_ITEM && shieldCd<=0){   // Schild blockt 50% von vorne
+    amount*=0.5; if(amount>=2) shieldCd=1.2; SFX.hit();
+  }
   if(!bypassArmor && amount>0){
     const pts=armorPoints();
-    if(pts>0){ degradeArmor(Math.max(1, Math.floor(amount/4))); amount *= (1 - Math.min(0.8, pts*0.04)); }  // Ruestung daempft + nutzt sich ab
+    if(pts>0){ degradeArmor(Math.max(1, Math.floor(amount/4))); amount *= (1 - Math.min(0.85, pts*0.04 + protPoints()*0.04)); }  // Ruestung daempft + nutzt sich ab
   }
   health -= amount; hurtT=0.35; SFX.hurt();
   if(health<=0){ health=0; die(); }
 }
-function die(){ dead=true; SFX.die(); invOpen=false; invScreen.classList.remove('open'); deathEl.classList.add('open'); if(!isTouch) document.exitPointerLock(); }
+function die(){ dead=true; gameStats.deaths++; SFX.die(); invOpen=false; invScreen.classList.remove('open'); showDeathStats(); deathEl.classList.add('open'); if(!isTouch) document.exitPointerLock(); }
 function respawn(){
   dead=false; deathEl.classList.remove('open');
   health=HEALTH_MAX; hunger=HUNGER_MAX; air=AIR_MAX; burnT=0;
@@ -2468,13 +3324,18 @@ function respawn(){
     for(let i=0;i<craftGrid.length;i++) craftGrid[i]=null;
     for(let i=0;i<4;i++) armor[i]=null;
     offhand=null;
+    xp=0; xpLevel=0;                            // XP geht beim Tod verloren (wie in MC)
   }
+  renderXP();
   held=null; selectedSlot=0;
   saveInv();   // Tod sofort sichern, sonst laedt ein Rejoin das alte volle Inventar
   recomputeCraft(); renderHotbar(); renderHeld(); if(invOpen) renderInventory();
-  player.x=8.5; player.z=8.5; player.vx=player.vy=player.vz=0;
-  for(let dz=-1;dz<=1;dz++) for(let dx=-1;dx<=1;dx++) world.ensureChunkData(dx,dz);
-  player.y=Math.max(terrainHeight(8,8),WATER_LEVEL)+2;
+  // Wiederbeleben am Bett (falls eins gesetzt), sonst am Start (8,8)
+  const sp = bedSpawn || {x:8.5, z:8.5, y:null};
+  player.x=sp.x; player.z=sp.z; player.vx=player.vy=player.vz=0;
+  const scx=Math.floor(player.x/CHUNK_SIZE), scz=Math.floor(player.z/CHUNK_SIZE);
+  for(let dz=-1;dz<=1;dz++) for(let dx=-1;dx<=1;dx++) world.ensureChunkData(scx+dx,scz+dz);
+  player.y = (sp.y!=null) ? sp.y : Math.max(terrainHeight(Math.floor(sp.x),Math.floor(sp.z)),WATER_LEVEL)+2;
   if(!isTouch) canvas.requestPointerLock();
 }
 respawnBtn.addEventListener('click', respawn);
@@ -2483,6 +3344,12 @@ respawnBtn.addEventListener('touchstart', (e)=>{ e.preventDefault(); respawn(); 
 // ---- Survival pro Frame ----
 function survivalUpdate(dt, now){
   if(dead) return;
+  if(portalCooldown>0) portalCooldown-=dt;                       // Portal: nach kurzem Stehen wechseln
+  if(portalCooldown<=0){
+    if(inPortalBlock()){ portalT+=dt; if(portalT>0.7){ portalT=0; usePortal(); } }
+    else if(inEndPortalBlock()){ portalT+=dt; if(portalT>0.7){ portalT=0; useEndPortal(); } }
+    else portalT=0;
+  } else portalT=0;
   if(net.connected){ hunger = Math.max(0, hunger - dt*0.015); if(sprinting) hunger=Math.max(0,hunger-dt*0.05); } // Hunger nur im MP
   if(hunger>6 && health<HEALTH_MAX){ health=Math.min(HEALTH_MAX, health+dt*0.4); if(net.connected) hunger=Math.max(0,hunger-dt*0.05); }
   else if(net.connected && hunger<=0 && health>0){ health=Math.max(0, health-dt*0.2); if(health<=0) die(); }
@@ -2494,6 +3361,7 @@ function survivalUpdate(dt, now){
   const midB  = world.getBlock(Math.floor(player.x), Math.floor(player.y+0.9), Math.floor(player.z));
   const inLava = (feetB===LAVA || midB===LAVA || eb===LAVA);
   if(inLava) burnT = 5;                                   // in Lava: Brand-Timer voll auffuellen
+  else if(feetB===FIRE || feetB===CAMPFIRE || midB===FIRE) burnT=Math.max(burnT, 3);  // Feuer/Lagerfeuer
   if(burnT>0){
     burnT = Math.max(0, burnT - dt);
     const iv = inLava ? 500 : 1000, dmg = inLava ? 2 : 1; // in Lava schneller + haerter
@@ -2510,15 +3378,97 @@ function survivalUpdate(dt, now){
     if(hr!==lastH || hu!==lastHu){ net.sendStat({health:hr, hunger:hu}); lastH=hr; lastHu=hu; lastStatSent=now; }
   }
 }
+// =====================================================================
+//  LOKALES MOB-SPAWNING + KI  (Solo-Modus: ohne Server gibt es sonst keine Mobs)
+//  Im Multiplayer uebernimmt der Server; diese Funktion haelt sich dann zurueck.
+// =====================================================================
+let localMobSeq = 1, _mobSpawnTimer = 1.5;
+const LOCAL_PASSIVE = ['cow','sheep','chicken','pig','horse','wolf'];
+const LOCAL_HOSTILE = ['zombie','skeleton','creeper','spider'];
+function localMobCount(hostile){ let n=0; for(const [,m] of mobsMap) if(m.local && m.hostile===hostile) n++; return n; }
+function spawnLocalMob(kind, x, z){
+  const id='L'+(localMobSeq++);
+  addMob({ id, kind, x, z, dir:Math.random()*6.283 });
+  const m=mobsMap.get(id);
+  if(m){ m.local=true; m.vx=0; m.vz=0; m.wanderT=0; m.moving=false; m.love=0; m.loveCd=0; m.baby=false; m.tame=false; }
+  return id;
+}
+// Sucht einen Spawn-Punkt in 16-36 Bloecken Abstand: offener Himmel, fester Boden, 2 Bloecke Luft drueber.
+function trySpawnPoint(){
+  const ang=Math.random()*6.283, r=16+Math.random()*20;
+  const xi=Math.floor(player.x+Math.cos(ang)*r), zi=Math.floor(player.z+Math.sin(ang)*r);
+  const h=terrainHeight(xi,zi);
+  if(h<WATER_LEVEL) return null;                                        // kein Spawn unter Wasser
+  const ground=world.getBlock(xi,h,zi);
+  if(!isSolid(ground)||ground===LEAVES) return null;
+  if(isSolid(world.getBlock(xi,h+1,zi))||isSolid(world.getBlock(xi,h+2,zi))) return null;
+  return { x:xi+0.5, z:zi+0.5, ground };
+}
+function updateLocalMobs(dt, now){
+  if(net.connected || dimension!==0) return;
+  _mobSpawnTimer-=dt;
+  if(_mobSpawnTimer<=0){
+    _mobSpawnTimer = 2.0 + Math.random()*2.5;
+    const night=isNightTime();
+    if(localMobCount(false)<8){ const sp=trySpawnPoint(); if(sp && (sp.ground===GRASS||sp.ground===SNOW)) spawnLocalMob(LOCAL_PASSIVE[(Math.random()*LOCAL_PASSIVE.length)|0], sp.x, sp.z); }
+    if(night && localMobCount(true)<11){ const sp=trySpawnPoint(); if(sp){ const d=Math.hypot(sp.x-player.x, sp.z-player.z); if(d>11) spawnLocalMob(LOCAL_HOSTILE[(Math.random()*LOCAL_HOSTILE.length)|0], sp.x, sp.z); } }
+  }
+  for(const [id,m] of mobsMap){
+    if(!m.local || m.ridden) continue;
+    const p=m.group.position;
+    const dx=player.x-p.x, dz=player.z-p.z, dist=Math.hypot(dx,dz);
+    if(dist>74){ removeMob(id); continue; }                              // weit weg -> verschwindet
+    if(m.loveCd>0) m.loveCd=Math.max(0,m.loveCd-dt);
+    if(m.hostile){
+      if(!night && dist>22 && Math.random()<0.03){ removeMob(id); continue; }  // tagsueber nach und nach despawnen
+      if(dist<26){
+        m.dir=Math.atan2(dx,dz);
+        if(dist>1.3){ const sp=m.kind==='spider'?3.4:2.5; m.vx=Math.sin(m.dir)*sp; m.vz=Math.cos(m.dir)*sp; }
+        else { m.vx=0; m.vz=0; }
+        if(m.kind==='creeper'){
+          if(dist<2.7){ m.fuse=Math.min(1,(m.fuse||0)+dt/1.5); if(!m.fusing){ m.fusing=true; SFX.fuse(p); } if(m.fuse>=1){ onExplode({mobId:id, r:3, dmg:7}); continue; } }
+          else if(m.fuse>0){ m.fuse=Math.max(0,m.fuse-dt); if(m.fuse<=0) m.fusing=false; }
+        }
+      } else { m.vx=0; m.vz=0; }
+    } else {
+      // Zucht: zwei verliebte Tiere derselben Art laufen zueinander
+      if(m.love>0){ m.love=Math.max(0,m.love-dt); const partner=findLovePartner(id,m); if(partner){ const pp=partner.group.position, ld=Math.hypot(pp.x-p.x,pp.z-p.z); if(ld>1.4){ m.dir=Math.atan2(pp.x-p.x,pp.z-p.z); m.vx=Math.sin(m.dir)*1.3; m.vz=Math.cos(m.dir)*1.3; } else if(m.love>0 && partner.love>0){ breedMobs(m,partner,p); } continue; } }
+      m.wanderT=(m.wanderT||0)-dt;
+      if(m.wanderT<=0){ m.wanderT=2+Math.random()*3; m.moving=Math.random()<0.55; m.dir=Math.random()*6.283; }
+      if(m.moving){ const sp=m.kind==='chicken'?1.5:1.1; m.vx=Math.sin(m.dir)*sp; m.vz=Math.cos(m.dir)*sp; } else { m.vx=0; m.vz=0; }
+    }
+    // grobe Hindernis-Vermeidung: fester Block voraus -> abdrehen
+    if(m.vx||m.vz){ const nx=p.x+Math.sin(m.dir)*0.6, nz=p.z+Math.cos(m.dir)*0.6; if(isSolid(world.getBlock(Math.floor(nx), Math.floor(p.y), Math.floor(nz)))){ m.dir+=2.2; m.vx=0; m.vz=0; m.wanderT=0.4; } }
+  }
+}
+function findLovePartner(myId,m){
+  for(const [id2,o] of mobsMap){ if(id2===myId||!o.local||o.kind!==m.kind||o.love<=0||o.baby) continue; if(Math.hypot(o.group.position.x-m.group.position.x, o.group.position.z-m.group.position.z)<6) return o; }
+  return null;
+}
+function breedMobs(a,b,pos){
+  a.love=0; b.love=0; a.loveCd=12; b.loveCd=12;
+  const id=spawnLocalMob(a.kind, pos.x+0.3, pos.z+0.3);
+  const baby=mobsMap.get(id); if(baby){ baby.baby=true; baby.group.scale.setScalar(0.55); baby.loveCd=20; }
+  spawnHeartParticles(pos.x,pos.y+1,pos.z); SFX.pickup(); addXP(1+(Math.random()*4|0)); unlockAch('breeder');
+}
+function spawnHeartParticles(x,y,z){
+  for(let i=0;i<5;i++){ const mat=new THREE.MeshBasicMaterial({color:0xff5a8a, transparent:true}); const mesh=new THREE.Mesh(_boomGeo,mat); mesh.position.set(x+(Math.random()-0.5)*0.5,y,z+(Math.random()-0.5)*0.5); mesh.scale.setScalar(0.25); scene.add(mesh); particles.push({mesh, vx:(Math.random()-0.5)*0.6, vy:1.4+Math.random(), vz:(Math.random()-0.5)*0.6, life:0.8, max:0.8}); }
+}
 function updateMobs(dt){
   for(const [id,m] of mobsMap){
+    if(dimension!==0 && !(m.local && m.fly)){ m.group.visible=false; continue; }   // in Nether/End nur fliegende lokale Mobs (Bosse/Ghast/Blaze)
     const p=m.group.position;
-    // Simulation Distance: weit entfernte Mobs ausblenden + nicht animieren (Perf-Hebel)
-    if(Math.max(Math.abs(m.tx-player.x), Math.abs(m.tz-player.z)) > SIM_DISTANCE*CHUNK_SIZE){ m.group.visible=false; continue; }
+    // Simulation Distance: weit entfernte Mobs ausblenden + nicht animieren (Perf-Hebel). Bosse nie cullen.
+    if(!m.boss && Math.max(Math.abs(m.tx-player.x), Math.abs(m.tz-player.z)) > SIM_DISTANCE*CHUNK_SIZE){ m.group.visible=false; continue; }
     m.group.visible=true;
-    const ndx=(m.tx-p.x)*0.2, ndz=(m.tz-p.z)*0.2;
+    if(m.ridden){ continue; }                            // gerittenes Pferd: Position kommt von updatePlayer
+    let ndx, ndz;
+    if(m.local){ ndx=(m.vx||0)*dt; ndz=(m.vz||0)*dt; }   // lokale Mobs: echte Geschwindigkeit
+    else { ndx=(m.tx-p.x)*0.2; ndz=(m.tz-p.z)*0.2; }     // Server-Mobs: zum Zielpunkt interpolieren
     p.x+=ndx; p.z+=ndz;
-    p.y = mobGroundY(p.x, p.z);
+    if(m.local){ m.tx=p.x; m.tz=p.z; }
+    if(m.fly){ p.y += (m.vy||0)*dt; }                    // fliegende Mobs: eigene Hoehe
+    else p.y = mobGroundY(p.x, p.z);
     m.group.rotation.y = m.dir;
     // Lauf-Animation: Beine schwingen gegenphasig, Staerke nach Tempo
     const moved=Math.hypot(ndx,ndz);
@@ -2663,6 +3613,7 @@ function applyCrater(cx,cy,cz,r){
   return removed;
 }
 function onExplode(m){
+  if(dimension!==0){ mobsMap.delete(m.mobId); myHits.delete(m.mobId); return; }   // im Nether keine Oberwelt-Krater anwenden
   const mob=mobsMap.get(m.mobId);
   let cx,cy,cz;
   if(mob){ const p=mob.group.position; cx=p.x; cy=p.y+0.6; cz=p.z; }
@@ -2719,11 +3670,30 @@ function addArmorItem(id){ for(let i=0;i<SLOT_COUNT;i++){ if(!inv[i]){ inv[i]={i
 function damageTool(){ const t=inv[selectedSlot]; if(!t||!isTool(t.id)) return; t.dur--; if(t.dur<=0) inv[selectedSlot]=null; renderHotbar(); if(invOpen) renderInventory(); }
 function breakBlock(x,y,z,bid,info,tool){
   if(bid===FURNACE){ const fk=x+'_'+y+'_'+z, f=furnaces.get(fk); if(f){ for(const s of f.slots){ if(s) addItem(s.id,s.count); } furnaces.delete(fk); } }
+  if(bid===CHEST||bid===BARREL){ const ck=x+'_'+y+'_'+z;                     // Truhen/Fass-Inhalt ausschuetten
+    if(lootChests.has(ck)){ fillLoot(chestAt(ck),ck); lootChests.delete(ck); }
+    const arr=chests.get(ck); if(arr){ for(const s of arr) if(s) addItem(s.id,s.count); chests.delete(ck); }
+    if(net.connected && dimension===0) net.send({t:'chest',pos:ck,slots:[]}); else saveChestsLocal();
+  }
+  const k=x+'_'+y+'_'+z;
+  if(bid===TNT){ if(tntFuses.has(k)){ tntFuses.delete(k); } }                // ungezuendetes TNT abbauen
+  crops.delete(k); saplings.delete(k); fires.delete(k); composters.delete(k); beacons.delete(k);
   SFX.dig(bid, {x:x+0.5, y:y+0.5, z:z+0.5});
+  const wasRedstone = isWire(bid)||isLever(bid)||isLamp(bid);
   world.setBlock(x,y,z,AIR);
+  if(wasRedstone) updateRedstone(x,y,z);                                     // Netz neu auswerten
   const okTool = !info.needsTool || (tool && isTool(tool.id) && TOOL[tool.id].cat===info.tool && TOOL[tool.id].tier >= (info.minTier||1));
-  if(okTool){ const dr=dropFor(bid); if(dr!==AIR) addItem(dr,1); }
+  if(okTool){ const dr=dropFor(bid); if(dr!==AIR) addItem(dr,1);
+    if(bid===WHEAT_S3) addItem(WHEAT_SEEDS, 1+(Math.random()*2|0));          // reifer Weizen: Samen extra
+    if(bid===SOUL_SAND && Math.random()<0.18) addItem(NETHER_WART,1);        // Netherwarze gelegentlich
+    if(bid===GRASS && Math.random()<0.12) addItem(WHEAT_SEEDS,1);            // Samen aus Gras
+  }
+  if(okTool && ORE_XP[bid]) spawnXPOrbs(x+0.5, y+0.5, z+0.5, ORE_XP[bid]);   // Erze geben Erfahrung
   if(tool && isTool(tool.id)) damageTool();
+  gameStats.blocksMined++; unlockAch('first_block');
+  if(bid===IRON_ORE) unlockAch('miner');
+  if(bid===DIAMOND_ORE) unlockAch('diamonds');
+  if(bid===WHEAT_S3) unlockAch('farmer');
 }
 function updateAim(dt){
   if(!isActive() || dead || invOpen){ highlightMesh.visible=false; mineBar.style.display='none'; mining.x=null; return; }
@@ -2735,11 +3705,454 @@ function updateAim(dt){
     const bid=world.getBlock(b.x,b.y,b.z);
     const info=mineInfo(bid);
     const tool=inv[selectedSlot];
-    const sp=(tool && isTool(tool.id) && TOOL[tool.id].cat===info.tool)?TOOL[tool.id].speed:1;
+    let sp=(tool && isTool(tool.id) && TOOL[tool.id].cat===info.tool)?TOOL[tool.id].speed:1;
+    if(tool && enchLvl(tool,'eff')) sp *= (1+0.35*enchLvl(tool,'eff'));   // Effizienz-Verzauberung
     mining.progress += dt*sp/Math.max(0.05,info.hard);
     if(mining.progress>=1){ breakBlock(b.x,b.y,b.z,bid,info,tool); mining.progress=0; mining.x=null; }
     mineBar.style.display='block'; mineFill.style.width=Math.min(100,mining.progress*100)+'%';
   } else { mineBar.style.display='none'; mining.progress=0; }
+}
+
+// =====================================================================
+//  XP / ERFAHRUNG + LEVEL
+// =====================================================================
+let xp=0, xpLevel=0;
+const xpFillEl=document.getElementById('xpfill'), xpLvlEl=document.getElementById('xplvl');
+function xpForLevel(lvl){ return 10 + lvl*5; }            // XP bis zum naechsten Level
+function renderXP(){
+  const need=xpForLevel(xpLevel);
+  xpFillEl.style.width=Math.max(0,Math.min(100, xp/need*100))+'%';
+  xpLvlEl.textContent=xpLevel;
+  xpLvlEl.classList.toggle('hidden', xpLevel<=0 && xp<=0);
+}
+function addXP(n){
+  if(n<=0) return;
+  xp+=n;
+  while(xp>=xpForLevel(xpLevel)){ xp-=xpForLevel(xpLevel); xpLevel++; SFX.levelup(); }
+  renderXP();
+}
+const MOB_XP = { cow:1, sheep:1, chicken:1, pig:1, zombie:5, skeleton:5, creeper:5, spider:5, enderman:10, wolf:0, horse:0, ghast:5, blaze:10, ender_dragon:500, wither:50, end_crystal:0 };
+const ORE_XP = { [COAL_ORE]:1, [COPPER_ORE]:1, [IRON_ORE]:2, [GOLD_ORE]:3, [DIAMOND_ORE]:5 };
+// Schwebende XP-Kuegelchen, die zum Spieler fliegen und dort gutgeschrieben werden
+const xpOrbs=[];
+const _xpOrbGeo=new THREE.SphereGeometry(0.12,6,5);
+const _xpOrbMat=new THREE.MeshBasicMaterial({color:0x9fe06a});
+function spawnXPOrbs(x,y,z,total){
+  if(total<=0) return;
+  const n=Math.min(8, Math.max(1, Math.round(total/2)));
+  for(let i=0;i<n;i++){
+    const mesh=new THREE.Mesh(_xpOrbGeo,_xpOrbMat);      // Geometrie/Material geteilt -> nie disposen
+    mesh.position.set(x+(Math.random()-0.5)*0.8, y+Math.random()*0.5, z+(Math.random()-0.5)*0.8);
+    scene.add(mesh);
+    xpOrbs.push({mesh, value:total/n, age:0, vy:1.5+Math.random()*1.5});
+  }
+}
+function updateXPOrbs(dt){
+  for(let i=xpOrbs.length-1;i>=0;i--){
+    const orb=xpOrbs[i]; orb.age+=dt; const p=orb.mesh.position;
+    const dx=player.x-p.x, dy=(player.y+0.8)-p.y, dz=player.z-p.z;
+    const d=Math.hypot(dx,dy,dz)||1e-3;
+    if(orb.age>0.25 && d<1.3){ addXP(orb.value); SFX.xp(); scene.remove(orb.mesh); xpOrbs.splice(i,1); continue; }
+    if(orb.age>30){ scene.remove(orb.mesh); xpOrbs.splice(i,1); continue; }
+    if(orb.age>0.25 && d<7){ const s=Math.min(1, 7*dt/d); p.x+=dx*s; p.y+=dy*s; p.z+=dz*s; orb.vy=0; }
+    else { orb.vy-=10*dt; p.y+=orb.vy*dt; const g=mobGroundY(p.x,p.z)-0.4; if(p.y<g){ p.y=g; orb.vy=0; } }
+    orb.mesh.rotation.y+=dt*3;
+  }
+}
+
+// =====================================================================
+//  KOMPASS — Himmelsrichtung oben mittig + Haus-Marker zeigt zum Spawn (0,0)
+// =====================================================================
+const compassEl=document.getElementById('compass');
+const COMPASS_DIRS=[['N',0,true],['NO',45,false],['O',90,true],['SO',135,false],['S',180,true],['SW',225,false],['W',270,true],['NW',315,false]];
+const _compassLabels=[]; let _compassHome=null;
+(function buildCompass(){
+  const mark=document.createElement('div'); mark.className='cmark'; compassEl.appendChild(mark);
+  for(const [txt,deg,card] of COMPASS_DIRS){
+    const el=document.createElement('div'); el.className='clab'+(card?' card':''); el.textContent=txt;
+    compassEl.appendChild(el); _compassLabels.push({el,deg});
+  }
+  _compassHome=document.createElement('div'); _compassHome.className='chome'; _compassHome.textContent='⌂';
+  compassEl.appendChild(_compassHome);
+})();
+const _cdir=new THREE.Vector3();
+const CMP_HALF=100, CMP_SCALE=1.7, CMP_VIS=58;           // Fensterbreite 200px, Pixel pro Grad
+function placeOnCompass(el, bearingDeg, headingDeg){
+  let rel=bearingDeg-headingDeg; while(rel>180)rel-=360; while(rel<-180)rel+=360;
+  if(Math.abs(rel)>CMP_VIS){ el.style.display='none'; return; }
+  el.style.display=''; el.style.left=(CMP_HALF+rel*CMP_SCALE)+'px';
+}
+function updateCompass(){
+  camera.getWorldDirection(_cdir);
+  let heading=Math.atan2(_cdir.x, -_cdir.z)*180/Math.PI; if(heading<0)heading+=360;
+  for(const l of _compassLabels) placeOnCompass(l.el, l.deg, heading);
+  let hb=Math.atan2(-player.x, player.z)*180/Math.PI; if(hb<0)hb+=360;   // Richtung zum Spawn
+  placeOnCompass(_compassHome, hb, heading);
+}
+
+// =====================================================================
+//  SCHLAFEN (Bett) — nachts die Nacht ueberspringen + Respawn-Punkt setzen
+// =====================================================================
+const sleepFadeEl=document.getElementById('sleepFade');
+let bedSpawn=null, sleeping=false;
+function isNightTime(){ return dayTime>0.75 || dayTime<0.2; }
+function trySleep(bx,by,bz){
+  if(sleeping) return;
+  bedSpawn={x:bx+0.5, y:by+1, z:bz+0.5};                 // hier wieder aufwachen / respawnen
+  saveInv();
+  if(!isNightTime()){ flashMsg('Du kannst nur nachts schlafen.'); return; }
+  sleeping=true; SFX.ui();
+  sleepFadeEl.classList.add('on');
+  if(net.connected) net.sendSleep();
+  setTimeout(()=>{
+    if(!net.connected) dayTime=0.25;                     // solo: selbst auf Morgen stellen (im MP macht das der Server)
+    health=Math.min(HEALTH_MAX, health+2); renderVitals(); // ausgeruht: etwas Leben zurueck
+    sleepFadeEl.classList.remove('on');
+    setTimeout(()=>{ sleeping=false; }, 700);
+  }, 750);
+}
+
+// =====================================================================
+//  TAG/NACHT-AMBIENT (Vogel tagsueber, Grille nachts)
+// =====================================================================
+let _ambTimer=4;
+function updateAmbient(dt){
+  _ambTimer-=dt;
+  if(_ambTimer>0) return;
+  _ambTimer=4+Math.random()*6;
+  if(isNightTime()) SFX.cricket();
+  else if(dayTime>0.25 && dayTime<0.7) SFX.bird();
+}
+
+// =====================================================================
+//  CHAT (Multiplayer; solo wird die eigene Nachricht lokal angezeigt)
+// =====================================================================
+const chatLogEl=document.getElementById('chatLog'), chatInputEl=document.getElementById('chatInput');
+let chatOpen=false;
+function escTxt(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function addChatMsg(name, text, sys){
+  const div=document.createElement('div'); div.className='cmsg'+(sys?' sys':'');
+  if(sys) div.textContent=text; else div.innerHTML='<b>'+escTxt(name)+':</b> '+escTxt(text);
+  chatLogEl.appendChild(div);
+  while(chatLogEl.children.length>8) chatLogEl.removeChild(chatLogEl.firstChild);
+  setTimeout(()=>{ div.classList.add('old'); setTimeout(()=>{ if(div.parentNode && div.classList.contains('old')) div.remove(); }, 700); }, 10000);
+}
+function flashMsg(text){ addChatMsg(null, text, true); }
+function openChat(){
+  if(chatOpen) return; chatOpen=true;
+  chatLogEl.classList.remove('dim');
+  for(const c of chatLogEl.children) c.classList.remove('old');
+  if(!isTouch) document.exitPointerLock();
+  chatInputEl.classList.add('open'); chatInputEl.value='';
+  setTimeout(()=>chatInputEl.focus(), 0);
+}
+function closeChat(){
+  chatOpen=false; chatInputEl.classList.remove('open'); chatInputEl.value=''; chatInputEl.blur();
+  chatLogEl.classList.add('dim');
+  if(!isTouch && overlay.classList.contains('hidden') && !invOpen && !settingsOpen) canvas.requestPointerLock();
+}
+function sendChat(text){
+  text=(text||'').trim(); if(!text) return;
+  if(net.connected) net.sendChat(text); else addChatMsg(playerName||'Du', text);
+}
+chatInputEl.addEventListener('keydown', (e)=>{
+  e.stopPropagation();
+  if(e.code==='Enter'){ e.preventDefault(); sendChat(chatInputEl.value); closeChat(); }
+  else if(e.code==='Escape'){ e.preventDefault(); closeChat(); }
+});
+chatInputEl.addEventListener('blur', ()=>{ if(isTouch && chatOpen) closeChat(); });  // Touch: wegtippen schliesst
+const btnChat=document.getElementById('btnChat');
+btnChat.addEventListener('touchstart', (e)=>{ e.preventDefault(); openChat(); }, {passive:false});
+
+// =====================================================================
+//  PvP — Nahkampf gegen andere Spieler
+// =====================================================================
+function avatarInView(maxT){
+  const o=camera.position; _fwd.set(0,0,-1).applyQuaternion(camera.quaternion);
+  let best=null, bestT=maxT;
+  for(const [id,a] of avatars){
+    const p=a.group.position;
+    const mn=[p.x-0.35, p.y, p.z-0.35], mx=[p.x+0.35, p.y+1.85, p.z+0.35];
+    const t=rayAABB(o,_fwd,mn,mx,bestT);
+    if(t!==null && t<bestT){ bestT=t; best=id; }
+  }
+  return best===null?null:{id:best, t:bestT};
+}
+function attackPlayer(id){
+  const now=performance.now(); if(now-lastAtk<500) return; lastAtk=now;
+  const sel=inv[selectedSlot];
+  let dmg=2; if(sel && isTool(sel.id)){ const td=TOOL[sel.id]; dmg=td.dmg || (td.cat==='axe'?4:2); }
+  if(sel) dmg += enchLvl(sel,'sharp');
+  net.send({t:'pvp', target:id, dmg});
+  SFX.hit();
+  if(sel && isTool(sel.id)) damageTool();
+}
+
+// =====================================================================
+//  DIMENSIONEN (Nether) + Portal
+// =====================================================================
+const DIM=[ {chunks:world.chunks, ov:overridesByChunk}, {chunks:new Map(), ov:new Map()}, {chunks:new Map(), ov:new Map()} ];  // [Oberwelt, Nether, End]
+function setOverrideInto(map,wx,wy,wz,id){   // Override in eine bestimmte Dimensions-Map schreiben (z.B. Oberwelt waehrend man im Nether ist)
+  const cx=Math.floor(wx/CHUNK_SIZE), cz=Math.floor(wz/CHUNK_SIZE);
+  const lx=wx-cx*CHUNK_SIZE, lz=wz-cz*CHUNK_SIZE, key=cx+','+cz;
+  let m=map.get(key); if(!m){ m=new Map(); map.set(key,m); }
+  m.set(((wy-Y_MIN)*CHUNK_SIZE+lz)*CHUNK_SIZE+lx, id);
+}
+let portalT=0, portalCooldown=0, netherReturn=null;
+function inPortalBlock(){
+  return world.getBlock(Math.floor(player.x),Math.floor(player.y),Math.floor(player.z))===PORTAL
+      || world.getBlock(Math.floor(player.x),Math.floor(player.y+0.9),Math.floor(player.z))===PORTAL;
+}
+function createPortal(h){   // Feuerzeug auf Obsidian -> Portal-Saeule darueber (vereinfacht, ohne strenge Rahmenpruefung)
+  if(world.getBlock(h.x,h.y,h.z)!==OBSIDIAN){ SFX.ui(); return; }
+  let made=0;
+  for(let dy=1; dy<=3; dy++){ if(world.getBlock(h.x,h.y+dy,h.z)===AIR){ world.setBlock(h.x,h.y+dy,h.z,PORTAL); made++; } else break; }
+  if(made>0){ SFX.sizzle(); flashMsg('Nether-Portal entzuendet — geh hinein!'); }
+  else SFX.ui();
+}
+function netherSpawnY(wx,wz){
+  for(let y=NETHER_TOP-3; y>Y_MIN+1; y--){
+    if(world.getBlock(wx,y,wz)===AIR && world.getBlock(wx,y+1,wz)===AIR && isSolid(world.getBlock(wx,y-1,wz))) return y;
+  }
+  return 20;
+}
+function endSpawnY(wx,wz){ for(let y=END_Y+12; y>END_Y-12; y--){ if(isSolid(world.getBlock(wx,y,wz)) && world.getBlock(wx,y+1,wz)===AIR) return y+1; } return END_Y+1; }
+function switchDimension(d){
+  if(d===dimension) return;
+  clearAllChunks();                       // aktuelle Dim: Meshes weg + chunks-Map leeren (Overrides bleiben erhalten)
+  clearLocalMobs();                        // Mobs der alten Dimension entfernen
+  dimension=d; genDim=d;
+  world.chunks=DIM[d].chunks; overridesByChunk=DIM[d].ov;
+  let tx,ty,tz;
+  if(d===1){
+    tx=Math.floor(player.x)+0.5; tz=Math.floor(player.z)+0.5;
+    world.ensureChunkData(Math.floor(tx/CHUNK_SIZE), Math.floor(tz/CHUNK_SIZE));
+    ty=netherSpawnY(Math.floor(tx),Math.floor(tz));
+    const bx=Math.floor(tx)+1, bz=Math.floor(tz), by=Math.floor(ty);   // Rueckkehr-Portal daneben
+    world.setBlock(bx,by-1,bz,OBSIDIAN); world.setBlock(bx,by,bz,PORTAL); world.setBlock(bx,by+1,bz,PORTAL);
+  } else if(d===2){
+    tx=0.5; tz=-38.5;
+    world.ensureChunkData(Math.floor(tx/CHUNK_SIZE), Math.floor(tz/CHUNK_SIZE));
+    ty=endSpawnY(Math.floor(tx),Math.floor(tz));
+  } else { const r=netherReturn||{x:8.5,y:70,z:8.5}; tx=r.x; ty=r.y; tz=r.z; }
+  player.x=tx; player.y=ty; player.z=tz; player.vx=player.vy=player.vz=0;
+  lastCX=lastCZ=null; portalCooldown=3;
+  const pcx=Math.floor(player.x/CHUNK_SIZE), pcz=Math.floor(player.z/CHUNK_SIZE);
+  for(let dz=-1;dz<=1;dz++) for(let dx=-1;dx<=1;dx++) world.ensureChunkData(pcx+dx,pcz+dz);
+  applyDayNight();
+  flashMsg(d===1?'Du bist im Nether.':(d===2?'☄️ Die End-Dimension...':'Zurück in der Oberwelt.'));
+  if(d===2){ unlockAch('the_end'); setTimeout(spawnEndBoss, 800); }
+}
+function clearLocalMobs(){ if(mountedHorse) dismountHorse(); for(const [id,m] of [...mobsMap]) if(m.local) removeMob(id); }
+// ---- Pferd reiten ----
+let mountedHorse=null;
+function mountHorse(id){ const m=mobsMap.get(id); if(!m) return; mountedHorse=id; m.ridden=true; m.vx=m.vz=0; flashMsg('🐎 Du reitest jetzt (Shift zum Absteigen)'); SFX.ui(); }
+function dismountHorse(){ const m=mobsMap.get(mountedHorse); if(m) m.ridden=false; mountedHorse=null; flashMsg('Abgestiegen'); }
+// ---- Lore / Schienen-Fahrt ----
+let mountedCart=false, cartSpeed=0; const cartDir={x:0,z:1};
+function boardCart(rx,ry,rz){
+  mountedCart=true; cartSpeed=4.5;
+  const dx=-Math.sin(yaw), dz=-Math.cos(yaw);
+  if(Math.abs(dx)>=Math.abs(dz)){ cartDir.x=dx>=0?1:-1; cartDir.z=0; } else { cartDir.x=0; cartDir.z=dz>=0?1:-1; }
+  player.x=rx+0.5; player.z=rz+0.5; player.y=ry; player.vy=0;
+  flashMsg('🛒 Lore rollt! (Shift zum Aussteigen)'); SFX.ui();
+}
+function railUnder(){ const b=world.getBlock(Math.floor(player.x), Math.floor(player.y+0.05), Math.floor(player.z)); return (b===RAIL||b===POWERED_RAIL)?b:0; }
+function updateCart(dt){
+  if(keys.has('ShiftLeft')){ mountedCart=false; flashMsg('Ausgestiegen'); return; }
+  const rb=railUnder(); if(!rb){ mountedCart=false; flashMsg('Schiene zu Ende — ausgestiegen'); return; }
+  const ry=Math.floor(player.y+0.05), cx=Math.floor(player.x), cz=Math.floor(player.z);
+  const ahead=world.getBlock(cx+cartDir.x, ry, cz+cartDir.z);
+  if(ahead!==RAIL && ahead!==POWERED_RAIL){                          // Kurve suchen
+    let turned=false;
+    for(const p of [{x:cartDir.z,z:cartDir.x},{x:-cartDir.z,z:-cartDir.x}]){ const b=world.getBlock(cx+p.x, ry, cz+p.z); if(b===RAIL||b===POWERED_RAIL){ cartDir.x=p.x; cartDir.z=p.z; turned=true; break; } }
+    if(!turned) cartSpeed*=Math.pow(0.1,dt);                          // Sackgasse: abbremsen
+  }
+  cartSpeed = rb===POWERED_RAIL ? Math.min(11, cartSpeed+9*dt) : Math.max(4.5, cartSpeed-1.5*dt);
+  player.x += cartDir.x*cartSpeed*dt; player.z += cartDir.z*cartSpeed*dt;
+  if(cartDir.x!==0) player.z=Math.floor(player.z)+0.5;               // auf Achse zentrieren
+  if(cartDir.z!==0) player.x=Math.floor(player.x)+0.5;
+  player.y=ry; player.vy=0;
+  camera.position.set(player.x, player.y+EYE_HEIGHT, player.z);
+  camera.rotation.set(pitch,yaw,0);
+}
+// ---- Nether-Mobs (Ghast/Blaze) lokal spawnen ----
+let _netherSpawnT=3;
+function updateNetherMobs(dt){
+  if(net.connected || dimension!==1) return;
+  _netherSpawnT-=dt;
+  if(_netherSpawnT<=0){ _netherSpawnT=4+Math.random()*5;
+    let count=0; for(const [,m] of mobsMap) if(m.local) count++;
+    if(count<6){ const ang=Math.random()*6.283, r=12+Math.random()*16;
+      const x=player.x+Math.cos(ang)*r, z=player.z+Math.sin(ang)*r, y=player.y+3+Math.random()*7;
+      spawnFlyingMob(Math.random()<0.45?'ghast':'blaze', x, y, z);
+    }
+  }
+  for(const [id,m] of mobsMap){ if(m.local && !m.boss && Math.hypot(m.group.position.x-player.x, m.group.position.z-player.z)>64) removeMob(id); }
+}
+
+// =====================================================================
+//  BOSSE: Enderdrache, Wither, Ghast, Blaze, End-Kristalle (fliegende KI)
+// =====================================================================
+let endDragonDefeated=false;
+const bossProjectiles=[];
+function spawnFlyingMob(kind,x,y,z){ const id='L'+(localMobSeq++); addMob({id,kind,x,z,dir:0}); const m=mobsMap.get(id); if(m){ m.local=true; m.fly=true; m.vx=m.vz=m.vy=0; m.group.position.y=y; m.tx=x; m.tz=z; } return id; }
+function crystalsAlive(){ let n=0; for(const [,m] of mobsMap) if(m.local&&m.kind==='end_crystal') n++; return n; }
+function bossInvulnerable(m){ return m.kind==='ender_dragon' && crystalsAlive()>0; }
+function spawnEndBoss(){
+  if(dimension!==2 || endDragonDefeated) return;
+  for(const pl of END_PILLARS) spawnFlyingMob('end_crystal', pl.x+0.5, END_Y+pl.h+2, pl.z+0.5);
+  spawnFlyingMob('ender_dragon', 0.5, END_Y+18, 30.5);
+  flashMsg('🐉 Der Enderdrache erwacht! Zerstöre zuerst die Kristalle.');
+}
+function bossShoot(from, type){
+  const dir=new THREE.Vector3(player.x-from.x, (player.y+0.9)-from.y, player.z-from.z).normalize();
+  const col = type==='ghast'?0xff6a2a : (type==='blaze'?0xffc040 : (type==='wither'?0x2a2a30 : 0xc060ff));
+  const sp  = type==='ghast'?12 : (type==='dragon'?9 : 14);
+  const dmg = type==='ghast'?6 : (type==='wither'?5 : (type==='dragon'?4:3));
+  const mat=new THREE.MeshBasicMaterial({color:col});
+  const mesh=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.4,0.4), mat);
+  mesh.position.set(from.x, from.y, from.z); scene.add(mesh);
+  bossProjectiles.push({mesh, vx:dir.x*sp, vy:dir.y*sp, vz:dir.z*sp, dmg, life:4, type});
+  if(SFX.bow) SFX.bow();
+}
+function updateBossProjectiles(dt){
+  for(let i=bossProjectiles.length-1;i>=0;i--){ const b=bossProjectiles[i];
+    b.mesh.position.x+=b.vx*dt; b.mesh.position.y+=b.vy*dt; b.mesh.position.z+=b.vz*dt; b.life-=dt;
+    const d=Math.hypot(b.mesh.position.x-player.x, b.mesh.position.y-(player.y+0.9), b.mesh.position.z-player.z);
+    const hitBlock=isSolid(world.getBlock(Math.floor(b.mesh.position.x),Math.floor(b.mesh.position.y),Math.floor(b.mesh.position.z)));
+    if(d<1.2 || b.life<=0 || hitBlock){
+      if(d<1.4 && !dead){ damagePlayer(b.dmg); if(b.type==='ghast'){ spawnExplosion(b.mesh.position.x,b.mesh.position.y,b.mesh.position.z); applyCrater(b.mesh.position.x,b.mesh.position.y,b.mesh.position.z,2); } if(b.type==='blaze') burnT=Math.max(burnT,3); }
+      scene.remove(b.mesh); b.mesh.material.dispose(); bossProjectiles.splice(i,1);
+    }
+  }
+}
+function updateBosses(dt){
+  for(const [id,m] of mobsMap){
+    if(!m.local || !m.fly) continue;
+    const p=m.group.position;
+    const dx=player.x-p.x, dz=player.z-p.z, dist=Math.hypot(dx,dz);
+    if(m.kind==='end_crystal'){ m.group.rotation.y+=dt*1.5; m.vx=m.vz=m.vy=0;
+      // heilt den Drachen in der Naehe (sichtbarer Strahl ueber group-Rotation reicht visuell)
+      continue; }
+    if(m.kind==='ender_dragon'){
+      m.orbit=(m.orbit||0)+dt*0.45;
+      const cx=Math.cos(m.orbit)*30, cz=Math.sin(m.orbit)*30, cy=END_Y+15+Math.sin(m.orbit*2)*5;
+      m.vx=(cx-p.x)*2.2; m.vz=(cz-p.z)*2.2; m.vy=(cy-p.y)*2.2; m.dir=Math.atan2(m.vx,m.vz);
+      if(crystalsAlive()>0 && Math.random()<dt*0.4) m.hp=Math.min(m.maxHp, m.hp+1);
+      m.shootCd=(m.shootCd||0)-dt; if(dist<45 && m.shootCd<=0){ m.shootCd=2.8; bossShoot(p,'dragon'); }
+      continue;
+    }
+    if(m.kind==='wither'){
+      m.vy=((player.y+4)-p.y)*2;
+      if(dist>6){ m.dir=Math.atan2(dx,dz); m.vx=Math.sin(m.dir)*4.2; m.vz=Math.cos(m.dir)*4.2; } else { m.vx=0; m.vz=0; }
+      m.shootCd=(m.shootCd||0)-dt; if(m.shootCd<=0){ m.shootCd=1.4; bossShoot(p,'wither'); }
+      continue;
+    }
+    if(m.kind==='ghast'){
+      m.vy=((player.y+9)-p.y)*1.5;
+      m.driftT=(m.driftT||0)-dt; if(m.driftT<=0){ m.driftT=3; m.ddir=Math.random()*6.283; }
+      m.vx=Math.cos(m.ddir)*1.4; m.vz=Math.sin(m.ddir)*1.4; m.dir=Math.atan2(dx,dz);
+      m.shootCd=(m.shootCd||0)-dt; if(dist<32 && m.shootCd<=0){ m.shootCd=3.5; bossShoot(p,'ghast'); }
+      continue;
+    }
+    if(m.kind==='blaze'){
+      m.vy=((player.y+3)-p.y)*2;
+      if(dist>4){ m.dir=Math.atan2(dx,dz); m.vx=Math.sin(m.dir)*2.6; m.vz=Math.cos(m.dir)*2.6; } else { m.vx=0; m.vz=0; }
+      m.shootCd=(m.shootCd||0)-dt; if(dist<22 && m.shootCd<=0){ m.shootCd=2; bossShoot(p,'blaze'); }
+      continue;
+    }
+  }
+}
+function onDragonDead(m){
+  endDragonDefeated=true;
+  for(let dx=-1;dx<=1;dx++) for(let dz=-1;dz<=1;dz++) world.setBlock(dx, END_Y+1, dz, (dx===0&&dz===0)?END_PORTAL:OBSIDIAN);
+  world.setBlock(0, END_Y+3, 0, DRAGON_EGG);
+  addItem(ELYTRA,1);
+  spawnExplosion(0, END_Y+4, 0);
+  flashMsg('🏆 Enderdrache besiegt! Elytra erhalten — steig ins Portal heimzukehren.');
+}
+function summonWither(x,y,z){
+  // Muster: 3 Seelensand uebereinander (geklickter + 2 darueber)
+  if(world.getBlock(x,y+1,z)!==SOUL_SAND || world.getBlock(x,y+2,z)!==SOUL_SAND) return false;
+  world.setBlock(x,y,z,AIR); world.setBlock(x,y+1,z,AIR); world.setBlock(x,y+2,z,AIR);
+  const id=spawnFlyingMob('wither', x+0.5, y+3, z+0.5);
+  spawnExplosion(x+0.5,y+2,z+0.5); SFX.explode({x:x+0.5,y:y+2,z:z+0.5});
+  flashMsg('💀 Der Wither wurde beschworen!');
+  return true;
+}
+// ---- End-Portal: Rahmen mit Augen fuellen ----
+const filledFrames=new Set();
+function fillEndFrame(x,y,z){
+  filledFrames.add(x+'_'+y+'_'+z); spawnHeartParticles(x+0.5,y+1,z+0.5); SFX.ui();
+  // pruefe ob ein 3x3-Ring aus gefuellten Rahmen einen Luft-/Kern-Block umschliesst
+  for(let cxo=-1;cxo<=1;cxo++) for(let czo=-1;czo<=1;czo++){
+    const cx=x+cxo, cz=z+czo; let ok=true;
+    for(let dx=-1;dx<=1;dx++) for(let dz=-1;dz<=1;dz++){ if(dx===0&&dz===0) continue; if(world.getBlock(cx+dx,y,cz+dz)!==END_PORTAL_FRAME || !filledFrames.has((cx+dx)+'_'+y+'_'+(cz+dz))) ok=false; }
+    if(ok && (world.getBlock(cx,y,cz)===AIR||world.getBlock(cx,y,cz)===END_PORTAL)){ world.setBlock(cx,y,cz,END_PORTAL); flashMsg('🌀 End-Portal aktiviert!'); unlockAch('the_end'); }
+  }
+}
+function inEndPortalBlock(){ return world.getBlock(Math.floor(player.x),Math.floor(player.y),Math.floor(player.z))===END_PORTAL || world.getBlock(Math.floor(player.x),Math.floor(player.y+0.9),Math.floor(player.z))===END_PORTAL; }
+function useEndPortal(){
+  if(sleeping) return;
+  sleepFadeEl.style.background='#0a1a14'; sleepFadeEl.classList.add('on');
+  const toEnd = dimension!==2;
+  if(toEnd) netherReturn={x:player.x, y:player.y, z:player.z};
+  setTimeout(()=>{ switchDimension(toEnd?2:0); sleepFadeEl.classList.remove('on'); setTimeout(()=>{ sleepFadeEl.style.background='#000'; }, 700); }, 550);
+}
+function usePortal(){
+  if(sleeping) return;
+  sleepFadeEl.style.background='#3a0a4a'; sleepFadeEl.classList.add('on');   // lila Blende
+  const toNether = dimension===0;
+  if(toNether) netherReturn={x:player.x, y:player.y, z:player.z};
+  setTimeout(()=>{
+    switchDimension(toNether?1:0);
+    sleepFadeEl.classList.remove('on'); setTimeout(()=>{ sleepFadeEl.style.background='#000'; }, 700);
+  }, 550);
+}
+
+// =====================================================================
+//  REDSTONE (Hebel -> Draht -> Lampe), lokale Netz-Auswertung beim Schalten
+// =====================================================================
+const RS_N6=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+function updateRedstone(sx,sy,sz){
+  const wires=new Set(), stack=[];
+  const seed=(x,y,z)=>{ if(isWire(world.getBlock(x,y,z))){ const k=x+','+y+','+z; if(!wires.has(k)){ wires.add(k); stack.push([x,y,z]); } } };
+  seed(sx,sy,sz); for(const d of RS_N6) seed(sx+d[0],sy+d[1],sz+d[2]);
+  while(stack.length){ const [x,y,z]=stack.pop(); for(const d of RS_N6) seed(x+d[0],y+d[1],z+d[2]); }
+  const leverNear=(x,y,z)=>{ for(const d of RS_N6) if(world.getBlock(x+d[0],y+d[1],z+d[2])===LEVER_ON) return true; return false; };
+  let powered = (world.getBlock(sx,sy,sz)===LEVER_ON) || leverNear(sx,sy,sz);
+  if(!powered) for(const k of wires){ const [x,y,z]=k.split(',').map(Number); if(leverNear(x,y,z)){ powered=true; break; } }
+  for(const k of wires){ const [x,y,z]=k.split(',').map(Number); const want=powered?REDSTONE_WIRE_ON:REDSTONE_WIRE; if(world.getBlock(x,y,z)!==want) world.setBlock(x,y,z,want); }
+  const lamps=new Set();
+  const addLamps=(x,y,z)=>{ for(const d of RS_N6){ const nx=x+d[0],ny=y+d[1],nz=z+d[2]; if(isLamp(world.getBlock(nx,ny,nz))) lamps.add(nx+','+ny+','+nz); } };
+  addLamps(sx,sy,sz); for(const k of wires){ const [x,y,z]=k.split(',').map(Number); addLamps(x,y,z); }
+  for(const k of lamps){ const [x,y,z]=k.split(',').map(Number);
+    let on=false; for(const d of RS_N6){ const b=world.getBlock(x+d[0],y+d[1],z+d[2]); if(b===REDSTONE_WIRE_ON||b===LEVER_ON){ on=true; break; } }
+    const want=on?REDSTONE_LAMP_ON:REDSTONE_LAMP; if(world.getBlock(x,y,z)!==want) world.setBlock(x,y,z,want);
+  }
+}
+function toggleLever(x,y,z){ world.setBlock(x,y,z, world.getBlock(x,y,z)===LEVER_ON?LEVER:LEVER_ON); SFX.ui(); updateRedstone(x,y,z); }
+
+// =====================================================================
+//  WASSER-FLUSS (begrenztes Fluten beim Ausgiessen)
+// =====================================================================
+function floodWater(sx,sy,sz){
+  const Q=[[sx,sy,sz,0]], seen=new Set([sx+','+sy+','+sz]); let budget=64;
+  while(Q.length && budget>0){
+    const [x,y,z,dist]=Q.shift();
+    if(world.getBlock(x,y-1,z)===AIR){ world.setBlock(x,y-1,z,WATER); budget--; const k=x+','+(y-1)+','+z; if(!seen.has(k)){ seen.add(k); Q.push([x,y-1,z,0]); } continue; }
+    if(dist<4) for(const d of [[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]]){ const nx=x+d[0],nz=z+d[2]; if(world.getBlock(nx,y,nz)===AIR){ world.setBlock(nx,y,nz,WATER); budget--; const k=nx+','+y+','+nz; if(!seen.has(k)){ seen.add(k); Q.push([nx,y,nz,dist+1]); } } }
+  }
+}
+
+// ---- Truhen-Loot (Strukturen): deterministisch beim ersten Oeffnen fuellen ----
+function fillLoot(arr,key){
+  const rnd=mulberry32(hashStr(key));
+  const pool=[ {id:IRON_INGOT,min:1,max:4},{id:COAL,min:1,max:6},{id:GOLD_INGOT,min:0,max:2},{id:DIAMOND,min:0,max:2},
+               {id:COOKED_BEEF,min:0,max:3},{id:ARROW_ITEM,min:0,max:8},{id:BONE,min:0,max:4},{id:LEATHER,min:0,max:3} ];
+  let slot=0;
+  for(const p of pool){ if(rnd()<0.6){ const n=p.min+Math.floor(rnd()*(p.max-p.min+1)); if(n>0 && slot<CHEST_SIZE){ arr[slot++]={id:p.id,count:n}; } } }
 }
 
 // =====================================================================
@@ -2750,7 +4163,7 @@ let lastSent=0, lsx=null,lsy=null,lsz=null,lsr=null;
 
 function frame(now){
   let dt=(now-last)/1000; last=now; if(dt>0.05) dt=0.05;
-  if(isActive() && !dead) updatePlayer(dt);
+  if(isActive() && !dead){ if(mountedCart) updateCart(dt); else updatePlayer(dt); }
 
   dayTime = (dayTime + dt/600) % 1; // lokaler Tag-Zyklus (~10 min), Server-Tick snappt drauf
   applyDayNight();
@@ -2759,12 +4172,20 @@ function frame(now){
   updateWorld(pcx,pcz);
 
   survivalUpdate(dt, now);
+  tickV2(dt);
+  updateLocalMobs(dt, now);
+  updateNetherMobs(dt);
+  updateBosses(dt);
+  updateBossProjectiles(dt);
   updateMobs(dt);
   updateArrows(dt);
   updateParticles(dt);
+  updateXPOrbs(dt);
   updateAim(dt);
   tickAllFurnaces(dt);
   updateTorchGlow();
+  updateCompass();
+  updateAmbient(dt);
   renderVitals();
 
   // eigene Position throttled (~10x/s) an Server, nur bei Aenderung
@@ -2781,6 +4202,7 @@ function frame(now){
     a.group.position.y+=(a.target.y-a.group.position.y)*0.2;
     a.group.position.z+=(a.target.z-a.group.position.z)*0.2;
     a.group.rotation.y=a.target.ry;
+    a.group.visible = (dimension===0);   // im Nether keine Oberwelt-Spieler zeigen
   }
 
   renderer.render(scene,camera);
@@ -2799,6 +4221,342 @@ function frame(now){
 }
 requestAnimationFrame(frame);
 
+// =====================================================================
+//  ROADMAP v2 — SYSTEME (Solo): TNT, Feuer, Ackerbau, Angeln, Zucht,
+//  Kompost, Tränke, Stationen, Wetter, Setzlinge, Beacon
+// =====================================================================
+const crops = new Map();        // "x_y_z" -> Wachstums-Fortschritt (0..1 ueber Stufen)
+const saplings = new Map();     // "x_y_z" -> Restzeit bis Baum
+const tntFuses = new Map();     // "x_y_z" -> Restzeit
+const fires = new Map();        // "x_y_z" -> Alter
+const composters = new Map();   // "x_y_z" -> Fuellstand 0..7
+const COMPOSTABLE = new Set([WHEAT_SEEDS, WHEAT, APPLE, SAPLING, LEAVES, TALL_GRASS, FLOWER_RED, FLOWER_YELLOW, BREAD, KELP, SUGAR_CANE]);
+const FLAMMABLE = new Set([WOOD, LOG, LEAVES, BOOKSHELF, WHEAT_S0,WHEAT_S1,WHEAT_S2,WHEAT_S3, TALL_GRASS, SAPLING, BARREL, CAMPFIRE]);
+
+// ---- TNT ----
+function igniteTNT(x,y,z){ tntFuses.set(x+'_'+y+'_'+z, 2.5); SFX.fuse({x:x+0.5,y:y+0.5,z:z+0.5}); }
+function explodeTNT(x,y,z){
+  world.setBlock(x,y,z,AIR);
+  const cx=x+0.5, cy=y+0.5, cz=z+0.5;
+  spawnExplosion(cx,cy,cz); SFX.explode({x:cx,y:cy,z:cz});
+  applyCrater(cx,cy,cz,4);
+  // Ketten-TNT zuenden
+  for(const [k] of [...tntFuses]){}
+  for(let dx=-4;dx<=4;dx++)for(let dy=-4;dy<=4;dy++)for(let dz=-4;dz<=4;dz++){ if(world.getBlock(x+dx,y+dy,z+dz)===TNT){ const kk=(x+dx)+'_'+(y+dy)+'_'+(z+dz); if(!tntFuses.has(kk)) tntFuses.set(kk, 0.3+Math.random()*0.4); } }
+  // Mobs + Spieler verletzen
+  for(const [id,m] of mobsMap){ const p=m.group.position; const d=Math.hypot(p.x-cx,p.y-cy,p.z-cz); if(d<5){ m.hp-=Math.ceil(14*(1-d/5)); onMobHp(id,m.hp); if(m.local&&m.hp<=0) onMobDead(id); } }
+  const pd=Math.hypot(player.x-cx,(player.y+0.9)-cy,player.z-cz); if(pd<5 && !dead) damagePlayer(Math.ceil(12*(1-pd/5)));
+}
+function tickTNT(dt){ for(const [k,t] of [...tntFuses]){ const nt=t-dt; if(nt<=0){ tntFuses.delete(k); const p=k.split('_'); explodeTNT(+p[0],+p[1],+p[2]); } else tntFuses.set(k,nt); } }
+
+// ---- Feuer (Ausbreitung + Verlöschen) ----
+function tickFire(dt){
+  if(fires.size===0) return;
+  for(const [k,age] of [...fires]){
+    const p=k.split('_'); const x=+p[0],y=+p[1],z=+p[2];
+    if(world.getBlock(x,y,z)!==FIRE){ fires.delete(k); continue; }
+    if(weather==='rain'||weather==='thunder'){ world.setBlock(x,y,z,AIR); fires.delete(k); continue; }   // Regen loescht
+    const na=age+dt;
+    // Schaden am Spieler
+    if(Math.floor(player.x)===x && Math.floor(player.z)===z && Math.abs(player.y-y)<1.2){ burnT=Math.max(burnT,3); }
+    // Ausbreitung
+    if(na>1.2 && Math.random()<0.35*dt*10){ const dirs=[[1,0,0],[-1,0,0],[0,0,1],[0,0,-1],[0,1,0],[0,-1,0]]; const d=dirs[(Math.random()*dirs.length)|0]; const nx=x+d[0],ny=y+d[1],nz=z+d[2]; if(FLAMMABLE.has(world.getBlock(nx,ny,nz)) && world.getBlock(nx,ny+1,nz)===AIR){ world.setBlock(nx,ny+1,nz,FIRE); fires.set(nx+'_'+(ny+1)+'_'+nz,0); } }
+    // Brennenden Block unten verzehren + verloeschen
+    if(na>3.5){ const below=world.getBlock(x,y-1,z); if(FLAMMABLE.has(below)) world.setBlock(x,y-1,z,AIR); world.setBlock(x,y,z,AIR); fires.delete(k); continue; }
+    fires.set(k,na);
+    if(Math.random()<dt*4){ spawnFireParticle(x+0.5,y+0.4,z+0.5); }
+  }
+}
+function spawnFireParticle(x,y,z){ const mat=new THREE.MeshBasicMaterial({color:Math.random()<0.5?0xff8a2a:0xffd24a, transparent:true}); const mesh=new THREE.Mesh(_boomGeo,mat); mesh.position.set(x+(Math.random()-0.5)*0.4,y,z+(Math.random()-0.5)*0.4); mesh.scale.setScalar(0.18); scene.add(mesh); particles.push({mesh, vx:0, vy:1.2+Math.random(), vz:0, life:0.6, max:0.6}); }
+
+// ---- Ackerbau: Weizen-Wachstum ----
+const WHEAT_STAGES=[WHEAT_S0,WHEAT_S1,WHEAT_S2,WHEAT_S3];
+function tickCrops(dt){
+  for(const [k,prog] of [...crops]){
+    const p=k.split('_'); const x=+p[0],y=+p[1],z=+p[2];
+    const b=world.getBlock(x,y,z); if(!isWheat(b)){ crops.delete(k); continue; }
+    if(b===WHEAT_S3) continue;                                    // ausgewachsen
+    const lit = world.getBlock(x,y-1,z)===FARMLAND ? 1 : 0.3;
+    const np=prog + dt*0.018*lit*(weather==='rain'?1.5:1);        // ~ Minute pro Stufe; Regen beschleunigt
+    const stage=Math.min(3, Math.floor(np*4));
+    if(WHEAT_STAGES[stage]!==b) world.setBlock(x,y,z,WHEAT_STAGES[stage]);
+    crops.set(k,np);
+  }
+}
+// ---- Setzlinge -> Baum ----
+function tickSaplings(dt){
+  for(const [k,t] of [...saplings]){
+    const p=k.split('_'); const x=+p[0],y=+p[1],z=+p[2];
+    if(world.getBlock(x,y,z)!==SAPLING){ saplings.delete(k); continue; }
+    const nt=t-dt; if(nt<=0){ saplings.delete(k); growTree(x,y,z); } else saplings.set(k,nt);
+  }
+}
+function growTree(x,y,z){
+  const h=4+(Math.random()*2|0);
+  for(let i=0;i<h;i++) world.setBlock(x,y+i,z,LOG);
+  for(let dy=h-2;dy<=h+1;dy++){ const r=(dy>=h)?1:2; for(let dx=-r;dx<=r;dx++)for(let dz=-r;dz<=r;dz++){ if(dx*dx+dz*dz>r*r+1) continue; if(world.getBlock(x+dx,y+dy,z+dz)===AIR) world.setBlock(x+dx,y+dy,z+dz,LEAVES); } }
+  SFX.place(LOG,{x:x+0.5,y:y+0.5,z:z+0.5});
+}
+// ---- Knochenmehl ----
+function useBoneMeal(x,y,z,tb){
+  if(isWheat(tb)){ crops.set(x+'_'+y+'_'+z, 1); world.setBlock(x,y,z,WHEAT_S3); spawnHeartParticles(x+0.5,y+0.5,z+0.5); return true; }
+  if(tb===SAPLING){ saplings.delete(x+'_'+y+'_'+z); growTree(x,y,z); return true; }
+  if(tb===GRASS){ // Blumen/Gras im Umkreis spruehen
+    let any=false; for(let i=0;i<8;i++){ const dx=(Math.random()*5|0)-2, dz=(Math.random()*5|0)-2; const gx=x+dx,gz=z+dz; if(world.getBlock(gx,y,gz)===GRASS && world.getBlock(gx,y+1,gz)===AIR){ const r=Math.random(); world.setBlock(gx,y+1,gz, r<0.6?TALL_GRASS:(r<0.8?FLOWER_RED:FLOWER_YELLOW)); any=true; } }
+    if(any) spawnHeartParticles(x+0.5,y+1,z+0.5); return any; }
+  return false;
+}
+// ---- Komposter ----
+function fillComposter(x,y,z){
+  const k=x+'_'+y+'_'+z; let lvl=composters.get(k)||0;
+  consumeSelected(1);
+  if(Math.random()<0.65) lvl++;
+  spawnHeartParticles(x+0.5,y+0.9,z+0.5);
+  if(lvl>=7){ addItem(BONE_MEAL,1); lvl=0; SFX.pickup(); } else SFX.ui();
+  composters.set(k,lvl);
+}
+// ---- Angeln ----
+let fishingState=null;   // {t, biteAt}
+function useFishingRod(){
+  if(fishingState){   // einholen
+    const caught = fishingState.bite;
+    fishingState=null;
+    if(caught){ const r=Math.random(); addItem(r<0.7?RAW_FISH:(r<0.85?STRING:(r<0.95?BONE:LEATHER)),1); addXP(1+(Math.random()*3|0)); SFX.pickup(); unlockAch('fisher'); }
+    else flashMsg('Zu früh eingeholt!');
+    return;
+  }
+  // auswerfen — nur wenn Wasser in Sicht
+  const L=liquidRay && liquidRay();
+  fishingState={ t:1.5+Math.random()*4, bite:false };
+  SFX.bow();
+}
+function tickFishing(dt){ if(!fishingState) return; fishingState.t-=dt; if(fishingState.t<=0 && !fishingState.bite){ fishingState.bite=true; fishingState.t=3; SFX.ui(); flashMsg('🎣 Es beißt! Rechtsklick zum Einholen'); spawnHeartParticles(player.x,player.y+1,player.z); } else if(fishingState.bite && fishingState.t<=0){ fishingState=null; } }
+
+// ---- Zucht / Zähmen ----
+function feedAnimal(){
+  const hit=mobInView(5); if(!hit) return false;
+  const m=mobsMap.get(hit.id); if(!m||!m.local||m.hostile||m.baby) return false;
+  if(!['cow','sheep','pig','chicken','wolf'].includes(m.kind)) return false;
+  if(m.loveCd>0){ flashMsg('Tier ist noch nicht bereit'); return true; }
+  m.love=20; spawnHeartParticles(m.group.position.x, m.group.position.y+1, m.group.position.z); SFX.pickup(); return true;
+}
+function tameWolf(){
+  const hit=mobInView(5); if(!hit) return false;
+  const m=mobsMap.get(hit.id); if(!m||m.kind!=='wolf') return false;
+  if(m.tame){ flashMsg('Wolf ist bereits gezähmt'); return true; }
+  if(Math.random()<0.5){ m.tame=true; m.hostile=false; for(const mat of m.tint){} flashMsg('🐺 Wolf gezähmt!'); spawnHeartParticles(m.group.position.x,m.group.position.y+1,m.group.position.z); SFX.levelup(); }
+  else { flashMsg('Zähmen fehlgeschlagen...'); }
+  return true;
+}
+
+// ---- Tränke trinken ----
+let buffSpeed=0, buffStrength=0, poisonT=0;
+function drinkPotion(id){
+  const now=performance.now(); if(now-lastEat<800) return; lastEat=now;
+  if(id===POTION_HEAL){ health=Math.min(HEALTH_MAX, health+6); spawnHeartParticles(player.x,player.y+1.5,player.z); }
+  else if(id===POTION_STRENGTH) buffStrength=90;
+  else if(id===POTION_SPEED) buffSpeed=90;
+  else if(id===POTION_POISON) poisonT=8;
+  consumeSelected(1); addItem(GLASS_BOTTLE,1); SFX.eat();
+}
+function tickBuffs(dt){
+  if(shieldCd>0) shieldCd=Math.max(0,shieldCd-dt);
+  if(buffSpeed>0) buffSpeed=Math.max(0,buffSpeed-dt);
+  if(buffStrength>0) buffStrength=Math.max(0,buffStrength-dt);
+  if(poisonT>0){ poisonT=Math.max(0,poisonT-dt); if(Math.floor(poisonT*2)!==Math.floor((poisonT+dt)*2) && health>1){ health=Math.max(1,health-1); hurtT=0.3; } }
+}
+
+// ---- Stationen ohne eigenes Panel ----
+function openEnderChest(){ openChest('ender'); }
+function openGrindstone(){
+  const s=inv[selectedSlot];
+  if(s && s.ench){ const lvl=s.ench.lvl; delete s.ench; addXP(lvl*3); flashMsg('Verzauberung entfernt (+'+(lvl*3)+' XP)'); SFX.levelup(); renderHotbar(); if(invOpen) renderInventory(); }
+  else flashMsg('Verzaubertes Item in der Hand halten');
+}
+const STONECUT = { [STONE]:BRICKS, [BRICKS]:STONE, [COBBLE]:STONE, [PURPUR]:BRICKS, [END_STONE]:BRICKS };
+function openStonecutter(){
+  const s=inv[selectedSlot];
+  if(s && STONECUT[s.id]!==undefined){ const out=STONECUT[s.id]; const n=s.count; inv[selectedSlot]=null; addItem(out,n); flashMsg(BLOCKS[out].name+' geschnitten'); SFX.dig(STONE,{x:player.x,y:player.y,z:player.z}); renderHotbar(); if(invOpen) renderInventory(); }
+  else flashMsg('Stein/Bruchstein in der Hand halten');
+}
+function openBrewing(){
+  // ein Brau-Schritt pro Klick, abhaengig vom Inventar
+  const has=(id)=>countItem(id)>0;
+  if(has(NETHER_WART)&&has(GLASS_BOTTLE)){ removeItem(NETHER_WART,1); removeItem(GLASS_BOTTLE,1); addItem(AWKWARD_POTION,1); flashMsg('Seltsamer Trank gebraut'); SFX.ui(); unlockAch('brewer'); return; }
+  if(has(AWKWARD_POTION)){
+    if(has(GLOWSTONE)){ removeItem(AWKWARD_POTION,1); removeItem(GLOWSTONE,1); addItem(POTION_HEAL,1); flashMsg('Heiltrank gebraut'); SFX.levelup(); return; }
+    if(has(BLAZE_POWDER)){ removeItem(AWKWARD_POTION,1); removeItem(BLAZE_POWDER,1); addItem(POTION_STRENGTH,1); flashMsg('Stärketrank gebraut'); SFX.levelup(); return; }
+    if(has(SUGAR_CANE)){ removeItem(AWKWARD_POTION,1); removeItem(SUGAR_CANE,1); addItem(POTION_SPEED,1); flashMsg('Tempotrank gebraut'); SFX.levelup(); return; }
+    if(has(SPIDER_EYE)){ removeItem(AWKWARD_POTION,1); removeItem(SPIDER_EYE,1); addItem(POTION_POISON,1); flashMsg('Gifttrank gebraut'); SFX.levelup(); return; }
+    flashMsg('Zutat fehlt: Glowstone/Lohenstaub/Zuckerrohr/Spinnenauge'); return;
+  }
+  flashMsg('Brauen: Netherwarze + Glasflasche → Seltsamer Trank');
+}
+
+// ---- Wetter ----
+let weather='clear', weatherT=120+Math.random()*180;
+const rainParts=[];
+function updateWeather(dt){
+  weatherT-=dt;
+  if(weatherT<=0){
+    const r=Math.random();
+    weather = r<0.6?'clear':(r<0.88?'rain':'thunder');
+    weatherT = weather==='clear' ? 120+Math.random()*240 : 30+Math.random()*60;
+    if(weather!=='clear') flashMsg(weather==='thunder'?'⛈️ Ein Gewitter zieht auf':'🌧️ Es fängt an zu regnen');
+    else if(rainParts.length) flashMsg('☀️ Der Himmel klart auf');
+  }
+  // Niederschlag-Partikel um den Spieler
+  if(weather!=='clear' && dimension===0){
+    for(let i=0;i<(weather==='thunder'?6:4);i++){ if(rainParts.length<160){ const cold=isCold(Math.floor(player.x),Math.floor(player.z)); const mat=new THREE.MeshBasicMaterial({color:cold?0xffffff:0x6aa0d0, transparent:true, opacity:0.6}); const mesh=new THREE.Mesh(_boomGeo,mat); const x=player.x+(Math.random()-0.5)*24, z=player.z+(Math.random()-0.5)*24; mesh.position.set(x, player.y+12, z); mesh.scale.set(0.05,cold?0.2:0.5,0.05); scene.add(mesh); rainParts.push({mesh, vy:cold?-6:-16, snow:cold}); } }
+    // Blitz
+    if(weather==='thunder' && Math.random()<dt*0.08){ doLightning(); }
+  }
+  for(let i=rainParts.length-1;i>=0;i--){ const p=rainParts[i]; p.mesh.position.y+=p.vy*dt; if(p.snow){ p.mesh.position.x+=Math.sin(performance.now()*0.002+i)*dt*0.4; } if(p.mesh.position.y<player.y-2){ scene.remove(p.mesh); p.mesh.material.dispose(); rainParts.splice(i,1); } }
+  if(weather==='clear'){ for(const p of rainParts){ scene.remove(p.mesh); p.mesh.material.dispose(); } rainParts.length=0; }
+}
+function doLightning(){
+  const x=Math.floor(player.x+(Math.random()-0.5)*30), z=Math.floor(player.z+(Math.random()-0.5)*30);
+  const y=terrainHeight(x,z);
+  // Blitzsaeule
+  const mat=new THREE.MeshBasicMaterial({color:0xfafaff, transparent:true, opacity:0.95});
+  const mesh=new THREE.Mesh(new THREE.BoxGeometry(0.3, 40, 0.3), mat); mesh.position.set(x+0.5, y+20, z+0.5); scene.add(mesh);
+  particles.push({mesh, vx:0, vy:0, vz:0, life:0.25, max:0.25});
+  SFX.explode({x:x+0.5,y:y+0.5,z:z+0.5});
+  // Baum/brennbares anzuenden
+  const tb=world.getBlock(x,y,z); if(FLAMMABLE.has(tb) && world.getBlock(x,y+1,z)===AIR){ world.setBlock(x,y+1,z,FIRE); fires.set(x+'_'+(y+1)+'_'+z,0); }
+}
+
+// ---- Beacon (vereinfacht: 3x3 Mineral-Basis darunter -> Buff im Umkreis) ----
+const beacons=new Set();
+function checkBeacon(x,y,z){
+  let base=0; for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++){ const b=world.getBlock(x+dx,y-1,z+dz); if(b===IRON_ORE||b===GOLD_ORE||b===DIAMOND_ORE||b===OBSIDIAN||b===END_STONE) base++; }
+  if(base>=9){ beacons.add(x+'_'+y+'_'+z); flashMsg('✨ Leuchtfeuer aktiv — Tempo & Stärke im Umkreis'); }
+  else flashMsg('Leuchtfeuer braucht 3×3 Mineralblöcke darunter');
+}
+function openBeacon(){ flashMsg(beacons.size?'Leuchtfeuer aktiv':'Leuchtfeuer auf einer 3×3-Mineralpyramide platzieren'); }
+function cookOnCampfire(){
+  const s=inv[selectedSlot];
+  if(s && SMELT[s.id]!==undefined && FOOD[SMELT[s.id]]!==undefined){ consumeSelected(1); addItem(SMELT[s.id],1); SFX.sizzle(); spawnFireParticle(player.x+Math.sin(yaw)*1.5, player.y+0.5, player.z+Math.cos(yaw)*1.5); flashMsg('🔥 Auf dem Lagerfeuer gegart'); }
+  else flashMsg('Rohes Essen aufs Lagerfeuer halten');
+}
+function tickBeacons(){ if(!beacons.size) return; for(const k of beacons){ const p=k.split('_'); if(world.getBlock(+p[0],+p[1],+p[2])!==BEACON){ beacons.delete(k); continue; } if(Math.hypot(player.x-+p[0],player.z-+p[2])<24){ if(buffSpeed<2)buffSpeed=3; if(buffStrength<2)buffStrength=3; } } }
+
+// =====================================================================
+//  FORTSCHRITTE / ACHIEVEMENTS + STATISTIK
+// =====================================================================
+const gameStats = { blocksMined:0, mobsKilled:0, started:performance.now(), deaths:0, distance:0 };
+const ACH_KEY='voxelcraft_ach_v1';
+let achUnlocked=new Set(); try{ const r=localStorage.getItem(ACH_KEY); if(r) achUnlocked=new Set(JSON.parse(r)); }catch(_){}
+const ACHIEVEMENTS = {
+  first_block:{ name:'Holzfäller', desc:'Ersten Block abgebaut' },
+  first_craft:{ name:'Handwerker', desc:'Etwas hergestellt' },
+  first_kill: { name:'Jäger', desc:'Erstes Lebewesen besiegt' },
+  miner:      { name:'Bergmann', desc:'Eisen abgebaut' },
+  diamonds:   { name:'Diamanten!', desc:'Diamant gefunden' },
+  farmer:     { name:'Bauer', desc:'Weizen geerntet' },
+  breeder:    { name:'Züchter', desc:'Zwei Tiere gepaart' },
+  nether:     { name:'In die Hölle', desc:'Den Nether betreten' },
+  the_end:    { name:'Das Ende', desc:'Die End-Dimension betreten' },
+  dragon:     { name:'Drachentöter', desc:'Den Enderdrachen besiegt' },
+  enchanter:  { name:'Magier', desc:'Ein Item verzaubert' },
+  fisher:     { name:'Angler', desc:'Einen Fisch gefangen' },
+  brewer:     { name:'Alchemist', desc:'Einen Trank gebraut' },
+};
+const achToastEl=document.getElementById('achToast');
+let _achTimer=null;
+function unlockAch(id){
+  if(achUnlocked.has(id) || !ACHIEVEMENTS[id]) return;
+  achUnlocked.add(id);
+  try{ localStorage.setItem(ACH_KEY, JSON.stringify([...achUnlocked])); }catch(_){}
+  const a=ACHIEVEMENTS[id];
+  achToastEl.innerHTML='<div style="color:#c084fc;font-weight:700;">🏆 Fortschritt erreicht!</div><div style="margin-top:3px;font-weight:700;">'+a.name+'</div><div style="color:#8fa07d;font-size:11px;">'+a.desc+'</div>';
+  achToastEl.style.transform='translateX(-50%) translateY(0)';
+  if(SFX.levelup) SFX.levelup();
+  clearTimeout(_achTimer); _achTimer=setTimeout(()=>{ achToastEl.style.transform='translateX(-50%) translateY(-120px)'; }, 4000);
+}
+function showDeathStats(){
+  const el=document.getElementById('deathStats'); if(!el) return;
+  const t=Math.round((performance.now()-gameStats.started)/1000);
+  const mm=Math.floor(t/60), ss=t%60;
+  el.innerHTML='<div style="margin:14px 0;color:#c9d6bd;font-size:13px;line-height:1.9;">'+
+    '⏱️ Überlebt: '+mm+'m '+ss+'s<br>'+
+    '⛏️ Blöcke abgebaut: '+gameStats.blocksMined+'<br>'+
+    '⚔️ Mobs besiegt: '+gameStats.mobsKilled+'<br>'+
+    '💀 Tode: '+gameStats.deaths+'<br>'+
+    '🏆 Fortschritte: '+achUnlocked.size+' / '+Object.keys(ACHIEVEMENTS).length+'</div>';
+}
+
+// =====================================================================
+//  MINIMAP + EFFEKT-HUD
+// =====================================================================
+const minimapEl=document.getElementById('minimap'), minimapCtx=minimapEl.getContext('2d');
+let minimapOn=true, _miniTimer=0; minimapEl.style.display='block';
+const MINI_COL={ [GRASS]:'#5fa83c',[DIRT]:'#6b4f2a',[STONE]:'#888d92',[SAND]:'#dfd6a4',[WATER]:'#2f6fd8',[SNOW]:'#eef3f8',[LEAVES]:'#3f7a2f',[LOG]:'#5f4a2e',[GRAVEL]:'#87827c',[CACTUS]:'#4e8f3a',[NETHERRACK]:'#6e2b24',[LAVA]:'#ff7a1a',[END_STONE]:'#dadca0',[ICE]:'#9fcaf0',[FARMLAND]:'#4a3220' };
+function surfaceColor(x,z){
+  for(let y=110;y>WATER_LEVEL-2;y--){ const b=world.getBlock(x,y,z); if(b!==AIR && b!==WATER && MINI_COL[b]) return MINI_COL[b]; if(b===WATER) return MINI_COL[WATER]; }
+  return '#1a2030';
+}
+function updateMinimap(dt){
+  if(!minimapOn) return;
+  _miniTimer-=dt; if(_miniTimer>0) return; _miniTimer=0.3;
+  const N=50, px=Math.floor(player.x), pz=Math.floor(player.z), step=Math.max(1,(2));
+  minimapCtx.clearRect(0,0,150,150);
+  const cell=150/N;
+  for(let j=0;j<N;j++) for(let i=0;i<N;i++){
+    const wx=px+(i-N/2)*step, wz=pz+(j-N/2)*step;
+    minimapCtx.fillStyle = dimension===1?'#3a1410':(dimension===2?'#0a1410':surfaceColor(wx,wz));
+    if(dimension!==0){ const b=world.getBlock(wx, dimension===1?40:65, wz); minimapCtx.fillStyle = MINI_COL[b]|| (dimension===2?'#1a241a':'#3a1410'); }
+    minimapCtx.fillRect(i*cell,j*cell,cell+0.5,cell+0.5);
+  }
+  // Mobs als Punkte
+  for(const [,m] of mobsMap){ if(!m.group.visible) continue; const dx=(m.group.position.x-px)/step+N/2, dz=(m.group.position.z-pz)/step+N/2; if(dx<0||dx>N||dz<0||dz>N) continue; minimapCtx.fillStyle=m.hostile?'#e24b4b':'#e0e060'; minimapCtx.fillRect(dx*cell-1,dz*cell-1,3,3); }
+  // andere Spieler
+  for(const a of avatars.values()){ const dx=(a.group.position.x-px)/step+N/2, dz=(a.group.position.z-pz)/step+N/2; if(dx<0||dx>N||dz<0||dz>N) continue; minimapCtx.fillStyle='#6ab0f0'; minimapCtx.fillRect(dx*cell-1,dz*cell-1,3,3); }
+  // Spieler-Pfeil (Mitte, gedreht nach yaw)
+  minimapCtx.save(); minimapCtx.translate(75,75); minimapCtx.rotate(-yaw);
+  minimapCtx.fillStyle='#ffffff'; minimapCtx.beginPath(); minimapCtx.moveTo(0,-6); minimapCtx.lineTo(4,5); minimapCtx.lineTo(-4,5); minimapCtx.closePath(); minimapCtx.fill();
+  minimapCtx.restore();
+}
+function toggleMinimap(){ minimapOn=!minimapOn; minimapEl.style.display=minimapOn?'block':'none'; }
+const effectsEl=document.getElementById('effects');
+function updateEffectsHUD(){
+  let h='';
+  if(buffSpeed>0) h+='<div style="color:#30c0e0;">⚡ Tempo '+Math.ceil(buffSpeed)+'s</div>';
+  if(buffStrength>0) h+='<div style="color:#e0603a;">💪 Stärke '+Math.ceil(buffStrength)+'s</div>';
+  if(poisonT>0) h+='<div style="color:#40a030;">☠️ Gift '+Math.ceil(poisonT)+'s</div>';
+  if(fishingState) h+='<div style="color:#6aa0d0;">🎣 '+(fishingState.bite?'Es beißt!':'Angel ausgeworfen')+'</div>';
+  if(weather!=='clear') h+='<div style="color:#9ac3e6;">'+(weather==='thunder'?'⛈️ Gewitter':'🌧️ Regen')+'</div>';
+  if(effectsEl.innerHTML!==h) effectsEl.innerHTML=h;
+}
+
+// ---- zentraler Tick fuer alle v2-Systeme ----
+function tickV2(dt){
+  tickTNT(dt); tickFire(dt); tickCrops(dt); tickSaplings(dt); tickFishing(dt);
+  tickBuffs(dt); updateWeather(dt); tickBeacons();
+  updateMinimap(dt); updateEffectsHUD();
+}
+
+// ---- TEMP TEST-HARNESS (wird nach dem Testen entfernt) ----
+window.__T = {
+  get mobs(){ return mobsMap; }, get player(){ return player; }, get dim(){ return dimension; },
+  get inv(){ return inv; }, get net(){ return net; }, get dayTime(){ return dayTime; },
+  set dayTime(v){ dayTime=v; }, spawnLocalMob, trySpawnPoint, isNightTime,
+  localMobCount, addItem, world, give:(id,n)=>addItem(id,n||1),
+  recipes:RECIPES, matchRecipe, setCraftN:(n)=>{craftN=n;}, setGrid:(i,id,c)=>{craftGrid[i]=id?{id,count:c||1}:null;},
+  clearGrid:()=>{ for(let i=0;i<9;i++) craftGrid[i]=null; }, recompute:recomputeCraft, getOut:()=>craftOutput,
+  forceSpawn:(k)=>{ const sp=trySpawnPoint()||{x:player.x+5,z:player.z+5}; return spawnLocalMob(k,sp.x,sp.z); },
+  // v2
+  setBlock:(x,y,z,id)=>world.setBlock(x,y,z,id), getBlock:(x,y,z)=>world.getBlock(x,y,z),
+  igniteTNT, tickV2, growTree, useBoneMeal, crops, saplings, tntFuses, fires,
+  get weather(){ return weather; }, setWeather:(w)=>{ weather=w; weatherT=60; },
+  get buffs(){ return {buffSpeed, buffStrength, poisonT}; }, drinkPotion, checkBeacon,
+  get health(){ return health; }, setHealth:(h)=>{ health=h; }, get hunger(){ return hunger; },
+  biomeAt, openBrewing, fillComposter,
+  // End / Bosse
+  switchDimension, spawnEndBoss, crystalsAlive, summonWither, fillEndFrame, useEndPortal,
+  spawnFlyingMob, updateBosses, updateMobs, get bossProj(){ return bossProjectiles.length; },
+  get dimension(){ return dimension; }, mobsMap, onMobDead
+};
 // PWA: Service Worker registrieren (installierbar + offline-faehig)
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }
 </script>

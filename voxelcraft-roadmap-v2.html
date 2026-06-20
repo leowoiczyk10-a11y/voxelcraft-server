@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoxelCraft Pro — Roadmap v2</title>
+<style>
+  :root{
+    --bg:#0f140c; --panel:#19200f; --panel2:#212a16;
+    --line:#33401f; --grass:#5fa83c; --grass-lit:#86d95a;
+    --dirt:#6b4f2a; --text:#e9f1df; --muted:#8fa07d; --done:#9fe06a;
+    --epic:#c084fc; --epic-bg:#1e1428; --epic-line:#5b3a8a;
+    --boss:#f87171; --boss-bg:#1f1010; --boss-line:#8a2020;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0;
+    background:linear-gradient(180deg,#0f140c 0%,#0c1009 100%);
+    color:var(--text);
+    font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    padding:16px 14px 40px; line-height:1.5;
+  }
+  .wrap{max-width:680px; margin:0 auto;}
+
+  header{margin-bottom:18px;}
+  h1{font-size:20px; letter-spacing:1px; margin:0 0 2px; font-weight:700;}
+  .sub{font-size:11px; color:var(--muted); margin-bottom:14px;}
+  .xpwrap{display:flex; align-items:center; gap:10px;}
+  .xpbar{
+    flex:1; height:18px; background:#0a0d07;
+    border:2px solid var(--line); border-radius:3px;
+    overflow:hidden; position:relative;
+  }
+  .xpfill{
+    height:100%; width:0;
+    background:repeating-linear-gradient(90deg,
+      var(--grass) 0 14px, var(--grass-lit) 14px 16px);
+    transition:width .35s cubic-bezier(.2,.8,.2,1);
+    box-shadow:inset 0 -4px 0 rgba(0,0,0,.28), inset 0 2px 0 rgba(255,255,255,.18);
+  }
+  .xpnum{font-size:13px; color:var(--done); min-width:62px; text-align:right; font-weight:700;}
+
+  .cat{margin-top:22px;}
+  .cat-h{
+    display:flex; align-items:center; gap:8px;
+    font-size:12px; letter-spacing:1.5px; text-transform:uppercase;
+    color:var(--muted); margin-bottom:8px; padding-left:2px;
+  }
+  .cat-h .bar{height:2px; flex:1; background:var(--line);}
+  .cat-h .cnt{color:var(--grass); font-size:11px;}
+
+  ul{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:5px;}
+  li{
+    display:flex; align-items:flex-start; gap:11px;
+    background:var(--panel); border:1px solid var(--line);
+    border-left:3px solid var(--line);
+    border-radius:7px; padding:11px 12px;
+    cursor:pointer; user-select:none;
+    transition:border-color .15s, background .15s, transform .05s;
+  }
+  li:active{transform:scale(.992);}
+  li.done{border-left-color:var(--grass); background:var(--panel2);}
+  li.epic-item{border-left-color:var(--epic-line); background:var(--epic-bg);}
+  li.epic-item.done{border-left-color:var(--epic); background:#241a36;}
+  li.boss-item{border-left-color:var(--boss-line); background:var(--boss-bg);}
+  li.boss-item.done{border-left-color:var(--boss); background:#2a1616;}
+
+  .box{
+    flex:0 0 22px; width:22px; height:22px; margin-top:1px;
+    border:2px solid #4a5c2c; border-radius:4px; background:#0c1007;
+    position:relative; transition:all .15s;
+    box-shadow:inset 0 -3px 0 rgba(0,0,0,.35);
+  }
+  li.done .box{
+    background:linear-gradient(180deg,var(--grass-lit),var(--grass));
+    border-color:var(--grass-lit);
+    box-shadow:inset 0 -3px 0 rgba(0,0,0,.25), inset 0 2px 0 rgba(255,255,255,.3);
+  }
+  .box::after{
+    content:""; position:absolute; left:6px; top:2px;
+    width:6px; height:11px; border:solid #0c1007;
+    border-width:0 3px 3px 0; transform:rotate(45deg) scale(0);
+    transition:transform .15s cubic-bezier(.2,1.4,.4,1);
+  }
+  li.done .box::after{transform:rotate(45deg) scale(1);}
+
+  .txt{flex:1;}
+  .label{font-size:14px;}
+  li.done .label{color:var(--done);}
+  .note{font-size:11px; color:var(--muted); margin-top:3px;}
+
+  .tag{
+    display:inline-block; font-size:9px; letter-spacing:.5px;
+    padding:1px 6px; border-radius:3px; margin-left:6px;
+    vertical-align:middle; text-transform:uppercase;
+  }
+  .tag.hard{background:#2a1e10; color:#f0b060; border:1px solid #5c3a10;}
+  .tag.epic{background:#1e1428; color:#c084fc; border:1px solid #5b3a8a;}
+  .tag.boss{background:#1f1010; color:#f87171; border:1px solid #8a2020;}
+  .tag.mp{background:#0f1e2a; color:#60b0f0; border:1px solid #1e4a6a;}
+  .tag.ux{background:#0f2018; color:#60e0a0; border:1px solid #1e5a36;}
+
+  .diff-legend{
+    display:flex; gap:12px; flex-wrap:wrap;
+    font-size:10px; color:var(--muted); margin-bottom:14px;
+  }
+  .diff-legend span{display:flex; align-items:center; gap:5px;}
+  .diff-dot{width:8px; height:8px; border-radius:2px; flex:0 0 8px;}
+
+  footer{margin-top:26px; display:flex; align-items:center; justify-content:space-between; gap:12px;}
+  .hint{font-size:11px; color:var(--muted);}
+  .reset{
+    font-size:11px; color:var(--muted); background:transparent;
+    border:1px solid var(--line); border-radius:6px; padding:7px 12px;
+    cursor:pointer; font-family:inherit;
+  }
+  .reset:active{background:var(--panel2);}
+  @media (prefers-reduced-motion:reduce){ *{transition:none!important;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>VoxelCraft Pro — Roadmap v2 🌿</h1>
+    <div class="sub">Phase 2: Mehr Minecraft. Tippen = abhaken. Stand wird gespeichert.</div>
+    <div class="diff-legend">
+      <span><div class="diff-dot" style="background:#5fa83c;border:1px solid #86d95a"></div> Normal</span>
+      <span><div class="diff-dot" style="background:#f0b060;border:1px solid #5c3a10"></div> Aufwändig</span>
+      <span><div class="diff-dot" style="background:#c084fc;border:1px solid #5b3a8a"></div> Episch</span>
+      <span><div class="diff-dot" style="background:#f87171;border:1px solid #8a2020"></div> Boss-Feature</span>
+    </div>
+    <div class="xpwrap">
+      <div class="xpbar"><div class="xpfill" id="fill"></div></div>
+      <div class="xpnum" id="num">0 / 0</div>
+    </div>
+  </header>
+  <div id="list"></div>
+  <footer>
+    <span class="hint" id="footer-hint">Noch offen — viel zu bauen!</span>
+    <button class="reset" id="reset">Alles zuruecksetzen</button>
+  </footer>
+</div>
+
+<script>
+const DATA = [
+  { cat:"Welt & Biome", items:[
+    {
+      id:"biomes",
+      label:"Biome-System",
+      tag:"hard",
+      note:"Wueste (Sand, Kakteen), Schnee (Eis, Fichte), Sumpf (Schlamm, Liane), Savanne (Akazie) — beeinflusst Weltgen + Tier-Spawns"
+    },
+    {
+      id:"ocean",
+      label:"Ozean-Biom",
+      note:"Meeresgrund mit Sand/Kies, Kelp-Pflanzen, Korallen, Tintenfische — Wasser reicht bis Y=62"
+    },
+    {
+      id:"weather",
+      label:"Regen & Gewitter",
+      note:"Regen verdunkelt den Himmel, Blitze setzen Baeume in Brand (Feuer-System noetig), Donnergeraeusch"
+    },
+    {
+      id:"snowfall",
+      label:"Schneefall & Eisbildung",
+      note:"Im Schnee-Biom legt Schnee sich auf Blocks, Wasser gefriert zu Eis — dynamisch bei Tag/Nacht"
+    },
+    {
+      id:"fire",
+      label:"Feuer-Block & Ausbreitung",
+      tag:"hard",
+      note:"Feuer breitet sich auf brennbare Blocks (Holz, Blatt) aus, loescht sich im Regen, Schaden beim Beruehren"
+    },
+  ]},
+
+  { cat:"Landwirtschaft & Tiere", items:[
+    {
+      id:"farming",
+      label:"Ackerboden & Weizen-Farm",
+      tag:"hard",
+      note:"Hacke craften -> Erde umgraben = Farmland, Weizensamen pflanzen, 5-Stufen-Wachstum, Brot craften"
+    },
+    {
+      id:"bonemeal",
+      label:"Knochenmehl als Duenger",
+      note:"Knochen (3x) -> Knochenmehl, auf Pflanzen/Gras werfen -> sofortiges Wachstum / Blumen"
+    },
+    {
+      id:"compost",
+      label:"Kompostbehälter",
+      note:"Organische Items (Blatt, Apfel, Weizen) einwerfen -> Knochenmehl nach 7 Ladungen"
+    },
+    {
+      id:"sapling",
+      label:"Setzlinge & Baum-Farm",
+      note:"Blattblock droppt Setzling, einpflanzen auf Erde, waechst nach ~5 Minuten zu echtem Baum"
+    },
+    {
+      id:"breeding",
+      label:"Tierzucht",
+      note:"Weizen an Kuh/Schaf halten -> Herz-Partikel -> Liebes-Modus, nach 5 s spawnt Jungtier; 5-min Cooldown"
+    },
+    {
+      id:"fishing",
+      label:"Angel & Angeln",
+      note:"Angel craften (Stecken + Faden), in Wasser werfen, Schwimmer beobachten, im richtigen Moment einziehen -> Fisch (Nahrung) oder seltene Beute"
+    },
+  ]},
+
+  { cat:"Neue Mobs", items:[
+    {
+      id:"spider",
+      label:"Spinne",
+      note:"Klettert Waende (ignoriert normale Kollision an Waenden), nachts aggressiv / tags neutral, droppt Spinnenfaden"
+    },
+    {
+      id:"enderman",
+      label:"Enderman",
+      tag:"hard",
+      note:"Neutral bis angesehen, teleportiert bei Schaden, traegt und platziert Blocks, droppt Ender-Perle — Wasser schadet ihm"
+    },
+    {
+      id:"ghast",
+      label:"Ghast (Nether)",
+      note:"Fliegendes grosses Mob im Nether, schiesst Feuerbaelle, Feuerbaelle koennen zurueckgeschlagen werden"
+    },
+    {
+      id:"blaze",
+      label:"Blaze (Nether-Festung)",
+      note:"Schiesst Feuerbaelle in Salven, schwebt, droppt Blaze-Rute (benoetigt fuer End-Portal-Aktivierung)"
+    },
+    {
+      id:"wolf",
+      label:"Wolf (zaehmbar)",
+      note:"Knochen fuettern -> zahmer Hund, folgt Spieler, greift Mobs an auf die der Spieler schlaegt, stirbt permanent"
+    },
+    {
+      id:"horse",
+      label:"Pferd (reitbar)",
+      tag:"hard",
+      note:"Mit leerem Slot annaehern -> reiten-Dialog, Sattel anlegen = dauerhaftes Reiten, schneller als Laufen, Pferd-Ruestung"
+    },
+  ]},
+
+  { cat:"Neue Bloecke & Items", items:[
+    {
+      id:"tnt",
+      label:"TNT",
+      note:"4 Sand + 5 Schwarzpulver craften, Feuerzeug/Redstone-Signal zuenden, 4 s Zuendung, Kugelexplosion R=4"
+    },
+    {
+      id:"lantern",
+      label:"Laterne & Seelen-Laterne",
+      note:"Eisen-Nugget + Fackel = Laterne (mehr Licht als Fackel), Seelen-Sand + Laterne = Seelen-Laterne (blaues Licht, kuehlend)"
+    },
+    {
+      id:"campfire",
+      label:"Lagerfeuer",
+      note:"Kocht bis zu 4 Items gleichzeitig (langsamer als Ofen), gibt dauerhaft Rauch-Partikel, Lichtquelle, Schaden beim Betreten"
+    },
+    {
+      id:"bookshelf",
+      label:"Bücherregal",
+      note:"3 Buecher + 6 Bretter craften, im Umkreis des Zaubertischs erhoehen sie die max. Verzauberungsstufe auf 3"
+    },
+    {
+      id:"shield",
+      label:"Schild (blockt Schaden)",
+      note:"6 Bretter + 1 Eisen craften, in Offhand-Slot legen, Rechtsklick = 50 % Schadensreduktion von vorne, Cooldown nach starkem Treffer"
+    },
+    {
+      id:"more_food",
+      label:"Mehr Nahrung",
+      note:"Brot (3 Weizen), Kuchen (Craftrezept 9 Items), Goldener Apfel (8 Goldbarren + Apfel = Regeneration-Effekt), gebratener Fisch"
+    },
+    {
+      id:"barrel",
+      label:"Fass (Lager-Block)",
+      note:"6 Bretter + 2 Holzplatten, oeffnet 27-Slot Inventar wie Truhe, stapelbar ohne Platz an der Oberseite benoetigt"
+    },
+    {
+      id:"stonecutter",
+      label:"Steinschneider",
+      note:"Alle Stein-Varianten (Treppe, Platte, Mauer, Saule) direkt herstellen ohne Crafting-Rezepte auswendig zu lernen"
+    },
+  ]},
+
+  { cat:"Fortgeschrittenes Gameplay", items:[
+    {
+      id:"potions",
+      label:"Brauen & Traenke",
+      tag:"hard",
+      note:"Braustand (1 Blaze-Rute + 3 Kopfsteine), Netherwarze -> Seltsamer Trank als Basis, dann Zutaten: Heilen / Staerke / Geschwindigkeit / Gift"
+    },
+    {
+      id:"ender_chest",
+      label:"Ender-Truhe",
+      note:"8 Obsidian + 1 Ender-Perle, 27-Slot Lager das dimensionsuebergreifend und spielerpersoenlich bleibt"
+    },
+    {
+      id:"map_item",
+      label:"Karte als Item",
+      tag:"hard",
+      note:"Kompass + 8 Papier (Zuckerrohr) craften -> Karte oeffnet sich und zeichnet besuchtes Terrain in 128x128-Block-Ausschnitt"
+    },
+    {
+      id:"advancements",
+      label:"Fortschritte / Achievements",
+      note:"Popup-Toast bei Meilensteinen (Erster Block abgebaut, Erstes Tier getötet, Erster Nether-Besuch usw.), in Menue einsehbar"
+    },
+    {
+      id:"grindstone",
+      label:"Schleifstein",
+      note:"2 Stecken + 2 Bretter + 1 Steinplatte, entfernt alle Verzauberungen von einem Item und gibt einen Teil XP zurueck"
+    },
+    {
+      id:"minecart",
+      label:"Lore & Schienen",
+      tag:"hard",
+      note:"Schiene craften (6 Eisen + 1 Stecken = 16 Stueck), Lore draufstellen, einsteigen und rollen — Antriebsschiene mit Redstone"
+    },
+    {
+      id:"elytra",
+      label:"Elytra (Gleitschirm)",
+      tag:"epic",
+      note:"In End-Stadt finden (nicht craften), in Brustpanzer-Slot anlegen, aus Hoehenflug abspringen + Leertaste = Gleiten; Feuerwerk boosted"
+    },
+  ]},
+
+  { cat:"End-Dimension & Endgame", items:[
+    {
+      id:"end_portal",
+      label:"End-Portal bauen + aktivieren",
+      tag:"epic",
+      note:"12 End-Portalrahmen aus Steinbrick-Variante in Festungs-Struktur, jedes Feld mit 'Auge des Endes' (Ender-Perle + Blaze-Rute) fuellen"
+    },
+    {
+      id:"end_dim",
+      label:"End-Dimension",
+      tag:"epic",
+      note:"Schwarzer Himmel, Endstein-Insel, Obsidian-Saeule mit Endkristallen, Brunnen — eigene Chunk-Generierung"
+    },
+    {
+      id:"ender_dragon",
+      label:"Ender-Drache (Endboss)",
+      tag:"boss",
+      note:"Fliegt im Kreis, schiesst Aether-Ladungen, heilt sich an Endkristallen (zuerst Kristalle zerstoeren!), stirbt = massig XP + Exit-Portal + Ei"
+    },
+    {
+      id:"end_city",
+      label:"End-Stadt & Shulker-Boxen",
+      tag:"epic",
+      note:"Prozedural generierte Tuerme, Shulker-Mob (schiesst schwebendes Projektil), Shulker-Box = 27-Slot portabler Speicher"
+    },
+    {
+      id:"wither",
+      label:"Wither-Boss beschworen",
+      tag:"boss",
+      note:"3 Seelen-Sand + 3 Wither-Schaedel (vom Wither-Skelett) aufstapeln -> beschwört Wither; schiesst Schaedel, Explosion bei Spawn + Tod"
+    },
+    {
+      id:"beacon",
+      label:"Beacon-Block",
+      tag:"epic",
+      note:"3 Obsidian + 5 Glas + 1 Nether-Stern (Wither-Drop), auf Pyramide aus Mineral-Blocks stellen -> Buffs im Umkreis (Eile, Staerke, Sprung)"
+    },
+  ]},
+
+  { cat:"Multiplayer & UX", items:[
+    {
+      id:"skin",
+      label:"Spieler-Skin anpassen",
+      note:"Skin-Editor im Menue (16x32 Pixel, 8 Bereiche: Kopf/Koerper/Arme/Beine), wird an Server gesendet und fuer andere Spieler gerendert"
+    },
+    {
+      id:"minimap",
+      label:"Persistent Minimap",
+      note:"Kleine Karte in Ecke (togglebar mit M), zeigt besuchte Chunks, eigene Position als Pfeil, andere Spieler als farbige Punkte"
+    },
+    {
+      id:"death_screen",
+      label:"Tod-Bildschirm mit Score",
+      note:"Anzeige: ueberlebte Zeit, getoe­tete Mobs, abgebaute Blocks, Todesursache — mit Respawn / Hauptmenue-Button"
+    },
+    {
+      id:"settings_menu",
+      label:"Einstellungs-Menue erweitert",
+      note:"FOV-Slider (60-110°), Render-Distanz (4/8/12/16 Chunks), Maus-Empfindlichkeit, Vollbild-Toggle, Tastenbelegung anzeigen"
+    },
+  ]},
+];
+
+const KEY = "voxelcraft_roadmap_v2";
+let overrides = {};
+
+const ALL = DATA.flatMap(c => c.items);
+function isDone(it){ return (it.id in overrides) ? overrides[it.id] : !!it.done; }
+
+async function loadState(){
+  try{ const r = await window.storage.get(KEY); if(r && r.value) overrides = JSON.parse(r.value)||{}; }
+  catch(e){ overrides={}; }
+  render();
+}
+async function saveState(){
+  try{ await window.storage.set(KEY, JSON.stringify(overrides)); }catch(e){}
+}
+
+function tagHtml(it){
+  if(!it.tag) return "";
+  const map = {hard:"Aufwaendig",epic:"Episch",boss:"Boss-Feature",mp:"Multiplayer",ux:"UX"};
+  return `<span class="tag ${it.tag}">${map[it.tag]||it.tag}</span>`;
+}
+
+function epicClass(it){
+  if(it.tag==="boss") return " boss-item";
+  if(it.tag==="epic") return " epic-item";
+  return "";
+}
+
+function render(){
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+  for(const c of DATA){
+    const done = c.items.filter(isDone).length;
+    const cat = document.createElement("div"); cat.className="cat";
+    cat.innerHTML =
+      `<div class="cat-h"><span>${c.cat}</span><span class="bar"></span><span class="cnt">${done}/${c.items.length}</span></div>`;
+    const ul = document.createElement("ul");
+    for(const it of c.items){
+      const li = document.createElement("li");
+      li.className = (isDone(it)?"done":"") + epicClass(it);
+      li.innerHTML =
+        `<div class="box"></div><div class="txt"><div class="label">${it.label}${tagHtml(it)}</div>`+
+        (it.note?`<div class="note">${it.note}</div>`:"")+"</div>";
+      li.addEventListener("click",()=>toggle(it));
+      ul.appendChild(li);
+    }
+    cat.appendChild(ul);
+    list.appendChild(cat);
+  }
+  const total=ALL.length, done=ALL.filter(isDone).length;
+  document.getElementById("fill").style.width=(total?(done/total*100):0)+"%";
+  document.getElementById("num").textContent=done+" / "+total;
+  const hint = document.getElementById("footer-hint");
+  hint.textContent = done===total
+    ? "Alle "+total+" Punkte erledigt! Echtes Minecraft-Erlebnis 🏆"
+    : done+" von "+total+" erledigt — "+Math.round(done/total*100)+" %";
+}
+
+function toggle(it){
+  overrides[it.id] = !isDone(it);
+  saveState();
+  render();
+}
+
+document.getElementById("reset").addEventListener("click",()=>{
+  overrides={};
+  saveState();
+  render();
+});
+
+loadState();
+</script>
+</body>
+</html>

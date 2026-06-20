@@ -49,6 +49,10 @@ const wss = new WebSocketServer({ server });
 // ---- gemeinsamer Spielzustand ----
 const blockOverrides = new Map();   // "x_y_z" -> blockId (0 = abgebaut)
 const players = new Map();          // id -> {id,name,x,y,z,ry,health,hunger}
+const chests = new Map();           // "x_y_z" -> Array serialisierter Slots (Truhen-Inhalt)
+const SPAWNER_ID = 31;
+const spawners = new Set();         // "x_y_z" platzierter Mob-Spawner
+let spawnerTimer = 0;
 let dayTime = 0.25;                 // 0..1, fuer alle synchron
 let nextId = 1;
 
@@ -99,6 +103,8 @@ async function loadWorld(){
       const data = await supaLoad();
       if (data){
         if (Array.isArray(data.overrides)) for (const [k,v] of data.overrides) blockOverrides.set(k, v);
+        if (Array.isArray(data.chests)) for (const [k,slots] of data.chests) chests.set(k, slots);
+        for (const [k,v] of blockOverrides) if (v === SPAWNER_ID) spawners.add(k);
         if (typeof data.dayTime === 'number') dayTime = data.dayTime;
         console.log(' Spielstand aus Supabase geladen: ' + blockOverrides.size + ' Block-Aenderungen.');
         return;
@@ -114,6 +120,8 @@ async function loadWorld(){
     if (!fs.existsSync(SAVE_FILE)) { console.log(' Kein Spielstand gefunden, neue Welt.'); return; }
     const data = JSON.parse(fs.readFileSync(SAVE_FILE, 'utf8'));
     if (Array.isArray(data.overrides)) for (const [k,v] of data.overrides) blockOverrides.set(k, v);
+    if (Array.isArray(data.chests)) for (const [k,slots] of data.chests) chests.set(k, slots);
+    for (const [k,v] of blockOverrides) if (v === SPAWNER_ID) spawners.add(k);
     if (typeof data.dayTime === 'number') dayTime = data.dayTime;
     console.log(' Spielstand (lokal) geladen: ' + blockOverrides.size + ' Block-Aenderungen.');
   } catch(e){ console.log(' Spielstand beschaedigt, starte neue Welt. (' + e.message + ')'); }
@@ -122,7 +130,7 @@ async function loadWorld(){
 async function saveWorld(){
   if (saving) return;            // nicht zwei Saves gleichzeitig
   saving = true;
-  const data = { overrides: [...blockOverrides.entries()], dayTime, savedAt: Date.now() };
+  const data = { overrides: [...blockOverrides.entries()], chests: [...chests.entries()], dayTime, savedAt: Date.now() };
   try {
     if (USE_SUPABASE){
       await supaSave(data);
@@ -155,8 +163,8 @@ process.on('SIGTERM', async () => { await saveWorld(); process.exit(0); });
 // ---- Mobs serverseitig (alle sehen dieselben) ----
 const mobs = new Map();             // mobId -> {id,kind,x,y,z,dir,hp,hostile}
 let nextMobId = 1;
-const MOB_KINDS_PASSIVE = ['cow','sheep','chicken'];
-const MOB_HP = { cow:8, sheep:6, chicken:4, zombie:10, skeleton:8, creeper:10 };
+const MOB_KINDS_PASSIVE = ['cow','sheep','chicken','pig'];
+const MOB_HP = { cow:8, sheep:6, chicken:4, pig:8, zombie:10, skeleton:8, creeper:10 };
 let mobSpawnTimer = 0;
 
 function isNight() { return dayTime > 0.75 || dayTime < 0.2; }
@@ -167,7 +175,7 @@ function spawnMob(hostile) {
   const x = Math.cos(ang)*r, z = Math.sin(ang)*r;
   let kind;
   if (hostile) { const q = Math.random(); kind = q<0.4 ? 'zombie' : q<0.75 ? 'skeleton' : 'creeper'; }
-  else kind = MOB_KINDS_PASSIVE[Math.floor(Math.random()*3)];
+  else kind = MOB_KINDS_PASSIVE[Math.floor(Math.random()*MOB_KINDS_PASSIVE.length)];
   const id = nextMobId++;
   mobs.set(id, { id, kind, x, y:20, z, dir:Math.random()*6.28, hp:MOB_HP[kind], hostile, atkCd:0, fuse:0 });
 }
@@ -198,6 +206,7 @@ wss.on('connection', (ws) => {
     id,
     seed: WORLD_SEED,
     overrides: [...blockOverrides.entries()],
+    chests: [...chests.entries()],
     players: [...players.values()].filter(p => p.id !== id),
     mobs: [...mobs.values()],
     time: dayTime
@@ -224,8 +233,8 @@ wss.on('connection', (ws) => {
         break;
       case 'block':           // Block gesetzt/abgebaut -> gemeinsame Welt
         { const k = m.x+'_'+m.y+'_'+m.z;
-          if (m.id === 0) blockOverrides.set(k, 0);   // abgebaut
-          else blockOverrides.set(k, m.id);           // gesetzt
+          if (m.id === 0) { blockOverrides.set(k, 0); spawners.delete(k); }   // abgebaut
+          else { blockOverrides.set(k, m.id); if (m.id === SPAWNER_ID) spawners.add(k); else spawners.delete(k); } // gesetzt
           saveDirty = true;                            // -> wird gespeichert
           broadcast({ t:'block', x:m.x, y:m.y, z:m.z, id:m.id }, id);
         }
@@ -234,10 +243,19 @@ wss.on('connection', (ws) => {
         { if (Array.isArray(m.blocks)) {
             for (const b of m.blocks) {
               const k = b.x+'_'+b.y+'_'+b.z;
-              if (b.id === 0) blockOverrides.set(k, 0); else blockOverrides.set(k, b.id);
+              if (b.id === 0) { blockOverrides.set(k, 0); spawners.delete(k); }
+              else { blockOverrides.set(k, b.id); if (b.id === SPAWNER_ID) spawners.add(k); else spawners.delete(k); }
             }
             saveDirty = true;
             broadcast({ t:'blockbulk', blocks:m.blocks }, id);
+          }
+        }
+        break;
+      case 'chest':           // Truhen-Inhalt geaendert -> speichern + an die anderen verteilen
+        { if (typeof m.pos === 'string' && Array.isArray(m.slots)) {
+            if (m.slots.some(s => s)) chests.set(m.pos, m.slots); else chests.delete(m.pos);
+            saveDirty = true;
+            broadcast({ t:'chest', pos:m.pos, slots:m.slots }, id);
           }
         }
         break;
@@ -260,6 +278,21 @@ wss.on('connection', (ws) => {
           arrows.set(aid, { id:aid, x:+m.x||0, y:+m.y||0, z:+m.z||0,
             vx: dx/dl*ARROW_SPEED, vy: dy/dl*ARROW_SPEED + 1.5, vz: dz/dl*ARROW_SPEED,
             life: ARROW_LIFE, owner: id });
+        }
+        break;
+      case 'chat':            // Chat-Nachricht an alle (inkl. Absender) verteilen
+        { const text = String(m.text||'').slice(0,100).trim();
+          if (text) broadcast({ t:'chat', id, name:p.name, text });
+        }
+        break;
+      case 'sleep':           // jemand schlaeft: nachts -> Morgen fuer alle
+        if (isNight()) { dayTime = 0.25; broadcast({ t:'slept', name:p.name }); }
+        break;
+      case 'pvp':             // Nahkampf-Treffer an das getroffene Ziel weiterleiten
+        { const dmg = Math.max(0, Math.min(20, +m.dmg||0));
+          for (const c of wss.clients) {
+            if (c._pid === m.target && c.readyState === 1) { sendTo(c, { t:'hurt', dmg, from:id }); break; }
+          }
         }
         break;
     }
@@ -303,6 +336,25 @@ setInterval(() => {
     for (const mob of mobs.values()) mob.hostile ? hostile++ : passive++;
     if (passive < 6) { spawnMob(false); broadcast({ t:'mobspawn', mob:[...mobs.values()].pop() }); }
     if (isNight() && hostile < 6) { spawnMob(true); broadcast({ t:'mobspawn', mob:[...mobs.values()].pop() }); }
+  }
+
+  // Mob-Spawner-Bloecke: spawnen feindliche Mobs, wenn ein Spieler in der Naehe ist
+  spawnerTimer += dt;
+  if (spawnerTimer >= 2) {
+    spawnerTimer = 0;
+    let hostile = 0; for (const mob of mobs.values()) if (mob.hostile) hostile++;
+    for (const key of spawners) {
+      if (hostile >= 14) break;
+      const [sx, sy, sz] = key.split('_').map(Number);
+      let near = false; for (const p of players.values()) if (Math.hypot(p.x-sx, p.z-sz) < 16) { near = true; break; }
+      if (near && Math.random() < 0.6) {
+        const q = Math.random(), kind = q<0.5 ? 'zombie' : q<0.8 ? 'skeleton' : 'creeper';
+        const mid = nextMobId++;
+        mobs.set(mid, { id:mid, kind, x:sx+(Math.random()-0.5)*2, y:sy+1, z:sz+(Math.random()-0.5)*2, dir:Math.random()*6.28, hp:MOB_HP[kind], hostile:true, atkCd:0, fuse:0 });
+        broadcast({ t:'mobspawn', mob: mobs.get(mid) });
+        hostile++;
+      }
+    }
   }
 
   // tagsueber verbrennen feindliche Mobs nach und nach (verschwinden) - Creeper aber nicht
@@ -366,6 +418,14 @@ setInterval(() => {
       mob.x += Math.sin(mob.dir)*speed;
       mob.z += Math.cos(mob.dir)*speed;
     }
+  }
+
+  // Mob-KI: einfache Schwarm-Trennung -> Mobs weichen sich gegenseitig aus, statt sich zu stapeln
+  const mobList = [...mobs.values()];
+  for (let i = 0; i < mobList.length; i++) for (let j = i+1; j < mobList.length; j++) {
+    const a = mobList[i], b = mobList[j];
+    const dx = b.x-a.x, dz = b.z-a.z, d = Math.hypot(dx, dz);
+    if (d > 0 && d < 1.0) { const push = (1.0-d)*2*dt, ux = dx/d, uz = dz/d; a.x -= ux*push; a.z -= uz*push; b.x += ux*push; b.z += uz*push; }
   }
 
   // Pfeile bewegen (leichte Schwerkraft) + ablaufen lassen
