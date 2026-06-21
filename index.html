@@ -593,7 +593,13 @@ const ICE=59, KELP=60, CORAL=61, SNOW_LAYER=62, FIRE=63, COMPOSTER=64;
 const BREWING_STAND=65, ENDER_CHEST=66, GRINDSTONE=67;
 const RAIL=68, POWERED_RAIL=69;
 const END_PORTAL_FRAME=70, END_PORTAL=71, END_STONE=72, PURPUR=73, BEACON=74, DRAGON_EGG=75, SUGARCANE=76;
+// ---- Roadmap v3: Mineralbloecke + Kuerbis + Slime ----
+const IRON_BLOCK=77, GOLD_BLOCK=78, DIAMOND_BLOCK=79, COAL_BLOCK=80, REDSTONE_BLOCK=81;
+const PUMPKIN=82, JACK_O_LANTERN=83, SLIME_BLOCK=84, HAY_BLOCK=85;
+const EMERALD_ORE=86, EMERALD_BLOCK=87;
+const DOOR_CLOSED=88, DOOR_OPEN=89, TRAPDOOR_CLOSED=90, TRAPDOOR_OPEN=91;
 function isWheat(id){ return id===WHEAT_S0||id===WHEAT_S1||id===WHEAT_S2||id===WHEAT_S3; }
+function isStorageBlock(id){ return id===IRON_BLOCK||id===GOLD_BLOCK||id===DIAMOND_BLOCK||id===COAL_BLOCK||id===REDSTONE_BLOCK; }
 const BLOCKS = {
   [AIR]:   { name:'Air',    solid:false, opaque:false },
   [GRASS]: { name:'Gras',   solid:true,  opaque:true,  top:0x5fa83d, side:0x6e7b3c, bottom:0x8a6a43 },
@@ -673,6 +679,22 @@ const BLOCKS = {
   [BEACON]:     { name:'Leuchtfeuer', solid:true, opaque:false, color:0x6fe0e0, transparent:true },
   [DRAGON_EGG]: { name:'Drachenei', solid:true, opaque:true, color:0x140e1f },
   [SUGARCANE]:  { name:'Zuckerrohr', solid:false, opaque:false, color:0x8ac060 },
+  // ---- Roadmap v3 ----
+  [IRON_BLOCK]: { name:'Eisenblock', solid:true, opaque:true, color:0xe6e8ec },
+  [GOLD_BLOCK]: { name:'Goldblock', solid:true, opaque:true, color:0xf2d24a },
+  [DIAMOND_BLOCK]:{ name:'Diamantblock', solid:true, opaque:true, color:0x52c7cf },
+  [COAL_BLOCK]: { name:'Kohleblock', solid:true, opaque:true, color:0x202024 },
+  [REDSTONE_BLOCK]:{ name:'Redstoneblock', solid:true, opaque:true, color:0xc83020 },
+  [PUMPKIN]:    { name:'Kürbis', solid:true, opaque:true, top:0xc88a2a, side:0xc88a2a, bottom:0xc88a2a },
+  [JACK_O_LANTERN]:{ name:'Kürbislaterne', solid:true, opaque:true, top:0xc88a2a, side:0xffce6a, bottom:0xc88a2a },
+  [SLIME_BLOCK]:{ name:'Schleimblock', solid:true, opaque:false, color:0x6acf6a, transparent:true },
+  [HAY_BLOCK]:  { name:'Heuballen', solid:true, opaque:true, color:0xd9c060, top:0xb09530, bottom:0xb09530 },
+  [EMERALD_ORE]:{ name:'Smaragderz', solid:true, opaque:true, color:0x6acaa0 },
+  [EMERALD_BLOCK]:{ name:'Smaragdblock', solid:true, opaque:true, color:0x30c060 },
+  [DOOR_CLOSED]:{ name:'Tür', solid:true, opaque:false, color:0x8a5a32, transparent:true },
+  [DOOR_OPEN]:  { name:'Tür', solid:false, opaque:false, color:0x8a5a32 },
+  [TRAPDOOR_CLOSED]:{ name:'Falltür', solid:true, opaque:false, color:0x8a5a32, transparent:true },
+  [TRAPDOOR_OPEN]:  { name:'Falltür', solid:false, opaque:false, color:0x8a5a32 },
 };
 // schnelle Block-Kategorien fuer Redstone
 function isWire(id){ return id===REDSTONE_WIRE||id===REDSTONE_WIRE_ON; }
@@ -712,6 +734,8 @@ const NETHER_WART=181, BLAZE_POWDER=182, GLASS_BOTTLE=183, AWKWARD_POTION=184;
 const POTION_HEAL=185, POTION_STRENGTH=186, POTION_SPEED=187, POTION_POISON=188;
 const NETHER_STAR=189, ELYTRA=190, SADDLE=191, SHIELD_ITEM=192, CHARCOAL=193, SUGAR_CANE=194, GHAST_TEAR=195, ENDER_EYE=196;
 const WOOD_HOE=197, STONE_HOE=198, IRON_HOE=199, MINECART=200;
+// ---- Roadmap v3 ----
+const SLIME_BALL=201, EMERALD=202, PUMPKIN_SEEDS=203;
 const ITEM = {
   [STRING]:        { name:'Faden',          color:0xe8e8e8 },
   [ENDER_PEARL]:   { name:'Enderperle',     color:0x18a08a },
@@ -775,6 +799,10 @@ const ITEM = {
   [WATER_BUCKET]:  { name:'Wassereimer',         color:0x3a6fd0 },
   [LAVA_BUCKET]:   { name:'Lavaeimer',           color:0xe2531a },
   [LEATHER]:       { name:'Leder',               color:0x8a5a32 },
+  // ---- Roadmap v3 ----
+  [SLIME_BALL]:    { name:'Schleimball',          color:0x6acf6a },
+  [EMERALD]:       { name:'Smaragd',              color:0x30c060 },
+  [PUMPKIN_SEEDS]: { name:'Kürbissamen',          color:0xc8a050 },
 };
 function thing(id){ return BLOCKS[id] || ITEM[id] || TOOL[id] || ARMOR[id]; }
 function thingColor(id){ const t=thing(id); return t ? (t.color??t.top??0x888888) : 0x888888; }
@@ -912,6 +940,22 @@ const BLOCK_MINE = {
   [BEACON]:     {hard:3.0, tool:'pick', needsTool:false},
   [DRAGON_EGG]: {hard:3.0, tool:null, needsTool:false},
   [SUGARCANE]:  {hard:0, tool:null, needsTool:false},
+  // ---- Roadmap v3 ----
+  [IRON_BLOCK]: {hard:5.0, tool:'pick', needsTool:true, minTier:2},
+  [GOLD_BLOCK]: {hard:3.0, tool:'pick', needsTool:true, minTier:3},
+  [DIAMOND_BLOCK]:{hard:5.0, tool:'pick', needsTool:true, minTier:3},
+  [COAL_BLOCK]: {hard:5.0, tool:'pick', needsTool:true, minTier:1},
+  [REDSTONE_BLOCK]:{hard:5.0, tool:'pick', needsTool:true, minTier:2},
+  [PUMPKIN]:    {hard:1.0, tool:'axe', needsTool:false},
+  [JACK_O_LANTERN]:{hard:1.0, tool:'axe', needsTool:false},
+  [SLIME_BLOCK]:{hard:0.0, tool:null, needsTool:false},
+  [HAY_BLOCK]:  {hard:0.5, tool:null, needsTool:false},
+  [EMERALD_ORE]:{hard:3.0, tool:'pick', needsTool:true, minTier:2},
+  [EMERALD_BLOCK]:{hard:5.0, tool:'pick', needsTool:true, minTier:2},
+  [DOOR_CLOSED]:{hard:0.6, tool:'axe', needsTool:false},
+  [DOOR_OPEN]:  {hard:0.6, tool:'axe', needsTool:false},
+  [TRAPDOOR_CLOSED]:{hard:0.5, tool:'axe', needsTool:false},
+  [TRAPDOOR_OPEN]:  {hard:0.5, tool:'axe', needsTool:false},
 };
 function mineInfo(id){ return BLOCK_MINE[id] || {hard:1, tool:null, needsTool:false}; }
 
@@ -934,11 +978,12 @@ function addItem(id,count){
   if(!invOpen && count<start) showItemName(id);   // beim Aufnehmen in der Welt kurz den Namen zeigen
   return count;
 }
-function dropFor(id){ if(id===GRASS) return DIRT; if(id===STONE) return COBBLE; if(id===COAL_ORE) return COAL; if(id===COPPER_ORE) return RAW_COPPER; if(id===IRON_ORE) return RAW_IRON; if(id===GOLD_ORE) return RAW_GOLD; if(id===DIAMOND_ORE) return DIAMOND; if(id===REDSTONE_ORE) return REDSTONE_WIRE; if(id===REDSTONE_WIRE_ON) return REDSTONE_WIRE; if(id===LEVER_ON) return LEVER; if(id===REDSTONE_LAMP_ON) return REDSTONE_LAMP; if(id===PORTAL) return AIR;
+function dropFor(id){ if(id===GRASS) return DIRT; if(id===STONE) return COBBLE; if(id===COAL_ORE) return COAL; if(id===COPPER_ORE) return RAW_COPPER; if(id===IRON_ORE) return RAW_IRON; if(id===GOLD_ORE) return RAW_GOLD; if(id===DIAMOND_ORE) return DIAMOND; if(id===EMERALD_ORE) return EMERALD; if(id===REDSTONE_ORE) return REDSTONE_WIRE; if(id===REDSTONE_WIRE_ON) return REDSTONE_WIRE; if(id===LEVER_ON) return LEVER; if(id===REDSTONE_LAMP_ON) return REDSTONE_LAMP; if(id===PORTAL) return AIR;
   if(id===FARMLAND) return DIRT; if(id===ICE) return AIR; if(id===SNOW_LAYER) return BONE_MEAL; if(id===FIRE||id===END_PORTAL) return AIR;
   if(id===WHEAT_S3) return WHEAT; if(id===WHEAT_S0||id===WHEAT_S1||id===WHEAT_S2) return WHEAT_SEEDS;
   if(id===SAPLING) return SAPLING; if(id===KELP) return KELP; if(id===CORAL) return CORAL; if(id===SUGARCANE) return SUGAR_CANE;
   if(id===CAMPFIRE) return CHARCOAL; if(id===END_PORTAL_FRAME) return AIR;
+  if(id===DOOR_OPEN) return DOOR_CLOSED; if(id===TRAPDOOR_OPEN) return TRAPDOOR_CLOSED;
   if(id===LEAVES||id===GLASS||id===BEDROCK||id===TALL_GRASS||id===DEAD_BUSH) return (id===LEAVES&&Math.random()<0.05)?SAPLING:AIR; return id; }
 
 // Crafting: shapeless (in:{...}, Position egal) ODER shaped (shape:[...], key:{...})
@@ -1051,6 +1096,34 @@ const RECIPES = [
   // End-Portalrahmen (im Overworld baubar) + Endsteinziegel/Purpur ueber Steinschneider
   { shape:["EEE","E.E"],       key:{E:END_STONE},            out:{id:END_PORTAL_FRAME, count:2} },
   { shape:["OO","OO"],         key:{O:OBSIDIAN},             out:{id:END_PORTAL_FRAME, count:1} },
+  // ==== Roadmap v3: Mineralblöcke, Kürbis, Slime, Heu ====
+  // 3x3 Ingot/Material -> Block (komprimieren)
+  { shape:["XXX","XXX","XXX"], key:{X:IRON_INGOT},     out:{id:IRON_BLOCK,     count:1} },
+  { shape:["XXX","XXX","XXX"], key:{X:GOLD_INGOT},     out:{id:GOLD_BLOCK,     count:1} },
+  { shape:["XXX","XXX","XXX"], key:{X:DIAMOND},        out:{id:DIAMOND_BLOCK,  count:1} },
+  { shape:["XXX","XXX","XXX"], key:{X:COAL},           out:{id:COAL_BLOCK,     count:1} },
+  { shape:["XXX","XXX","XXX"], key:{X:REDSTONE_WIRE}, out:{id:REDSTONE_BLOCK, count:1} },
+  { shape:["XXX","XXX","XXX"], key:{X:WHEAT},          out:{id:HAY_BLOCK,      count:1} },
+  // Rückwandlung: 1 Block -> 9 Material (shapeless)
+  { in:{[IRON_BLOCK]:1},     out:{id:IRON_INGOT,    count:9} },
+  { in:{[GOLD_BLOCK]:1},     out:{id:GOLD_INGOT,    count:9} },
+  { in:{[DIAMOND_BLOCK]:1},  out:{id:DIAMOND,       count:9} },
+  { in:{[COAL_BLOCK]:1},     out:{id:COAL,          count:9} },
+  { in:{[REDSTONE_BLOCK]:1}, out:{id:REDSTONE_WIRE, count:9} },
+  { in:{[HAY_BLOCK]:1},      out:{id:WHEAT,         count:9} },
+  // Slime: 4 Bälle (2x2) -> Block, 1 Block -> 4 Bälle
+  { shape:["XX","XX"],       key:{X:SLIME_BALL},     out:{id:SLIME_BLOCK,   count:1} },
+  { in:{[SLIME_BLOCK]:1},    out:{id:SLIME_BALL,    count:4} },
+  // Kürbislaterne (Kürbis + Fackel)
+  { in:{[PUMPKIN]:1,[TORCH]:1}, out:{id:JACK_O_LANTERN, count:1} },
+  // Kürbis -> Kürbissamen
+  { in:{[PUMPKIN]:1},        out:{id:PUMPKIN_SEEDS, count:4} },
+  // Smaragd-Block <-> Smaragde
+  { shape:["XXX","XXX","XXX"], key:{X:EMERALD}, out:{id:EMERALD_BLOCK, count:1} },
+  { in:{[EMERALD_BLOCK]:1},  out:{id:EMERALD, count:9} },
+  // Tueren + Falltueren
+  { shape:["XX","XX","XX"], key:{X:WOOD}, out:{id:DOOR_CLOSED,     count:3} },
+  { shape:["XXX","XXX"],     key:{X:WOOD}, out:{id:TRAPDOOR_CLOSED, count:2} },
 ];
 function craftCounts(){ const c={}; for(let i=0;i<craftN*craftN;i++){ const s=craftGrid[i]; if(s) c[s.id]=(c[s.id]||0)+s.count; } return c; }
 function gridIds(){ const a=[]; for(let r=0;r<craftN;r++){ a.push([]); for(let c=0;c<craftN;c++){ const s=craftGrid[r*craftN+c]; a[r].push(s?s.id:null); } } return a; }
@@ -1140,6 +1213,7 @@ function noise3(x,y,z){
 function oreAt(x,y,z){
   if(y< -24 && noise3(x*0.17+11, y*0.17, z*0.17+11) > 0.88) return DIAMOND_ORE;
   if(y<   8 && noise3(x*0.17+27, y*0.17, z*0.17+27) > 0.87) return GOLD_ORE;
+  if(y>74 && noise3(x*0.22+131, y*0.22, z*0.22+131) > 0.90) return EMERALD_ORE;  // sehr selten in den Bergen
   if(y<  56 && noise3(x*0.16+43, y*0.16, z*0.16+43) > 0.83) return IRON_ORE;
   if(y<  68 && noise3(x*0.16+61, y*0.16, z*0.16+61) > 0.85) return COPPER_ORE;
   if(noise3(x*0.15+79, y*0.15, z*0.15+79) > 0.84) return COAL_ORE;
@@ -1212,6 +1286,7 @@ function generateChunkData(cx,cz){
       } else {
         if(pr<0.10){ data[((top-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=TALL_GRASS; }
         else if(pr<0.115){ data[((top-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=(hash2(wx+5,wz+5)<0.5)?FLOWER_RED:FLOWER_YELLOW; }
+        else if(pr<0.119){ data[((top-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=PUMPKIN; }   // seltene Kuerbisse in Wiesen
       }
     } else if(h===WATER_LEVEL+1 && top<Y_MAX){
       // Strand-Rand: Zuckerrohr am Wasser
@@ -1312,6 +1387,63 @@ function placeStructures(data,cx,cz,ox,oz){
     const az=gz*CELL + 6 + ((hash2(gx*13-2,gz*29+9)*(CELL-12))|0);
     if(r<0.24) buildHut(data,ox,oz,ax,az); else buildDungeon(data,ox,oz,ax,az);
   }
+  // Doerfer: viel groesseres Raster (selten); enthaelt 3 Huetten in Cluster + Brunnen
+  const VCELL=240, VM=18;
+  for(let gz=Math.floor((oz-VM)/VCELL); gz<=Math.floor((oz+CHUNK_SIZE+VM)/VCELL); gz++)
+  for(let gx=Math.floor((ox-VM)/VCELL); gx<=Math.floor((ox+CHUNK_SIZE+VM)/VCELL); gx++){
+    if(hash2(gx*311+19, gz*373-23) > 0.4) continue;            // ~40% der Riesen-Zellen
+    const cxv=gx*VCELL + 30 + ((hash2(gx*41+11,gz*53+7)*(VCELL-60))|0);
+    const czv=gz*VCELL + 30 + ((hash2(gx*23-13,gz*37+5)*(VCELL-60))|0);
+    buildVillage(data, ox, oz, cxv, czv, gx, gz);
+  }
+}
+function buildVillage(data, ox, oz, cx, cz, gx, gz){
+  const base=terrainHeight(cx, cz);
+  if(base<=WATER_LEVEL+1 || base>WATER_LEVEL+25) return;       // nicht im Wasser, nicht hoch oben
+  if(biomeNoise(cx,cz) > DESERT_T) return;                    // nicht in der Wueste
+  // Brunnen in der Mitte
+  for(let dz=-1;dz<=1;dz++) for(let dx=-1;dx<=1;dx++){
+    setTreeBlock(data,ox,oz, cx+dx, base, cz+dz, COBBLE, false);
+    if(Math.abs(dx)===1||Math.abs(dz)===1){
+      setTreeBlock(data,ox,oz, cx+dx, base+1, cz+dz, COBBLE, false);
+      setTreeBlock(data,ox,oz, cx+dx, base+2, cz+dz, COBBLE, false);
+    } else setTreeBlock(data,ox,oz, cx+dx, base+1, cz+dz, WATER, false);
+  }
+  // Pfad-Sterne + 3 Huetten rundherum
+  const SLOTS=[[ -8,-2],[8,-2],[0,9]];
+  let hi=0;
+  for(const s of SLOTS){
+    const ax=cx+s[0], az=cz+s[1];
+    if(hi===0) buildVillageHouse(data, ox, oz, ax, az, true);
+    else buildVillageHouse(data, ox, oz, ax, az, false);
+    hi++;
+  }
+  // Aeckerbeet
+  for(let dz=-2;dz<=2;dz++) for(let dx=-2;dx<=2;dx++){
+    const fx=cx+dx-12, fz=cz+dz;
+    const fy=terrainHeight(fx,fz);
+    setTreeBlock(data,ox,oz, fx, fy, fz, FARMLAND, false);
+    if((dx+dz)&1) setTreeBlock(data,ox,oz, fx, fy+1, fz, WHEAT_S3, false);
+  }
+}
+function buildVillageHouse(data, ox, oz, ax, az, hasLoot){
+  const base=terrainHeight(ax,az);
+  if(base<=WATER_LEVEL+1 || base>WATER_LEVEL+30) return;
+  const W=3;
+  for(let dz=-W;dz<=W;dz++) for(let dx=-W;dx<=W;dx++){
+    setTreeBlock(data,ox,oz, ax+dx, base, az+dz, WOOD, false);
+    const edge=(Math.abs(dx)===W||Math.abs(dz)===W);
+    if(edge){
+      for(let h=1;h<=3;h++) setTreeBlock(data,ox,oz, ax+dx, base+h, az+dz, (h===3?LOG:COBBLE), false);
+      // 2 Glasfenster an gegenueberliegenden Seiten
+      if((dx===W && dz===0)||(dx===-W && dz===0)) setTreeBlock(data,ox,oz, ax+dx, base+2, az+dz, GLASS, false);
+    }
+  }
+  setTreeBlock(data,ox,oz, ax, base+1, az+W, DOOR_CLOSED, false);
+  setTreeBlock(data,ox,oz, ax, base+2, az+W, AIR, false);
+  for(let dz=-W;dz<=W;dz++) for(let dx=-W;dx<=W;dx++) setTreeBlock(data,ox,oz, ax+dx, base+4, az+dz, WOOD, false);
+  setTreeBlock(data,ox,oz, ax, base+3, az, LANTERN, false);
+  if(hasLoot){ setTreeBlock(data,ox,oz, ax+1, base+1, az-1, CHEST, false); lootChests.add((ax+1)+'_'+(base+1)+'_'+(az-1)); }
 }
 function buildHut(data,ox,oz,ax,az){
   const base=terrainHeight(ax,az);
@@ -1461,7 +1593,12 @@ const KIND_LIST = [
   'tnt_top','tnt_side','lantern','soul_lantern','campfire_top','bookshelf','barrel_top','barrel_side',
   'stonecutter_top','stonecutter_side','farmland','wheat0','wheat1','wheat2','wheat3','sapling',
   'ice','kelp','coral','snow_layer','fire','composter','brewing','enderchest','grindstone_top',
-  'rail','powered_rail','end_frame','end_portal','end_stone','purpur','beacon','dragon_egg','sugarcane'
+  'rail','powered_rail','end_frame','end_portal','end_stone','purpur','beacon','dragon_egg','sugarcane',
+  // Roadmap v3
+  'iron_block','gold_block','diamond_block','coal_block','redstone_block',
+  'pumpkin_top','pumpkin_side','jack_face','slime','hay_top','hay_side',
+  'emerald_ore','emerald_block',
+  'door_closed','door_open','trapdoor'
 ];
 
 function hashStr(s){ let h=2166136261>>>0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
@@ -1574,6 +1711,7 @@ function paintTile(ctx, kind, ts, ox, oy){
     case 'iron_ore':    return ore(ctx,ox,oy,ts,rng,0xd8c0a8,0.6);
     case 'gold_ore':    return ore(ctx,ox,oy,ts,rng,0xf2d24a,0.6);
     case 'diamond_ore': return ore(ctx,ox,oy,ts,rng,0x6fdfe6,0.65);
+    case 'emerald_ore': return ore(ctx,ox,oy,ts,rng,0x30c060,0.6);
     case 'furnace_top': {
       noiseFill(ctx,ox,oy,ts,rng,0x5c5c62,0.1);
       const c=(ts*0.28)|0, sz=(ts*0.44)|0; rect(ctx,ox,oy,c,c,sz,sz,shadeHex(0x2a2a30,1.0));
@@ -1736,6 +1874,22 @@ function paintTile(ctx, kind, ts, ox, oy){
     case 'beacon': { noiseFill(ctx,ox,oy,ts,rng,0x6fe0e0,0.1); const c=(ts/2)|0; rect(ctx,ox,oy,c-Math.round(ts*0.2),c-Math.round(ts*0.2),Math.round(ts*0.4),Math.round(ts*0.4),shadeHex(0xffffff,1.4)); break; }
     case 'dragon_egg': { noiseFill(ctx,ox,oy,ts,rng,0x140e1f,0.15); for(let i=0;i<Math.round(5*s);i++) px(ctx,ox,oy,(rng()*ts)|0,(rng()*ts)|0,shadeHex(0x5a3a7a,1.3)); break; }
     case 'sugarcane': { ctx.clearRect(ox,oy,ts,ts); const c=(ts/2)|0; for(let y=0;y<ts;y++) { px(ctx,ox,oy,c,y,shadeHex(0x8ac060,0.85+rng()*0.25)); px(ctx,ox,oy,c+1,y,shadeHex(0x6a9a40,1.0)); } for(let y=Math.round(ts*0.3);y<ts;y+=Math.round(ts*0.3)) px(ctx,ox,oy,c,y,shadeHex(0x4a6a2a,1.0)); break; }
+    // ---- Roadmap v3 ----
+    case 'iron_block': { noiseFill(ctx,ox,oy,ts,rng,0xe6e8ec,0.04); rect(ctx,ox,oy,1,1,ts-2,Math.max(1,Math.round(ts*0.06)),shadeHex(0xffffff,1.0)); rect(ctx,ox,oy,1,1,Math.max(1,Math.round(ts*0.06)),ts-2,shadeHex(0xffffff,1.0)); rect(ctx,ox,oy,1,ts-2,ts-2,Math.max(1,Math.round(ts*0.06)),shadeHex(0xb8c0c8,1.0)); break; }
+    case 'gold_block': { noiseFill(ctx,ox,oy,ts,rng,0xf2d24a,0.06); rect(ctx,ox,oy,1,1,ts-2,Math.max(1,Math.round(ts*0.06)),shadeHex(0xfff0a0,1.0)); rect(ctx,ox,oy,1,ts-2,ts-2,Math.max(1,Math.round(ts*0.06)),shadeHex(0xc09020,1.0)); break; }
+    case 'diamond_block': { noiseFill(ctx,ox,oy,ts,rng,0x52c7cf,0.08); for(let i=0;i<Math.round(6*s*s);i++){ const x=(rng()*ts)|0,y=(rng()*ts)|0; rect(ctx,ox,oy,x,y,Math.max(1,Math.round(ts*0.12)),Math.max(1,Math.round(ts*0.12)),shadeHex(0xa0f0f8,1.4)); } break; }
+    case 'coal_block': { noiseFill(ctx,ox,oy,ts,rng,0x202024,0.18); specks(ctx,ox,oy,ts,rng,0x000000,Math.round(6*s),Math.max(1,s|0),0.5,0.7); break; }
+    case 'redstone_block': { noiseFill(ctx,ox,oy,ts,rng,0xc83020,0.14); specks(ctx,ox,oy,ts,rng,0xff5040,Math.round(8*s),Math.max(1,s|0),0.85,1.3); break; }
+    case 'pumpkin_top': { noiseFill(ctx,ox,oy,ts,rng,0xb07820,0.06); const c=(ts/2)|0; rect(ctx,ox,oy,c-1,c-Math.round(ts*0.2),3,Math.round(ts*0.4),shadeHex(0x5a4020,1.0)); break; }
+    case 'pumpkin_side': { noiseFill(ctx,ox,oy,ts,rng,0xc88a2a,0.08); for(let i=0;i<3;i++){ const x=Math.round(ts*(0.2+i*0.3)); for(let y=0;y<ts;y++) px(ctx,ox,oy,x,y,shadeHex(0x8a5818,1.0)); } break; }
+    case 'jack_face': { paintTile(ctx,'pumpkin_side',ts,ox,oy); const c=(ts/2)|0; rect(ctx,ox,oy,c-Math.round(ts*0.28),c-Math.round(ts*0.12),Math.round(ts*0.16),Math.round(ts*0.16),shadeHex(0xffd24a,1.5)); rect(ctx,ox,oy,c+Math.round(ts*0.12),c-Math.round(ts*0.12),Math.round(ts*0.16),Math.round(ts*0.16),shadeHex(0xffd24a,1.5)); for(let x=-Math.round(ts*0.22);x<=Math.round(ts*0.22);x++) px(ctx,ox,oy,c+x, c+Math.round(ts*0.18), shadeHex(0xffd24a,1.5)); break; }
+    case 'slime': { noiseFill(ctx,ox,oy,ts,rng,0x6acf6a,0.18); for(let i=0;i<Math.round(8*s);i++){ const x=(rng()*ts)|0,y=(rng()*ts)|0; px(ctx,ox,oy,x,y,shadeHex(0x9ae09a,1.4)); } break; }
+    case 'hay_top': { noiseFill(ctx,ox,oy,ts,rng,0xb09530,0.08); const c=(ts/2)|0; for(let i=-1;i<=1;i++) for(let j=-1;j<=1;j++) px(ctx,ox,oy,c+i,c+j,shadeHex(0x705a20,1.0)); break; }
+    case 'hay_side': { for(let y=0;y<ts;y++){ const f=0.85+0.15*Math.sin(y*1.5); for(let x=0;x<ts;x++) px(ctx,ox,oy,x,y,shadeHex(0xd9c060,f*(1+(rng()*2-1)*0.06))); } for(let y=Math.round(ts*0.15);y<ts;y+=Math.max(2,Math.round(ts*0.35))) rect(ctx,ox,oy,0,y,ts,Math.max(1,Math.round(ts*0.06)),shadeHex(0x705a20,1.0)); break; }
+    case 'emerald_block': { noiseFill(ctx,ox,oy,ts,rng,0x2aa050,0.05); const s=Math.max(2,Math.round(ts*0.18)); for(let i=0;i<5;i++){ const x=(rng()*(ts-s))|0, y=(rng()*(ts-s))|0; rect(ctx,ox,oy,x,y,s,s,shadeHex(0x4be090,1.0)); rect(ctx,ox,oy,x,y,s,1,shadeHex(0xa0ffc0,1.0)); } break; }
+    case 'door_closed': { noiseFill(ctx,ox,oy,ts,rng,0x8a5a32,0.06); const py=Math.round(ts*0.5); rect(ctx,ox,oy,1,1,ts-2,Math.max(1,Math.round(ts*0.05)),shadeHex(0x5a3520,1.0)); rect(ctx,ox,oy,1,py,ts-2,Math.max(1,Math.round(ts*0.05)),shadeHex(0x5a3520,1.0)); rect(ctx,ox,oy,Math.round(ts*0.7),Math.round(ts*0.45),Math.max(2,Math.round(ts*0.12)),Math.max(2,Math.round(ts*0.12)),shadeHex(0xd4af37,1.0)); break; }
+    case 'door_open':   { noiseFill(ctx,ox,oy,ts,rng,0x8a5a32,0.06); rect(ctx,ox,oy,Math.round(ts*0.42),0,Math.max(2,Math.round(ts*0.15)),ts,shadeHex(0x5a3520,1.0)); break; }
+    case 'trapdoor':    { noiseFill(ctx,ox,oy,ts,rng,0x8a5a32,0.06); const s=Math.max(1,Math.round(ts*0.05)); rect(ctx,ox,oy,1,1,ts-2,s,shadeHex(0x5a3520,1.0)); rect(ctx,ox,oy,1,ts-2,ts-2,s,shadeHex(0x5a3520,1.0)); rect(ctx,ox,oy,1,1,s,ts-2,shadeHex(0x5a3520,1.0)); rect(ctx,ox,oy,ts-2,1,s,ts-2,shadeHex(0x5a3520,1.0)); rect(ctx,ox,oy,Math.round(ts*0.7),Math.round(ts*0.45),Math.max(2,Math.round(ts*0.12)),Math.max(2,Math.round(ts*0.12)),shadeHex(0xd4af37,1.0)); break; }
     default: { noiseFill(ctx,ox,oy,ts,rng,0x888d92,0.12); }
   }
 }
@@ -1801,6 +1955,16 @@ const TEX = {
   [RAIL]:'rail', [POWERED_RAIL]:'powered_rail',
   [END_PORTAL_FRAME]:{top:'end_frame',side:'end_stone',bottom:'end_stone'}, [END_PORTAL]:'end_portal',
   [END_STONE]:'end_stone', [PURPUR]:'purpur', [BEACON]:'beacon', [DRAGON_EGG]:'dragon_egg', [SUGARCANE]:'sugarcane',
+  // Roadmap v3
+  [IRON_BLOCK]:'iron_block', [GOLD_BLOCK]:'gold_block', [DIAMOND_BLOCK]:'diamond_block',
+  [COAL_BLOCK]:'coal_block', [REDSTONE_BLOCK]:'redstone_block',
+  [PUMPKIN]:{top:'pumpkin_top',side:'pumpkin_side',bottom:'pumpkin_top'},
+  [JACK_O_LANTERN]:{top:'pumpkin_top',side:'jack_face',bottom:'pumpkin_top'},
+  [SLIME_BLOCK]:'slime',
+  [HAY_BLOCK]:{top:'hay_top',side:'hay_side',bottom:'hay_top'},
+  [EMERALD_ORE]:'emerald_ore', [EMERALD_BLOCK]:'emerald_block',
+  [DOOR_CLOSED]:'door_closed', [DOOR_OPEN]:'door_open',
+  [TRAPDOOR_CLOSED]:'trapdoor', [TRAPDOOR_OPEN]:'trapdoor',
 };
 const ATLAS_N = Math.ceil(Math.sqrt(KIND_LIST.length));
 const KIND_INDEX = {}; KIND_LIST.forEach((k,i)=>{ KIND_INDEX[k]=i; });
@@ -2244,7 +2408,16 @@ function updatePlayer(dt){
   moveAxis(0,player.vx*dt); moveAxis(2,player.vz*dt);
   const impactVy=player.vy;
   moveAxis(1,player.vy*dt);
-  if(player.onGround && impactVy<-16 && !gliding){ const dmg=Math.floor((-impactVy-16)/3); if(dmg>0) damagePlayer(dmg); }
+  // Slime-Block: kein Fallschaden + Rueckprall
+  let onSlime=false;
+  if(player.onGround && impactVy<-0.5){
+    const sb=world.getBlock(Math.floor(player.x), Math.floor(player.y-0.05), Math.floor(player.z));
+    if(sb===SLIME_BLOCK){
+      onSlime=true;
+      if(impactVy<-3){ player.vy = -impactVy*0.78; player.onGround=false; SFX.ui&&SFX.ui(); }
+    }
+  }
+  if(player.onGround && impactVy<-16 && !gliding && !onSlime){ const dmg=Math.floor((-impactVy-16)/3); if(dmg>0) damagePlayer(dmg); }
 
   // Schritte + Landung
   const _hsp=Math.hypot(player.vx,player.vz);
@@ -2374,8 +2547,19 @@ function doPlace(){
   if(tb===BEACON){ openBeacon(); return; }
   if(tb===CAMPFIRE){ cookOnCampfire(); return; }
   if(isLever(tb)){ toggleLever(h.x,h.y,h.z); return; }
-  // Pferd reiten (nicht beim Fuettern mit Weizen)
-  { const sel0=inv[selectedSlot]; if(!(sel0&&sel0.id===WHEAT)){ const mh=mobInView(4.5); if(mh){ const m=mobsMap.get(mh.id); if(m&&m.kind==='horse'&&m.local){ if(mountedHorse===mh.id) dismountHorse(); else mountHorse(mh.id); return; } } } }
+  if(tb===DOOR_CLOSED||tb===DOOR_OPEN){ world.setBlock(h.x,h.y,h.z, tb===DOOR_CLOSED?DOOR_OPEN:DOOR_CLOSED); SFX.ui(); return; }
+  if(tb===TRAPDOOR_CLOSED||tb===TRAPDOOR_OPEN){ world.setBlock(h.x,h.y,h.z, tb===TRAPDOOR_CLOSED?TRAPDOOR_OPEN:TRAPDOOR_CLOSED); SFX.ui(); return; }
+  // Pferd reiten (nicht beim Fuettern mit Weizen). Sattel anlegen oder reiten falls schon gesattelt.
+  { const sel0=inv[selectedSlot]; if(!(sel0&&sel0.id===WHEAT)){ const mh=mobInView(4.5); if(mh){ const m=mobsMap.get(mh.id); if(m&&m.kind==='horse'&&m.local){
+    if(mountedHorse===mh.id){ dismountHorse(); return; }
+    if(!m.saddled){
+      if(sel0 && sel0.id===SADDLE){ m.saddled=true; consumeSelected(1); flashMsg('🐎 Sattel angelegt'); SFX.ui(); mountHorse(mh.id); return; }
+      flashMsg('Pferd braucht einen Sattel'); return;
+    }
+    mountHorse(mh.id); return;
+  } } } }
+  // Dorfbewohner: Tauschhandel (Emeralden)
+  { const mh=mobInView(4.5); if(mh){ const m=mobsMap.get(mh.id); if(m&&m.kind==='villager'){ tradeWithVillager(m); return; } } }
   const s=inv[selectedSlot]; if(!s) return;
   // Komposter: kompostierbares Item einwerfen
   if(tb===COMPOSTER && COMPOSTABLE.has(s.id)){ fillComposter(h.x,h.y,h.z); return; }
@@ -3012,8 +3196,11 @@ const MOB_DEF = {
   ender_dragon:{ hostile:true, hw:2.0, hh:1.2, fly:true, boss:true },
   wither:  { hostile:true,  hw:0.9,  hh:1.8,  fly:true, boss:true },
   end_crystal:{ hostile:true, hw:0.6, hh:1.2, fly:true },
+  slime:       { hostile:true,  hw:0.45, hh:0.9 },
+  slime_small: { hostile:true,  hw:0.25, hh:0.5 },
+  villager:    { hostile:false, hw:0.4,  hh:1.0 },
 };
-const MOB_HP_MAX = { cow:8, sheep:6, chicken:4, pig:8, zombie:10, skeleton:8, creeper:10, spider:9, enderman:20, wolf:8, horse:15, ghast:10, blaze:12, ender_dragon:120, wither:80, end_crystal:5 }; // muss zum Server passen
+const MOB_HP_MAX = { cow:8, sheep:6, chicken:4, pig:8, zombie:10, skeleton:8, creeper:10, spider:9, enderman:20, wolf:8, horse:15, ghast:10, blaze:12, ender_dragon:120, wither:80, end_crystal:5, slime:8, slime_small:3, villager:10 }; // muss zum Server passen
 function makeMobModel(kind){
   const g=new THREE.Group(); const legs=[], arms=[];
   if(kind==='zombie' || kind==='skeleton'){
@@ -3109,6 +3296,29 @@ function makeMobModel(kind){
     const cr=boxMesh(0.5,0.5,0.5, 0xe0a0ff, 0,1.2,0); cr.rotation.set(0.4,0.4,0); g.add(cr);
     g.add(boxMesh(0.7,0.2,0.7, 0x6a3a8a, 0,0.3,0));          // Sockel (Grundgestein-Look)
     legs.push(cr);
+  } else if(kind==='villager'){
+    const robe=0x6f4a2e, skin=0xc9a07a, apron=0x8a5a3a;
+    g.add(boxMesh(0.5,0.95,0.34, robe, 0,1.0,0));            // Robe
+    g.add(boxMesh(0.5,0.18,0.34, apron, 0,0.55,0));          // Schuerze
+    g.add(boxMesh(0.5,0.5,0.5, skin, 0,1.72,0));             // Kopf
+    g.add(boxMesh(0.18,0.22,0.06, skin, 0,1.66,0.26));       // Nase (gross)
+    g.add(boxMesh(0.1,0.08,0.02, 0x101014, -0.12,1.78,0.26));// Augen
+    g.add(boxMesh(0.1,0.08,0.02, 0x101014,  0.12,1.78,0.26));
+    g.add(boxMesh(0.14,0.65,0.14, robe, -0.32,1.05,0));      // Arme zusammen (Standmodell)
+    g.add(boxMesh(0.14,0.65,0.14, robe,  0.32,1.05,0));
+    const lL=legPivot(0.16,0.6,0.16, 0x3a2a18, -0.12,0.6,0);
+    const lR=legPivot(0.16,0.6,0.16, 0x3a2a18,  0.12,0.6,0);
+    g.add(lL); g.add(lR); legs.push(lL,lR);
+  } else if(kind==='slime' || kind==='slime_small'){
+    const sz = kind==='slime' ? 0.9 : 0.5;
+    const body=boxMesh(sz,sz,sz, 0x6acf6a, 0, sz*0.5, 0);
+    if(body.material){ body.material.transparent=true; body.material.opacity=0.78; }
+    g.add(body);
+    g.add(boxMesh(sz*0.6,sz*0.5,sz*0.6, 0x4eaa4e, 0, sz*0.5, 0)); // dunkler Kern
+    g.add(boxMesh(sz*0.14,sz*0.12,0.02, 0x101510, -sz*0.18, sz*0.62, sz*0.45)); // Augen
+    g.add(boxMesh(sz*0.14,sz*0.12,0.02, 0x101510,  sz*0.18, sz*0.62, sz*0.45));
+    g.add(boxMesh(sz*0.22,sz*0.06,0.02, 0x101510, 0, sz*0.36, sz*0.45));        // Mund
+    legs.push(body);
   } else if(kind==='chicken'){
     g.add(boxMesh(0.34,0.36,0.46, 0xf2f2ec, 0,0.5,0));        // Koerper
     g.add(boxMesh(0.26,0.28,0.26, 0xf6f6f0, 0,0.82,0.16));    // Kopf
@@ -3205,6 +3415,9 @@ const MOB_DROP = {
   wither:  [{id:NETHER_STAR, min:1, max:1}],
   ender_dragon:[],
   end_crystal:[],
+  slime:       [{id:SLIME_BALL, min:0, max:2}],
+  slime_small: [{id:SLIME_BALL, min:0, max:1}],
+  villager:    [{id:EMERALD,    min:0, max:1}],
 };
 function rollDrops(kind){
   const tbl=MOB_DROP[kind]; if(!tbl) return;
@@ -3269,9 +3482,20 @@ function onMobDead(id){
     if(m.kind==='ender_dragon'){ unlockAch('dragon'); onDragonDead(m); }
     else if(m.kind==='wither'){ rollDrops('wither'); }
   } else if(m && t && performance.now()-t<4000){ rollDrops(m.kind);   // nur wer kurz vorher traf, kriegt Drop + XP
+    if(m.kind==='horse' && m.saddled) addItem(SADDLE,1);              // Sattel kommt mit zurueck
     spawnXPOrbs(m.group.position.x, m.group.position.y+0.6, m.group.position.z, MOB_XP[m.kind]||1);
     gameStats.mobsKilled++; unlockAch('first_kill'); }
   if(m && m.kind==='end_crystal'){ spawnExplosion(m.group.position.x, m.group.position.y, m.group.position.z); }
+  // Slime spaltet sich in 2-3 kleine Slimes
+  if(m && m.kind==='slime' && m.local){
+    const px=m.group.position.x, pz=m.group.position.z;
+    const n=2+((Math.random()*2)|0);
+    for(let i=0;i<n;i++){
+      const a=Math.random()*6.283, r=0.8;
+      const nid=spawnLocalMob('slime_small', px+Math.cos(a)*r, pz+Math.sin(a)*r);
+      const nm=mobsMap.get(nid); if(nm){ nm.hopT=0.2+Math.random()*0.3; }
+    }
+  }
   myHits.delete(id);
   removeMob(id);
 }
@@ -3382,15 +3606,15 @@ function survivalUpdate(dt, now){
 //  LOKALES MOB-SPAWNING + KI  (Solo-Modus: ohne Server gibt es sonst keine Mobs)
 //  Im Multiplayer uebernimmt der Server; diese Funktion haelt sich dann zurueck.
 // =====================================================================
-let localMobSeq = 1, _mobSpawnTimer = 1.5;
-const LOCAL_PASSIVE = ['cow','sheep','chicken','pig','horse','wolf'];
+let localMobSeq = 1, _mobSpawnTimer = 1.5, _slimeSpawnTimer = 6;
+const LOCAL_PASSIVE = ['cow','sheep','chicken','pig','horse','wolf','villager'];
 const LOCAL_HOSTILE = ['zombie','skeleton','creeper','spider'];
 function localMobCount(hostile){ let n=0; for(const [,m] of mobsMap) if(m.local && m.hostile===hostile) n++; return n; }
 function spawnLocalMob(kind, x, z){
   const id='L'+(localMobSeq++);
   addMob({ id, kind, x, z, dir:Math.random()*6.283 });
   const m=mobsMap.get(id);
-  if(m){ m.local=true; m.vx=0; m.vz=0; m.wanderT=0; m.moving=false; m.love=0; m.loveCd=0; m.baby=false; m.tame=false; }
+  if(m){ m.local=true; m.vx=0; m.vz=0; m.wanderT=0; m.moving=false; m.love=0; m.loveCd=0; m.baby=false; m.tame=false; m.saddled=false; }
   return id;
 }
 // Sucht einen Spawn-Punkt in 16-36 Bloecken Abstand: offener Himmel, fester Boden, 2 Bloecke Luft drueber.
@@ -3413,6 +3637,20 @@ function updateLocalMobs(dt, now){
     if(localMobCount(false)<8){ const sp=trySpawnPoint(); if(sp && (sp.ground===GRASS||sp.ground===SNOW)) spawnLocalMob(LOCAL_PASSIVE[(Math.random()*LOCAL_PASSIVE.length)|0], sp.x, sp.z); }
     if(night && localMobCount(true)<11){ const sp=trySpawnPoint(); if(sp){ const d=Math.hypot(sp.x-player.x, sp.z-player.z); if(d>11) spawnLocalMob(LOCAL_HOSTILE[(Math.random()*LOCAL_HOSTILE.length)|0], sp.x, sp.z); } }
   }
+  // Slimes spawnen in tiefen Bloecken (y<40) ODER nachts in Wiesen, eher selten
+  _slimeSpawnTimer-=dt;
+  if(_slimeSpawnTimer<=0){
+    _slimeSpawnTimer = 6 + Math.random()*8;
+    if(localMobCount(true)<14){
+      const sp=trySpawnPoint();
+      if(sp){
+        const yh=terrainHeight(Math.floor(sp.x), Math.floor(sp.z));
+        const ok = (yh<40 && Math.random()<0.7) || (isNightTime() && Math.random()<0.18);
+        if(ok && Math.hypot(sp.x-player.x, sp.z-player.z)>12) spawnLocalMob('slime', sp.x, sp.z);
+      }
+    }
+  }
+  const night=isNightTime();
   for(const [id,m] of mobsMap){
     if(!m.local || m.ridden) continue;
     const p=m.group.position;
@@ -3420,7 +3658,20 @@ function updateLocalMobs(dt, now){
     if(dist>74){ removeMob(id); continue; }                              // weit weg -> verschwindet
     if(m.loveCd>0) m.loveCd=Math.max(0,m.loveCd-dt);
     if(m.hostile){
-      if(!night && dist>22 && Math.random()<0.03){ removeMob(id); continue; }  // tagsueber nach und nach despawnen
+      if(!night && dist>22 && Math.random()<0.03 && m.kind!=='slime' && m.kind!=='slime_small'){ removeMob(id); continue; }  // tagsueber nach und nach despawnen
+      if(m.kind==='slime' || m.kind==='slime_small'){
+        // Slime: huepft in Schueben Richtung Spieler. Boden-Geschw. nur waehrend Spruengen.
+        m.hopT=(m.hopT||0)-dt;
+        if(!m.airborne){ m.vx=0; m.vz=0; }
+        if(m.hopT<=0 && !m.airborne){
+          m.hopT = 0.9 + Math.random()*0.6;
+          m.dir = dist<14 ? Math.atan2(dx,dz) : Math.random()*6.283;
+          const sp = m.kind==='slime' ? 2.2 : 1.4;
+          m.vx = Math.sin(m.dir)*sp; m.vz = Math.cos(m.dir)*sp;
+          m.airborne=true; m.bounceVy = m.kind==='slime' ? 5.2 : 4.0;
+        }
+        continue;
+      }
       if(dist<26){
         m.dir=Math.atan2(dx,dz);
         if(dist>1.3){ const sp=m.kind==='spider'?3.4:2.5; m.vx=Math.sin(m.dir)*sp; m.vz=Math.cos(m.dir)*sp; }
@@ -3468,6 +3719,22 @@ function updateMobs(dt){
     p.x+=ndx; p.z+=ndz;
     if(m.local){ m.tx=p.x; m.tz=p.z; }
     if(m.fly){ p.y += (m.vy||0)*dt; }                    // fliegende Mobs: eigene Hoehe
+    else if(m.kind==='slime' || m.kind==='slime_small'){
+      // Slime-Sprung: vertikale Geschwindigkeit + Bodenkontakt
+      const gy=mobGroundY(p.x,p.z);
+      if(m.airborne){
+        p.y += (m.bounceVy||0)*dt; m.bounceVy = (m.bounceVy||0) - 16*dt;
+        if(p.y<=gy){ p.y=gy; m.airborne=false; m.bounceVy=0; m.vx=0; m.vz=0; }
+      } else p.y = gy;
+      // Squash/Stretch
+      const ph = m.airborne ? Math.max(0, Math.min(1, (m.bounceVy+4)/9)) : 0;
+      m.group.scale.set(1+ph*0.18, 1-ph*0.22, 1+ph*0.18);
+      // Spielerschaden bei Beruehrung
+      const _nw=performance.now();
+      if(Math.hypot(p.x-player.x, p.z-player.z)<m.hw+0.4 && Math.abs(p.y-player.y)<1.4 && (_nw-(m.lastAttack||0)>900)){
+        m.lastAttack=_nw; damagePlayer(m.kind==='slime'?2:1);
+      }
+    }
     else p.y = mobGroundY(p.x, p.z);
     m.group.rotation.y = m.dir;
     // Lauf-Animation: Beine schwingen gegenphasig, Staerke nach Tempo
@@ -3561,6 +3828,8 @@ function poofColor(kind){
   if(kind==='cow') return 0x5a4632;
   if(kind==='sheep') return 0xe8e8e0;
   if(kind==='chicken') return 0xf2f2ec;
+  if(kind==='slime' || kind==='slime_small') return 0x6acf6a;
+  if(kind==='villager') return 0x6f4a2e;
   return 0xcccccc;
 }
 function spawnPoof(x,y,z,kind){
@@ -3731,7 +4000,7 @@ function addXP(n){
   while(xp>=xpForLevel(xpLevel)){ xp-=xpForLevel(xpLevel); xpLevel++; SFX.levelup(); }
   renderXP();
 }
-const MOB_XP = { cow:1, sheep:1, chicken:1, pig:1, zombie:5, skeleton:5, creeper:5, spider:5, enderman:10, wolf:0, horse:0, ghast:5, blaze:10, ender_dragon:500, wither:50, end_crystal:0 };
+const MOB_XP = { cow:1, sheep:1, chicken:1, pig:1, zombie:5, skeleton:5, creeper:5, spider:5, enderman:10, wolf:0, horse:0, ghast:5, blaze:10, ender_dragon:500, wither:50, end_crystal:0, slime:4, slime_small:1, villager:2 };
 const ORE_XP = { [COAL_ORE]:1, [COPPER_ORE]:1, [IRON_ORE]:2, [GOLD_ORE]:3, [DIAMOND_ORE]:5 };
 // Schwebende XP-Kuegelchen, die zum Spieler fliegen und dort gutgeschrieben werden
 const xpOrbs=[];
@@ -3948,6 +4217,32 @@ function clearLocalMobs(){ if(mountedHorse) dismountHorse(); for(const [id,m] of
 let mountedHorse=null;
 function mountHorse(id){ const m=mobsMap.get(id); if(!m) return; mountedHorse=id; m.ridden=true; m.vx=m.vz=0; flashMsg('🐎 Du reitest jetzt (Shift zum Absteigen)'); SFX.ui(); }
 function dismountHorse(){ const m=mobsMap.get(mountedHorse); if(m) m.ridden=false; mountedHorse=null; flashMsg('Abgestiegen'); }
+// ---- Villager: einfacher Tauschhandel (Item gegen Smaragd oder umgekehrt) ----
+const VILLAGER_TRADES = [
+  { give:WHEAT,        n:10, get:EMERALD, gn:1, label:'10 Weizen' },
+  { give:RAW_FISH,     n:6,  get:EMERALD, gn:1, label:'6 rohe Fische' },
+  { give:COAL,         n:8,  get:EMERALD, gn:1, label:'8 Kohle' },
+  { give:LEATHER,      n:4,  get:EMERALD, gn:1, label:'4 Leder' },
+  { give:PUMPKIN,      n:4,  get:EMERALD, gn:1, label:'4 Kuerbisse' },
+  { give:EMERALD,      n:1,  get:BREAD,   gn:3, label:'1 Smaragd', back:true },
+  { give:EMERALD,      n:2,  get:ARROW_ITEM, gn:8, label:'2 Smaragde', back:true },
+  { give:EMERALD,      n:5,  get:IRON_INGOT, gn:1, label:'5 Smaragde', back:true },
+];
+function tradeWithVillager(m){
+  if(!m.trade){ m.trade = VILLAGER_TRADES[(Math.random()*VILLAGER_TRADES.length)|0]; m.tradeUses=0; }
+  const t=m.trade;
+  if(m.tradeUses>=8){ flashMsg('Dorfbewohner ist ausverkauft 😴'); SFX.ui(); return; }
+  if(countItem(t.give)>=t.n){
+    removeItem(t.give, t.n); addItem(t.get, t.gn); m.tradeUses++;
+    SFX.pickup(); addXP(2); spawnHeartParticles(m.group.position.x, m.group.position.y+1.6, m.group.position.z);
+    flashMsg('🟢 Getauscht: '+t.label+' → '+t.gn+'× '+(thing(t.get)?.name||'?'));
+    unlockAch('trader');
+  } else {
+    const wantName = thing(t.give)?.name || '?';
+    flashMsg('💬 Möchte '+t.label+' für '+t.gn+'× '+(thing(t.get)?.name||'?'));
+    SFX.ui();
+  }
+}
 // ---- Lore / Schienen-Fahrt ----
 let mountedCart=false, cartSpeed=0; const cartDir={x:0,z:1};
 function boardCart(rx,ry,rz){
@@ -4150,7 +4445,8 @@ function floodWater(sx,sy,sz){
 function fillLoot(arr,key){
   const rnd=mulberry32(hashStr(key));
   const pool=[ {id:IRON_INGOT,min:1,max:4},{id:COAL,min:1,max:6},{id:GOLD_INGOT,min:0,max:2},{id:DIAMOND,min:0,max:2},
-               {id:COOKED_BEEF,min:0,max:3},{id:ARROW_ITEM,min:0,max:8},{id:BONE,min:0,max:4},{id:LEATHER,min:0,max:3} ];
+               {id:COOKED_BEEF,min:0,max:3},{id:ARROW_ITEM,min:0,max:8},{id:BONE,min:0,max:4},{id:LEATHER,min:0,max:3},
+               {id:SADDLE,min:0,max:1},{id:APPLE,min:0,max:2},{id:WHEAT_SEEDS,min:0,max:3},{id:BOOK,min:0,max:2} ];
   let slot=0;
   for(const p of pool){ if(rnd()<0.6){ const n=p.min+Math.floor(rnd()*(p.max-p.min+1)); if(n>0 && slot<CHEST_SIZE){ arr[slot++]={id:p.id,count:n}; } } }
 }
@@ -4461,6 +4757,7 @@ const ACHIEVEMENTS = {
   enchanter:  { name:'Magier', desc:'Ein Item verzaubert' },
   fisher:     { name:'Angler', desc:'Einen Fisch gefangen' },
   brewer:     { name:'Alchemist', desc:'Einen Trank gebraut' },
+  trader:     { name:'Händler', desc:'Mit einem Dorfbewohner getauscht' },
 };
 const achToastEl=document.getElementById('achToast');
 let _achTimer=null;
@@ -4529,10 +4826,54 @@ function updateEffectsHUD(){
   if(effectsEl.innerHTML!==h) effectsEl.innerHTML=h;
 }
 
+// ---- Klima: Wasser gefriert, Schnee schichtet sich auf (kalte Biome) ----
+let _climateT=0;
+function tickClimate(dt){
+  if(dimension!==0) return;
+  _climateT-=dt; if(_climateT>0) return; _climateT=2.5;             // alle ~2.5s scannen
+  const snowing = (weather==='rain'||weather==='thunder');
+  const px=Math.floor(player.x), pz=Math.floor(player.z), R=14;
+  for(let i=0;i<24;i++){                                            // 24 zufaellige Spalten pro Tick
+    const x=px+((Math.random()*(R*2+1))|0)-R, z=pz+((Math.random()*(R*2+1))|0)-R;
+    if(!isCold(x,z)) continue;
+    let y=110; while(y>WATER_LEVEL-4 && world.getBlock(x,y,z)===AIR) y--;
+    const b=world.getBlock(x,y,z);
+    if(b===WATER){ if(world.getBlock(x,y+1,z)===AIR && Math.random()<0.35) world.setBlock(x,y,z,ICE); continue; }
+    if(!snowing) continue;
+    if(b===AIR||b===LEAVES||b===ICE||b===SNOW_LAYER||b===FIRE) continue;
+    if(world.getBlock(x,y+1,z)===AIR && Math.random()<0.5) world.setBlock(x,y+1,z,SNOW_LAYER);
+  }
+}
+
+// ---- Zuckerrohr waechst bis 3 Bloecke ----
+let _caneT=0;
+function tickSugarcane(dt){
+  if(dimension!==0) return;
+  _caneT-=dt; if(_caneT>0) return; _caneT=4;                        // alle ~4s scannen
+  const px=Math.floor(player.x), pz=Math.floor(player.z), R=12;
+  for(let i=0;i<10;i++){
+    const x=px+((Math.random()*(R*2+1))|0)-R, z=pz+((Math.random()*(R*2+1))|0)-R;
+    let baseY=-1;
+    for(let y=WATER_LEVEL-2; y<WATER_LEVEL+30; y++){ if(world.getBlock(x,y,z)===SUGARCANE){ baseY=y; break; } }
+    if(baseY<0) continue;
+    let top=baseY; while(world.getBlock(x,top+1,z)===SUGARCANE) top++;
+    const h=top-baseY+1;
+    if(h>=3) continue;
+    if(world.getBlock(x,top+1,z)!==AIR) continue;
+    const bb=world.getBlock(x,baseY-1,z);
+    if(bb!==GRASS && bb!==DIRT && bb!==SAND) continue;
+    let nearWater=false;
+    for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]) if(world.getBlock(x+dx,baseY,z+dz)===WATER){ nearWater=true; break; }
+    if(!nearWater) continue;
+    if(Math.random()<0.45) world.setBlock(x,top+1,z,SUGARCANE);
+  }
+}
+
 // ---- zentraler Tick fuer alle v2-Systeme ----
 function tickV2(dt){
   tickTNT(dt); tickFire(dt); tickCrops(dt); tickSaplings(dt); tickFishing(dt);
   tickBuffs(dt); updateWeather(dt); tickBeacons();
+  tickClimate(dt); tickSugarcane(dt);
   updateMinimap(dt); updateEffectsHUD();
 }
 
