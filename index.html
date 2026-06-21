@@ -735,7 +735,7 @@ const POTION_HEAL=185, POTION_STRENGTH=186, POTION_SPEED=187, POTION_POISON=188;
 const NETHER_STAR=189, ELYTRA=190, SADDLE=191, SHIELD_ITEM=192, CHARCOAL=193, SUGAR_CANE=194, GHAST_TEAR=195, ENDER_EYE=196;
 const WOOD_HOE=197, STONE_HOE=198, IRON_HOE=199, MINECART=200;
 // ---- Roadmap v3 ----
-const SLIME_BALL=201, EMERALD=202, PUMPKIN_SEEDS=203;
+const SLIME_BALL=201, EMERALD=202, PUMPKIN_SEEDS=203, INK_SAC=204, SHULKER_SHELL=205;
 const ITEM = {
   [STRING]:        { name:'Faden',          color:0xe8e8e8 },
   [ENDER_PEARL]:   { name:'Enderperle',     color:0x18a08a },
@@ -771,6 +771,8 @@ const ITEM = {
   [GHAST_TEAR]:    { name:'Ghastträne',     color:0xd8e8e8 },
   [ENDER_EYE]:     { name:'Auge des Endes', color:0x30b090 },
   [MINECART]:      { name:'Lore',           color:0x9a9aa0 },
+  [INK_SAC]:       { name:'Tintenbeutel',   color:0x1a1a2a },
+  [SHULKER_SHELL]: { name:'Shulkerschale',  color:0xa87aa8 },
   [PORK_RAW]:      { name:'Rohes Schwein', color:0xe09a8a },
   [PORK_COOKED]:   { name:'Schweinebraten', color:0xb06a40 },
   [MILK_BUCKET]:   { name:'Milcheimer',     color:0xf2f2f2 },
@@ -3199,8 +3201,10 @@ const MOB_DEF = {
   slime:       { hostile:true,  hw:0.45, hh:0.9 },
   slime_small: { hostile:true,  hw:0.25, hh:0.5 },
   villager:    { hostile:false, hw:0.4,  hh:1.0 },
+  squid:       { hostile:false, hw:0.45, hh:0.55, fly:true },   // aquatisch: fly=true gibt uns manuelle Hoehensteuerung
+  shulker:     { hostile:true,  hw:0.45, hh:0.5,  fly:true },    // ortsfest an der End-Stadt, schiesst Projektile
 };
-const MOB_HP_MAX = { cow:8, sheep:6, chicken:4, pig:8, zombie:10, skeleton:8, creeper:10, spider:9, enderman:20, wolf:8, horse:15, ghast:10, blaze:12, ender_dragon:120, wither:80, end_crystal:5, slime:8, slime_small:3, villager:10 }; // muss zum Server passen
+const MOB_HP_MAX = { cow:8, sheep:6, chicken:4, pig:8, zombie:10, skeleton:8, creeper:10, spider:9, enderman:20, wolf:8, horse:15, ghast:10, blaze:12, ender_dragon:120, wither:80, end_crystal:5, slime:8, slime_small:3, villager:10, squid:6, shulker:15 }; // muss zum Server passen (squid/shulker nur lokal)
 function makeMobModel(kind){
   const g=new THREE.Group(); const legs=[], arms=[];
   if(kind==='zombie' || kind==='skeleton'){
@@ -3329,6 +3333,22 @@ function makeMobModel(kind){
     const lL=legPivot(0.06,0.25,0.06, 0xe0a020, -0.09,0.3,0);
     const lR=legPivot(0.06,0.25,0.06, 0xe0a020,  0.09,0.3,0);
     g.add(lL); g.add(lR); legs.push(lL,lR);
+  } else if(kind==='squid'){
+    const ink=0x3a4ab0, dark=0x2a3580;
+    g.add(boxMesh(0.5,0.62,0.5, ink, 0,0.9,0));               // Mantel (Koerper)
+    g.add(boxMesh(0.42,0.26,0.42, ink, 0,0.52,0));            // Kopf/Basis
+    g.add(boxMesh(0.1,0.1,0.02, 0xf0f0f0, -0.13,0.56,0.22));  // Augen weiss
+    g.add(boxMesh(0.1,0.1,0.02, 0xf0f0f0,  0.13,0.56,0.22));
+    g.add(boxMesh(0.05,0.05,0.02, 0x101018, -0.13,0.56,0.24));// Pupillen
+    g.add(boxMesh(0.05,0.05,0.02, 0x101018,  0.13,0.56,0.24));
+    for(let i=0;i<8;i++){ const a=i/8*6.283, r=0.16; const t=legPivot(0.07,0.5,0.07, dark, Math.cos(a)*r, 0.42, Math.sin(a)*r); t.rotation.x=0.4; g.add(t); legs.push(t); }  // 8 Tentakel
+  } else if(kind==='shulker'){
+    const sh=0x9a6a9a, hd=0xd8b0d8;
+    g.add(boxMesh(0.78,0.66,0.78, sh, 0,0.48,0));            // Panzer (Boden-Schale)
+    g.add(boxMesh(0.84,0.2,0.84, sh, 0,0.84,0));             // Deckel-Rand
+    g.add(boxMesh(0.42,0.42,0.42, hd, 0,0.7,0));             // Kopf lugt heraus
+    g.add(boxMesh(0.08,0.08,0.02, 0xf0e060, -0.1,0.76,0.21)); // Augen gelblich
+    g.add(boxMesh(0.08,0.08,0.02, 0xf0e060,  0.1,0.76,0.21));
   } else {
     const body = kind==='sheep'?0xe8e8e0:(kind==='pig'?0xe79a9a:0x5a4632);
     const head = kind==='sheep'?0xd8c8b0:(kind==='pig'?0xdd7e7e:0x4a3826);
@@ -3386,6 +3406,7 @@ function onMobHp(id, hp){
   const m=mobsMap.get(id); if(!m) return;
   if(typeof hp==='number') m.hp=hp;
   m.flash=0.28; m.hpShow=4.0;
+  if(m.kind==='squid') spawnPoof(m.group.position.x, m.group.position.y+0.5, m.group.position.z, 'squid'); // Tintenwolke
   if(m.kind==='enderman' && m.local && m.hp>0){   // Enderman teleportiert bei Schaden weg
     const ang=Math.random()*6.283, r=6+Math.random()*8;
     const nx=player.x+Math.cos(ang)*r, nz=player.z+Math.sin(ang)*r;
@@ -3418,6 +3439,8 @@ const MOB_DROP = {
   slime:       [{id:SLIME_BALL, min:0, max:2}],
   slime_small: [{id:SLIME_BALL, min:0, max:1}],
   villager:    [{id:EMERALD,    min:0, max:1}],
+  squid:       [{id:INK_SAC,    min:1, max:3}],
+  shulker:     [{id:SHULKER_SHELL, min:1, max:2}],
 };
 function rollDrops(kind){
   const tbl=MOB_DROP[kind]; if(!tbl) return;
@@ -3606,7 +3629,7 @@ function survivalUpdate(dt, now){
 //  LOKALES MOB-SPAWNING + KI  (Solo-Modus: ohne Server gibt es sonst keine Mobs)
 //  Im Multiplayer uebernimmt der Server; diese Funktion haelt sich dann zurueck.
 // =====================================================================
-let localMobSeq = 1, _mobSpawnTimer = 1.5, _slimeSpawnTimer = 6;
+let localMobSeq = 1, _mobSpawnTimer = 1.5, _slimeSpawnTimer = 6, _squidSpawnTimer = 4;
 const LOCAL_PASSIVE = ['cow','sheep','chicken','pig','horse','wolf','villager'];
 const LOCAL_HOSTILE = ['zombie','skeleton','creeper','spider'];
 function localMobCount(hostile){ let n=0; for(const [,m] of mobsMap) if(m.local && m.hostile===hostile) n++; return n; }
@@ -3627,6 +3650,41 @@ function trySpawnPoint(){
   if(!isSolid(ground)||ground===LEAVES) return null;
   if(isSolid(world.getBlock(xi,h+1,zi))||isSolid(world.getBlock(xi,h+2,zi))) return null;
   return { x:xi+0.5, z:zi+0.5, ground };
+}
+function localSquidCount(){ let n=0; for(const [,m] of mobsMap) if(m.local && m.kind==='squid') n++; return n; }
+// Spawn-Punkt mitten in einer tiefen Wassersaeule (Ozean) finden
+function tryWaterSpawnPoint(){
+  const ang=Math.random()*6.283, r=10+Math.random()*18;
+  const xi=Math.floor(player.x+Math.cos(ang)*r), zi=Math.floor(player.z+Math.sin(ang)*r);
+  const h=terrainHeight(xi,zi);
+  if(h >= WATER_LEVEL-2) return null;                          // nur tieferes Wasser
+  if(world.getBlock(xi, WATER_LEVEL-1, zi)!==WATER) return null;
+  const yy = h + 1.5 + Math.random()*Math.max(1,(WATER_LEVEL-2-h));
+  if(world.getBlock(xi, Math.floor(yy), zi)!==WATER) return null;
+  return { x:xi+0.5, z:zi+0.5, y:yy };
+}
+// Tintenfisch-KI: gleitet in Schueben durchs Wasser, bleibt zwischen Grund und Oberflaeche
+function updateSquidAI(m, p, dt){
+  m.swimT = (m.swimT||0) - dt;
+  if(m.swimT<=0){
+    m.swimT = 1.4 + Math.random()*2.2;
+    m.dir = Math.random()*6.283;
+    const sp = 1.0 + Math.random()*1.2;
+    m.vx = Math.sin(m.dir)*sp; m.vz = Math.cos(m.dir)*sp;
+    m.vy = (Math.random()-0.45)*1.4;                          // leichter Auf-/Ab-Schub
+  } else {
+    const damp = Math.max(0, 1 - 1.6*dt);                     // zwischen den Schueben ausgleiten
+    m.vx*=damp; m.vz*=damp; m.vy*=damp;
+  }
+  const floorY = terrainHeight(Math.floor(p.x), Math.floor(p.z));
+  const minY = floorY + 1.2, maxY = WATER_LEVEL - 0.6;        // im Wasser halten (Boden auf floorY, Wasser darueber)
+  if(p.y < minY){ p.y = minY; if(m.vy<0) m.vy =  Math.abs(m.vy)*0.5 + 0.3; }
+  if(p.y > maxY){ p.y = maxY; if(m.vy>0) m.vy = -Math.abs(m.vy)*0.5 - 0.3; }
+  // vor uns kein Wasser (Wand/Strand) -> abdrehen
+  const nx = p.x + Math.sin(m.dir)*0.7, nz = p.z + Math.cos(m.dir)*0.7;
+  if(world.getBlock(Math.floor(nx), Math.floor(p.y), Math.floor(nz)) !== WATER){
+    m.dir += 2.4; m.vx = Math.sin(m.dir)*0.8; m.vz = Math.cos(m.dir)*0.8; m.swimT = Math.min(m.swimT, 0.4);
+  }
 }
 function updateLocalMobs(dt, now){
   if(net.connected || dimension!==0) return;
@@ -3650,6 +3708,15 @@ function updateLocalMobs(dt, now){
       }
     }
   }
+  // Tintenfische unter Wasser im Ozean
+  _squidSpawnTimer-=dt;
+  if(_squidSpawnTimer<=0){
+    _squidSpawnTimer = 5 + Math.random()*6;
+    if(localSquidCount()<4){
+      const sp=tryWaterSpawnPoint();
+      if(sp){ const id=spawnLocalMob('squid', sp.x, sp.z); const sq=mobsMap.get(id); if(sq){ sq.group.position.y=sp.y; sq.tx=sp.x; sq.tz=sp.z; sq.vx=sq.vy=sq.vz=0; sq.swimT=0.6+Math.random()*1.5; } }
+    }
+  }
   const night=isNightTime();
   for(const [id,m] of mobsMap){
     if(!m.local || m.ridden) continue;
@@ -3657,6 +3724,7 @@ function updateLocalMobs(dt, now){
     const dx=player.x-p.x, dz=player.z-p.z, dist=Math.hypot(dx,dz);
     if(dist>74){ removeMob(id); continue; }                              // weit weg -> verschwindet
     if(m.loveCd>0) m.loveCd=Math.max(0,m.loveCd-dt);
+    if(m.kind==='squid'){ updateSquidAI(m, p, dt); continue; }
     if(m.hostile){
       if(!night && dist>22 && Math.random()<0.03 && m.kind!=='slime' && m.kind!=='slime_small'){ removeMob(id); continue; }  // tagsueber nach und nach despawnen
       if(m.kind==='slime' || m.kind==='slime_small'){
@@ -3741,7 +3809,12 @@ function updateMobs(dt){
     const moved=Math.hypot(ndx,ndz);
     m.phase += moved*6;
     const sw=Math.sin(m.phase)*Math.min(0.6, moved*18);
-    if(m.legs.length>=4){ m.legs[0].rotation.x=sw; m.legs[1].rotation.x=-sw; m.legs[2].rotation.x=-sw; m.legs[3].rotation.x=sw; }
+    if(m.kind==='squid'){
+      const tt=performance.now()*0.004;                                  // Tentakel wogen sanft + Koerper kippt mit der Auf/Ab-Bewegung
+      for(let i=0;i<m.legs.length;i++) m.legs[i].rotation.x = 0.4 + Math.sin(tt + i*0.7)*0.35;
+      m.group.rotation.x = Math.max(-0.5, Math.min(0.5, -(m.vy||0)*0.18));
+    }
+    else if(m.legs.length>=4){ m.legs[0].rotation.x=sw; m.legs[1].rotation.x=-sw; m.legs[2].rotation.x=-sw; m.legs[3].rotation.x=sw; }
     else if(m.legs.length>=2){ m.legs[0].rotation.x=sw; m.legs[1].rotation.x=-sw; }
     if(m.arms.length>=2){ m.arms[0].rotation.x=-1.3+sw*0.5; m.arms[1].rotation.x=-1.3-sw*0.5; }
     // Treffer-Blitz: kurz rot aufleuchten (ueber emissive der Mob-Materialien)
@@ -3830,6 +3903,8 @@ function poofColor(kind){
   if(kind==='chicken') return 0xf2f2ec;
   if(kind==='slime' || kind==='slime_small') return 0x6acf6a;
   if(kind==='villager') return 0x6f4a2e;
+  if(kind==='squid') return 0x20203a;
+  if(kind==='shulker') return 0x9a6a9a;
   return 0xcccccc;
 }
 function spawnPoof(x,y,z,kind){
@@ -4000,7 +4075,7 @@ function addXP(n){
   while(xp>=xpForLevel(xpLevel)){ xp-=xpForLevel(xpLevel); xpLevel++; SFX.levelup(); }
   renderXP();
 }
-const MOB_XP = { cow:1, sheep:1, chicken:1, pig:1, zombie:5, skeleton:5, creeper:5, spider:5, enderman:10, wolf:0, horse:0, ghast:5, blaze:10, ender_dragon:500, wither:50, end_crystal:0, slime:4, slime_small:1, villager:2 };
+const MOB_XP = { cow:1, sheep:1, chicken:1, pig:1, zombie:5, skeleton:5, creeper:5, spider:5, enderman:10, wolf:0, horse:0, ghast:5, blaze:10, ender_dragon:500, wither:50, end_crystal:0, slime:4, slime_small:1, villager:2, squid:3, shulker:5 };
 const ORE_XP = { [COAL_ORE]:1, [COPPER_ORE]:1, [IRON_ORE]:2, [GOLD_ORE]:3, [DIAMOND_ORE]:5 };
 // Schwebende XP-Kuegelchen, die zum Spieler fliegen und dort gutgeschrieben werden
 const xpOrbs=[];
@@ -4294,17 +4369,23 @@ const bossProjectiles=[];
 function spawnFlyingMob(kind,x,y,z){ const id='L'+(localMobSeq++); addMob({id,kind,x,z,dir:0}); const m=mobsMap.get(id); if(m){ m.local=true; m.fly=true; m.vx=m.vz=m.vy=0; m.group.position.y=y; m.tx=x; m.tz=z; } return id; }
 function crystalsAlive(){ let n=0; for(const [,m] of mobsMap) if(m.local&&m.kind==='end_crystal') n++; return n; }
 function bossInvulnerable(m){ return m.kind==='ender_dragon' && crystalsAlive()>0; }
+function spawnEndCityShulkers(){
+  const cx=140, cz=20;
+  for(const [x,y,z] of [[cx-4,END_Y+4,cz],[cx+4,END_Y+8,cz],[cx,END_Y+6,cz-4],[cx,END_Y+10,cz+4]]) spawnFlyingMob('shulker', x+0.5, y, z+0.5);
+}
 function spawnEndBoss(){
-  if(dimension!==2 || endDragonDefeated) return;
+  if(dimension!==2) return;
+  spawnEndCityShulkers();                                 // Wachen der End-Stadt (auch nach dem Drachen)
+  if(endDragonDefeated) return;
   for(const pl of END_PILLARS) spawnFlyingMob('end_crystal', pl.x+0.5, END_Y+pl.h+2, pl.z+0.5);
   spawnFlyingMob('ender_dragon', 0.5, END_Y+18, 30.5);
   flashMsg('🐉 Der Enderdrache erwacht! Zerstöre zuerst die Kristalle.');
 }
 function bossShoot(from, type){
   const dir=new THREE.Vector3(player.x-from.x, (player.y+0.9)-from.y, player.z-from.z).normalize();
-  const col = type==='ghast'?0xff6a2a : (type==='blaze'?0xffc040 : (type==='wither'?0x2a2a30 : 0xc060ff));
-  const sp  = type==='ghast'?12 : (type==='dragon'?9 : 14);
-  const dmg = type==='ghast'?6 : (type==='wither'?5 : (type==='dragon'?4:3));
+  const col = type==='ghast'?0xff6a2a : (type==='blaze'?0xffc040 : (type==='wither'?0x2a2a30 : (type==='shulker'?0xd0a0ff : 0xc060ff)));
+  const sp  = type==='ghast'?12 : (type==='dragon'?9 : (type==='shulker'?6 : 14));
+  const dmg = type==='ghast'?6 : (type==='wither'?5 : (type==='dragon'?4 : (type==='shulker'?2:3)));
   const mat=new THREE.MeshBasicMaterial({color:col});
   const mesh=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.4,0.4), mat);
   mesh.position.set(from.x, from.y, from.z); scene.add(mesh);
@@ -4317,7 +4398,7 @@ function updateBossProjectiles(dt){
     const d=Math.hypot(b.mesh.position.x-player.x, b.mesh.position.y-(player.y+0.9), b.mesh.position.z-player.z);
     const hitBlock=isSolid(world.getBlock(Math.floor(b.mesh.position.x),Math.floor(b.mesh.position.y),Math.floor(b.mesh.position.z)));
     if(d<1.2 || b.life<=0 || hitBlock){
-      if(d<1.4 && !dead){ damagePlayer(b.dmg); if(b.type==='ghast'){ spawnExplosion(b.mesh.position.x,b.mesh.position.y,b.mesh.position.z); applyCrater(b.mesh.position.x,b.mesh.position.y,b.mesh.position.z,2); } if(b.type==='blaze') burnT=Math.max(burnT,3); }
+      if(d<1.4 && !dead){ damagePlayer(b.dmg); if(b.type==='ghast'){ spawnExplosion(b.mesh.position.x,b.mesh.position.y,b.mesh.position.z); applyCrater(b.mesh.position.x,b.mesh.position.y,b.mesh.position.z,2); } if(b.type==='blaze') burnT=Math.max(burnT,3); if(b.type==='shulker') player.vy=Math.max(player.vy||0, 6); }
       scene.remove(b.mesh); b.mesh.material.dispose(); bossProjectiles.splice(i,1);
     }
   }
@@ -4355,6 +4436,13 @@ function updateBosses(dt){
       m.vy=((player.y+3)-p.y)*2;
       if(dist>4){ m.dir=Math.atan2(dx,dz); m.vx=Math.sin(m.dir)*2.6; m.vz=Math.cos(m.dir)*2.6; } else { m.vx=0; m.vz=0; }
       m.shootCd=(m.shootCd||0)-dt; if(dist<22 && m.shootCd<=0){ m.shootCd=2; bossShoot(p,'blaze'); }
+      continue;
+    }
+    if(m.kind==='shulker'){
+      m.vx=0; m.vz=0; m.vy=0;                                 // ortsfest an der End-Stadt
+      m.dir=Math.atan2(dx,dz);
+      const d3=Math.hypot(dx, (player.y-p.y), dz);
+      m.shootCd=(m.shootCd||0)-dt; if(d3<16 && m.shootCd<=0){ m.shootCd=2.4; bossShoot({x:p.x,y:p.y+0.7,z:p.z},'shulker'); }
       continue;
     }
   }
@@ -4889,6 +4977,7 @@ window.__T = {
   // v2
   setBlock:(x,y,z,id)=>world.setBlock(x,y,z,id), getBlock:(x,y,z)=>world.getBlock(x,y,z),
   igniteTNT, tickV2, growTree, useBoneMeal, crops, saplings, tntFuses, fires,
+  updateLocalMobs, tryWaterSpawnPoint, localSquidCount, rollDrops,
   get weather(){ return weather; }, setWeather:(w)=>{ weather=w; weatherT=60; },
   get buffs(){ return {buffSpeed, buffStrength, poisonT}; }, drinkPotion, checkBeacon,
   get health(){ return health; }, setHealth:(h)=>{ health=h; }, get hunger(){ return hunger; },
