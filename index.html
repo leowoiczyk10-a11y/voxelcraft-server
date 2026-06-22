@@ -10,207 +10,292 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
 <style>
+
   /* =====================================================================
-     DESIGN-SYSTEM — VoxelCraft UI (komplett ueberarbeitet)
+     MINECRAFT-UI  —  komplettes GUI im Minecraft-Look
+     Pixel-Font, Bevel-Panels, Steinslots, Pixelherzen, Dirt-Hintergrund.
+     Alle IDs/Klassen bleiben erhalten, damit die Spiel-Logik weiterlaeuft.
      ===================================================================== */
   :root{
-    --font: ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-    --panel: linear-gradient(180deg, rgba(34,42,54,0.94), rgba(20,25,33,0.96));
-    --panel-solid: rgba(22,27,35,0.96);
-    --chip: rgba(16,20,27,0.5);
-    --stroke: rgba(255,255,255,0.10);
-    --stroke-2: rgba(255,255,255,0.18);
-    --text:#eaf1fb; --text-dim:#bccadd; --muted:#8492a8;
-    --accent:#6cc24a; --accent-2:#9be06a; --accent-deep:#46913a;
-    --info:#56a8ff; --danger:#e2554a; --warn:#e8a93a; --ench:#b070f0;
-    --r-sm:7px; --r:11px; --r-lg:16px;
-    --shadow: 0 12px 34px rgba(0,0,0,0.5);
-    --shadow-lg: 0 26px 72px rgba(0,0,0,0.62);
-    --slot-bg: rgba(255,255,255,0.045);
-    --slot-stroke: rgba(255,255,255,0.13);
-    --blur: blur(9px) saturate(1.1);
+    --ui-scale: 1;          /* GUI-Groesse: skaliert Menues & Hotbar (Einstellungen) */
+    --mc-font: 'VT323', ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --mc-title: 'Press Start 2P', 'VT323', monospace;
+
+    /* Graustufen der klassischen MC-Oberflaeche */
+    --gui:#c6c6c6;          /* Panel-Flaeche           */
+    --gui-d:#b0b0b0;
+    --slot:#8b8b8b;         /* Slot-Flaeche            */
+    --slot-d:#7a7a7a;
+    --hi:#ffffff;           /* Bevel hell (oben/links) */
+    --sh:#373737;           /* Bevel dunkel (Slots)    */
+    --sh2:#555555;          /* Bevel dunkel (Panels)   */
+    --edge:#0d0d10;         /* dunkler Aussenrahmen    */
+
+    --btn:#7d7d7d;          /* Button-Flaeche          */
+    --btn-hi:#9a9a9a;
+    --btn-sh:#525252;
+    --sel:#5a8f3a;          /* gruene Auswahl (Hover)  */
+    --sel-hi:#8fce4f;
+    --sel-sh:#385f22;
+
+    --green:#5fa83c; --green-d:#3e7a27; --green-l:#8fd24f;
+    --xp:#80ff20; --xp-d:#3a7a10;
+    --red:#e23a32; --red-empty:#451214;
+    --yellow:#ffe64a; --yellow2:#fcfc00;
+    --air:#7ec8ff; --bone:#e8dcc2; --meat:#c8772f; --meat-d:#5a3415;
+    --steel:#c3cdda; --steel-d:#5a6472;
+
+    --txt:#ffffff;
+    --txt-sh: 2px 2px 0 rgba(0,0,0,0.6);
+    --txt-sh-s: 1px 1px 0 rgba(0,0,0,0.6);
+    --lab:#3b3b3b;          /* Text auf grauem Panel   */
+    --lab-emb: 1px 1px 0 rgba(255,255,255,0.35);
+    --hint:#5f5f5f;
+
+    /* gekachelte Dirt-Textur fuer Titel-/Menue-Hintergruende */
+    --dirt: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='8'%20height='8'%20shape-rendering='crispEdges'%3E%3Crect%20width='8'%20height='8'%20fill='%235c4329'/%3E%3Crect%20x='1'%20y='1'%20width='1'%20height='1'%20fill='%236f5436'/%3E%3Crect%20x='6'%20y='2'%20width='1'%20height='1'%20fill='%236f5436'/%3E%3Crect%20x='3'%20y='0'%20width='1'%20height='1'%20fill='%234a3520'/%3E%3Crect%20x='0'%20y='3'%20width='1'%20height='1'%20fill='%234a3520'/%3E%3Crect%20x='4'%20y='4'%20width='1'%20height='1'%20fill='%234a3520'/%3E%3Crect%20x='2'%20y='5'%20width='1'%20height='1'%20fill='%236a4f30'/%3E%3Crect%20x='5'%20y='6'%20width='1'%20height='1'%20fill='%236f5436'/%3E%3Crect%20x='7'%20y='5'%20width='1'%20height='1'%20fill='%234a3520'/%3E%3C/svg%3E");
+
+    /* Pixel-Herz als clip-path (9x8 Raster) */
+    --heart: polygon(0% 12.5%,11.11% 12.5%,11.11% 0,33.33% 0,33.33% 12.5%,44.44% 12.5%,44.44% 25%,55.56% 25%,55.56% 12.5%,66.67% 12.5%,66.67% 0,88.89% 0,88.89% 12.5%,100% 12.5%,100% 50%,88.89% 50%,88.89% 62.5%,77.78% 62.5%,77.78% 75%,66.67% 75%,66.67% 87.5%,55.56% 87.5%,55.56% 100%,44.44% 100%,44.44% 87.5%,33.33% 87.5%,33.33% 75%,22.22% 75%,22.22% 62.5%,11.11% 62.5%,11.11% 50%,0 50%);
+    /* Pixel-Achteck (Blase) */
+    --octa: polygon(33% 0,67% 0,100% 33%,100% 67%,67% 100%,33% 100%,0 67%,0 33%);
+    /* Pixel-Schild (Ruestung) */
+    --shield: polygon(0 0,100% 0,100% 58%,78% 80%,50% 100%,22% 80%,0 58%);
   }
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
-  html, body { width: 100%; height: 100%; overflow: hidden; background: #87b8e8; touch-action: none; }
-  canvas { display: block; }
-  #hud { position: fixed; inset: 0; pointer-events: none; font-family: var(--font); }
 
-  #crosshair { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; transform: translate(-50%, -50%); opacity: 0.9; transition: transform .09s ease; }
-  #crosshair::before, #crosshair::after { content: ""; position: absolute; background: #fff; border-radius: 2px; box-shadow: 0 0 3px rgba(0,0,0,0.75); transition: background .09s, box-shadow .09s; }
-  #crosshair::before { left: 50%; top: 3px; bottom: 3px; width: 2px; transform: translateX(-50%); }
-  #crosshair::after  { top: 50%; left: 3px; right: 3px; height: 2px; transform: translateY(-50%); }
-  #crosshair.aim-mob { transform: translate(-50%,-50%) scale(1.3) rotate(45deg); }
-  #crosshair.aim-mob::before, #crosshair.aim-mob::after { background: var(--danger); box-shadow: 0 0 5px rgba(226,85,74,0.95); }
-  #crosshair.hit { transform: translate(-50%,-50%) scale(1.85) rotate(45deg); }
-  #crosshair.hit::before, #crosshair.hit::after { background: #fff; box-shadow: 0 0 9px #fff, 0 0 4px var(--danger); }
-  #mineBar { position: absolute; left: 50%; top: calc(50% + 18px); transform: translateX(-50%); width: 54px; height: 6px; background: rgba(0,0,0,0.55); border-radius: 4px; display: none; overflow: hidden; z-index: 5; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12); }
-  #mineFill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
-  .slot, .islot { position: relative; }
-  .durbar { position: absolute; left: 4px; right: 4px; bottom: 3px; height: 3px; background: rgba(0,0,0,0.5); border-radius: 2px; overflow: hidden; }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; }
+  input { -webkit-user-select:text; user-select:text; }
+  html, body { width:100%; height:100%; overflow:hidden; background:#87b8e8; touch-action:none; font-family:var(--mc-font); }
+  canvas { display:block; }
+  #hud { position:fixed; inset:0; pointer-events:none; font-family:var(--mc-font); }
 
-  #hotbar { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; gap: 6px; padding: 7px; background: var(--chip); border: 1px solid var(--stroke); border-radius: 14px; backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); box-shadow: var(--shadow); pointer-events: auto; }
-  #hotbarName { position: absolute; left: 50%; bottom: 122px; transform: translateX(-50%); color: #fff; font-size: 15px; font-weight: 700; letter-spacing: 0.3px; text-shadow: 0 1px 3px rgba(0,0,0,0.95), 0 0 7px rgba(0,0,0,0.7); padding: 2px 12px; background: var(--chip); border: 1px solid var(--stroke); border-radius: 999px; backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); opacity: 0; transition: opacity 0.35s; pointer-events: none; white-space: nowrap; }
-  #hotbarName.show { opacity: 1; }
-  #slotTip { position: fixed; z-index: 30; background: var(--panel-solid); color: var(--text); border: 1px solid var(--stroke-2); border-radius: 8px; padding: 4px 10px; font-size: 13px; font-weight: 600; pointer-events: none; white-space: nowrap; transform: translate(-50%, -140%); display: none; box-shadow: var(--shadow); }
-  .slot { width: 48px; height: 48px; border-radius: var(--r-sm); background: var(--slot-bg); border: 1.5px solid var(--slot-stroke); display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -2px 6px rgba(0,0,0,0.28); transition: border-color .12s, transform .06s, background .12s; }
-  .slot:active { transform: scale(0.94); }
-  .slot .swatch { width: 30px; height: 30px; border-radius: 5px; box-shadow: inset 0 -6px 0 rgba(0,0,0,0.22), inset 0 2px 0 rgba(255,255,255,0.2); }
-  .slot .num { position: absolute; top: 2px; left: 5px; font-size: 10px; color: rgba(255,255,255,0.5); font-weight: 700; }
-  .slot.active { border-color: var(--accent-2); background: rgba(108,194,74,0.16); box-shadow: 0 0 0 1px var(--accent-2), 0 0 14px rgba(124,224,90,0.45), inset 0 -2px 6px rgba(0,0,0,0.28); }
+  /* ---- Fadenkreuz: invertiert wie in Minecraft (mix-blend-mode) ---- */
+  #crosshair { position:absolute; left:50%; top:50%; width:20px; height:20px; transform:translate(-50%,-50%); mix-blend-mode:difference; transition:transform .09s ease; }
+  #crosshair::before, #crosshair::after { content:""; position:absolute; background:#fff; }
+  #crosshair::before { left:50%; top:2px; bottom:2px; width:2px; transform:translateX(-50%); }
+  #crosshair::after  { top:50%; left:2px; right:2px; height:2px; transform:translateY(-50%); }
+  #crosshair.aim-mob { transform:translate(-50%,-50%) scale(1.25) rotate(45deg); mix-blend-mode:normal; }
+  #crosshair.aim-mob::before, #crosshair.aim-mob::after { background:var(--red); box-shadow:0 0 0 1px rgba(0,0,0,.5); }
+  #crosshair.hit { transform:translate(-50%,-50%) scale(1.7) rotate(45deg); }
+  #crosshair.hit::before, #crosshair.hit::after { background:#fff; }
 
-  #debug { position: absolute; top: 8px; left: 8px; font-size: 11px; line-height: 1.55; color: var(--text); text-shadow: 0 1px 2px rgba(0,0,0,0.7); background: var(--chip); border: 1px solid var(--stroke); padding: 8px 11px; border-radius: var(--r); white-space: pre; backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); }
+  #mineBar { position:absolute; left:50%; top:calc(50% + 20px); transform:translateX(-50%); width:60px; height:8px; background:#000; display:none; overflow:hidden; z-index:5; box-shadow:inset 2px 2px 0 var(--sh), inset -2px -2px 0 #6b6b6b; }
+  #mineFill { height:100%; width:0%; background:var(--green); image-rendering:pixelated; }
+  .slot, .islot { position:relative; }
+  .durbar { position:absolute; left:3px; right:3px; bottom:2px; height:3px; background:#000; overflow:hidden; box-shadow:inset 1px 1px 0 rgba(255,255,255,.15); }
 
-  #joy, .btn { display: none; }
-  body.touch #joy { display: block; }
-  body.touch .btn { display: flex; }
-  #joy { position: fixed; left: 24px; bottom: 24px; width: 124px; height: 124px; border-radius: 50%; background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08), rgba(255,255,255,0.04)); border: 1.5px solid var(--stroke-2); z-index: 6; touch-action: none; box-shadow: var(--shadow); }
-  #joyKnob { position: absolute; left: 38px; top: 38px; width: 48px; height: 48px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, rgba(255,255,255,0.55), rgba(255,255,255,0.28)); border: 1.5px solid rgba(255,255,255,0.6); box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
-  .btn { position: fixed; z-index: 6; border-radius: 50%; border: 1.5px solid var(--stroke-2); background: rgba(14,18,25,0.5); color: #fff; font-size: 11px; font-weight: 700; align-items: center; justify-content: center; text-align: center; touch-action: none; text-shadow: 0 1px 2px #000; backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); box-shadow: var(--shadow); transition: transform .06s, background .1s; }
-  .btn:active { background: rgba(108,194,74,0.34); border-color: var(--accent-2); transform: scale(0.93); }
-  #btnPlace { right: 24px; bottom: 24px; width: 90px; height: 90px; font-size: 13px; }
-  #btnBreak { right: 124px; bottom: 58px; width: 74px; height: 74px; }
-  #btnJump  { right: 36px; bottom: 130px; width: 68px; height: 68px; }
-  #btnItems { right: 124px; bottom: 144px; width: 60px; height: 60px; font-size: 10px; }
+  /* =====================  HOTBAR  ===================== */
+  #hotbar { position:absolute; left:50%; bottom:14px; transform:translateX(-50%) scale(var(--ui-scale)); transform-origin:bottom center; display:flex; gap:0; padding:3px; background:#8b8b8b; border:2px solid var(--edge); box-shadow:inset 2px 2px 0 #c9c9c9, inset -2px -2px 0 var(--sh); pointer-events:auto; image-rendering:pixelated; }
+  #hotbarName { position:absolute; left:50%; bottom:118px; transform:translateX(-50%); color:#fff; font-size:19px; font-weight:400; letter-spacing:.5px; text-shadow:var(--txt-sh); padding:3px 12px; background:rgba(0,0,0,.55); opacity:0; transition:opacity .35s; pointer-events:none; white-space:nowrap; }
+  #hotbarName.show { opacity:1; }
+  #slotTip { position:fixed; z-index:30; background:#100010ee; color:#fff; border:2px solid #280050; padding:4px 9px; font-size:16px; pointer-events:none; white-space:nowrap; transform:translate(-50%,-150%); display:none; box-shadow:0 0 0 1px #000; }
 
-  #loading { position: fixed; left: 50%; bottom: 70px; transform: translateX(-50%); color: var(--text-dim); font-size: 12px; font-family: var(--font); text-shadow: 0 1px 2px rgba(0,0,0,0.7); z-index: 5; pointer-events: none; }
+  .slot { width:48px; height:48px; background:transparent; border:none; box-shadow:inset 1px 1px 0 #6f6f6f, inset -1px -1px 0 #a9a9a9; display:flex; align-items:center; justify-content:center; position:relative; cursor:pointer; }
+  .slot .swatch { width:32px; height:32px; image-rendering:pixelated; filter:drop-shadow(2px 2px 0 rgba(0,0,0,.35)); }
+  .slot .num { position:absolute; top:1px; left:4px; font-size:13px; color:rgba(255,255,255,.65); text-shadow:var(--txt-sh-s); }
+  .slot.active { box-shadow:0 0 0 3px #f6f6f6, 0 0 0 5px #2b2b2b; z-index:2; }
 
-  #overlay { position: fixed; inset: 0; pointer-events: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(ellipse at 50% 30%, rgba(20,28,40,0.72), rgba(8,11,16,0.9)); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: var(--text); font-family: var(--font); text-align: center; cursor: pointer; z-index: 10; padding: 16px; }
-  #overlay h1 { font-size: 38px; letter-spacing: 3px; margin-bottom: 6px; font-weight: 800; background: linear-gradient(180deg, #d8f5c4, var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: 0 4px 18px rgba(108,194,74,0.35); }
-  #overlay .tag { font-size: 13px; color: var(--muted); margin-bottom: 26px; letter-spacing: 0.5px; }
-  #nameInput { pointer-events: auto; font-family: inherit; font-size: 14px; padding: 11px 16px; width: 240px; text-align: center; border-radius: var(--r); border: 1.5px solid var(--stroke-2); background: rgba(255,255,255,0.07); color: #fff; margin-bottom: 18px; outline: none; transition: border-color .15s, box-shadow .15s; }
-  #nameInput:focus { border-color: var(--accent-2); box-shadow: 0 0 0 3px rgba(108,194,74,0.25); }
-  #playBtn { font-size: 16px; font-weight: 800; letter-spacing: 1px; padding: 13px 38px; border: none; border-radius: var(--r); margin-bottom: 26px; color: #0e1a08; background: linear-gradient(180deg, var(--accent-2), var(--accent-deep)); box-shadow: 0 8px 22px rgba(70,145,58,0.45), inset 0 1px 0 rgba(255,255,255,0.4); transition: transform .08s, box-shadow .12s; }
-  #playBtn:hover { box-shadow: 0 10px 28px rgba(70,145,58,0.6), inset 0 1px 0 rgba(255,255,255,0.5); }
-  #playBtn:active { transform: translateY(2px) scale(0.98); }
-  #overlay .controls { font-size: 11px; color: var(--text-dim); line-height: 2; background: var(--chip); border: 1px solid var(--stroke); border-radius: var(--r); padding: 12px 18px; }
-  #overlay .controls b { color: var(--accent-2); }
-  #overlay.hidden { display: none; }
+  /* =====================  DEBUG (F3)  ===================== */
+  #debug { position:absolute; top:6px; left:6px; font-size:15px; line-height:1.35; color:#fff; text-shadow:var(--txt-sh-s); background:rgba(0,0,0,.5); padding:3px 7px; white-space:pre; }
 
-  #invScreen { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(8,10,16,0.62); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); z-index: 9; pointer-events: auto; padding: 12px; }
-  #invScreen.open { display: flex; }
-  #invPanel { position: relative; background: var(--panel); border: 1px solid var(--stroke); border-radius: var(--r-lg); padding: 18px; display: flex; flex-direction: column; gap: 13px; max-width: 95vw; box-shadow: var(--shadow-lg); }
-  .invCraftRow { display: flex; align-items: center; justify-content: center; gap: 16px; }
-  .craftGrid { display: grid; grid-template-columns: repeat(3, 44px); grid-auto-rows: 44px; gap: 5px; padding: 6px; background: rgba(0,0,0,0.2); border-radius: var(--r); }
-  .craftArrow { color: var(--accent-2); font-size: 24px; }
-  .invGrid { display: grid; grid-template-columns: repeat(9, 44px); grid-auto-rows: 44px; gap: 5px; }
-  .invHot { margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--stroke); }
-  .islot { width: 44px; height: 44px; border-radius: var(--r-sm); background: var(--slot-bg); border: 1.5px solid var(--slot-stroke); position: relative; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -2px 5px rgba(0,0,0,0.26); transition: border-color .12s, transform .06s; }
-  .islot.out { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 12px rgba(108,194,74,0.4); }
-  .islot:active { border-color: var(--accent-2); transform: scale(0.94); }
-  .iswatch { position: absolute; inset: 6px; border-radius: 4px; box-shadow: inset 0 -4px 0 rgba(0,0,0,0.22), inset 0 2px 0 rgba(255,255,255,0.14); }
-  .icount { position: absolute; right: 3px; bottom: 1px; font-size: 11px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px #000; font-family: var(--font); }
-  #held { position: fixed; z-index: 12; width: 44px; height: 44px; transform: translate(-50%,-50%); pointer-events: none; display: none; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)); }
-  #held .iswatch { inset: 4px; }
-  .slot .hcount { position: absolute; right: 3px; bottom: 1px; font-size: 11px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px #000; }
-  .invFurnaceRow { display: flex; align-items: center; justify-content: center; gap: 16px; }
-  .fceCol { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-  .fceFlame { width: 18px; height: 18px; border-radius: 4px; background: #2c2114; transition: background 0.2s, box-shadow 0.2s; }
-  .fceFlame.lit { background: radial-gradient(circle at 50% 60%, #ffd24a, #ff7a1a 72%); box-shadow: 0 0 9px #ff9a3a; }
-  .fceArrowWrap { width: 68px; height: 9px; background: rgba(0,0,0,0.3); border-radius: 5px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--stroke); }
-  .fceProg { width: 0%; height: 100%; background: linear-gradient(90deg, var(--info), #9fd0ff); }
-  .invHotRow { display: flex; align-items: center; gap: 14px; }
-  .islot.offhand { border-color: rgba(86,168,255,0.6); }
-  .islot.armor { border-color: rgba(150,170,200,0.55); }
-  .invArmorRow { display:flex; align-items:center; gap:6px; justify-content:center; margin:8px 0; }
-  .armorLabel { font-size:10px; color: var(--muted); letter-spacing:1.5px; margin-right:4px; }
-  #invTitle { text-align: center; color: var(--text-dim); font-size: 12px; letter-spacing: 2px; font-weight: 700; text-transform: uppercase; }
+  /* =====================  TOUCH-STEUERUNG  ===================== */
+  #joy, .btn { display:none; }
+  body.touch #joy { display:block; }
+  body.touch .btn { display:flex; }
+  #joy { position:fixed; left:24px; bottom:24px; width:124px; height:124px; background:rgba(0,0,0,.32); border:3px solid var(--edge); box-shadow:inset 3px 3px 0 rgba(255,255,255,.18), inset -3px -3px 0 rgba(0,0,0,.4); z-index:6; touch-action:none; }
+  #joyKnob { position:absolute; left:36px; top:36px; width:48px; height:48px; background:var(--btn); border:2px solid var(--edge); box-shadow:inset 2px 2px 0 var(--btn-hi), inset -2px -2px 0 var(--btn-sh); }
+  .btn { position:fixed; z-index:6; border:2px solid var(--edge); background:var(--btn); color:#fff; font-size:13px; font-weight:400; align-items:center; justify-content:center; text-align:center; touch-action:none; text-shadow:var(--txt-sh-s); box-shadow:inset 2px 2px 0 var(--btn-hi), inset -2px -2px 0 var(--btn-sh); transition:none; }
+  .btn:active { background:var(--sel); box-shadow:inset 2px 2px 0 var(--sel-sh), inset -2px -2px 0 var(--sel-sh); }
+  #btnPlace { right:24px; bottom:24px; width:90px; height:90px; font-size:15px; }
+  #btnBreak { right:124px; bottom:58px; width:74px; height:74px; }
+  #btnJump  { right:36px; bottom:130px; width:68px; height:68px; }
+  #btnItems { right:124px; bottom:144px; width:60px; height:60px; font-size:12px; }
 
-  #hurt { position: fixed; inset: 0; pointer-events: none; z-index: 4; background: radial-gradient(circle, rgba(170,0,0,0) 42%, rgba(170,0,0,0.6) 100%); opacity: 0; transition: opacity 0.08s; }
-  #burn { position: fixed; inset: 0; pointer-events: none; z-index: 4; background: radial-gradient(circle, rgba(255,90,0,0) 36%, rgba(255,64,0,0.55) 100%); opacity: 0; transition: opacity 0.12s; }
-  #water { position: fixed; inset: 0; pointer-events: none; z-index: 4; background: radial-gradient(circle, rgba(40,110,170,0.28) 28%, rgba(18,58,108,0.62) 100%); opacity: 0; transition: opacity 0.22s; }
-  #vignette { position: fixed; inset: 0; pointer-events: none; z-index: 3; background: radial-gradient(ellipse at center, rgba(0,0,0,0) 56%, rgba(0,0,0,0.30) 100%); }
-  #vitals { position: fixed; left: 50%; bottom: 104px; transform: translateX(-50%); z-index: 5; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  .vrow { display: flex; gap: 4px; }
-  .pip { width: 13px; height: 13px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.1); }
-  .pip.hp  { background: #43201f; } .pip.hp.on  { background: linear-gradient(180deg,#f0584c,#d6322a); }
-  .pip.hg  { background: #43331c; } .pip.hg.on  { background: linear-gradient(180deg,#e9a23a,#cf7b1e); }
-  .pip.air { background: #173140; } .pip.air.on { background: linear-gradient(180deg,#6fccf5,#3aa6e6); }
-  .pip.ar  { background: #262b33; } .pip.ar.on  { background: linear-gradient(180deg,#d4dce6,#aeb8c6); }
-  #airRow { display: none; } #airRow.show { display: flex; }
-  #armorRow { display: none; } #armorRow.show { display: flex; }
-  #death { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: radial-gradient(ellipse at center, rgba(80,12,12,0.7), rgba(30,6,6,0.85)); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); z-index: 11; pointer-events: auto; text-align: center; color: #ffd8d8; font-family: var(--font); }
-  #death.open { display: flex; }
-  #death h1 { font-size: 34px; letter-spacing: 3px; margin-bottom: 22px; font-weight: 800; text-shadow: 0 4px 18px rgba(220,40,40,0.5); }
-  #respawnBtn { font-size: 16px; font-weight: 800; letter-spacing: 0.5px; padding: 13px 34px; border: none; border-radius: var(--r); cursor: pointer; display: inline-block; color: #2a0808; background: linear-gradient(180deg,#ffb3b3,#e2554a); box-shadow: 0 8px 22px rgba(190,40,40,0.45), inset 0 1px 0 rgba(255,255,255,0.4); transition: transform .08s; }
-  #respawnBtn:active { transform: translateY(2px) scale(0.98); }
-  /* ---- Settings-Menue ---- */
-  #btnSettings { position: fixed; top: 8px; right: 8px; z-index: 8; width: 40px; height: 40px; border-radius: var(--r); border: 1px solid var(--stroke); background: var(--chip); color: var(--text); font-size: 21px; line-height: 38px; text-align: center; cursor: pointer; backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); box-shadow: var(--shadow); transition: background .12s, transform .06s; }
-  #btnSettings:hover { background: rgba(44,54,70,0.8); }
-  #btnSettings:active { transform: scale(0.92); }
-  #settingsScreen { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(8,10,16,0.7); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 10; padding: 16px; }
-  #settingsScreen.open { display: flex; }
-  #settingsPanel { width: min(440px, 94vw); max-height: 90vh; overflow-y: auto; background: var(--panel); border: 1px solid var(--stroke); border-radius: var(--r-lg); padding: 20px; color: var(--text); box-shadow: var(--shadow-lg); }
-  .setTitle { font-size: 16px; letter-spacing: 3px; font-weight: 800; text-align: center; margin-bottom: 18px; color: var(--text); text-transform: uppercase; }
-  .setGroup { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent-2); font-weight: 800; margin: 18px 0 11px; padding-bottom: 6px; border-bottom: 1px solid var(--stroke); }
-  .setGroup:first-of-type { margin-top: 2px; }
-  .setRow { margin-bottom: 18px; }
-  .setLabel { font-size: 13px; font-weight: 700; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: baseline; }
-  .setVal { color: var(--accent-2); font-family: var(--font); font-size: 13px; font-weight: 700; }
-  .setRow input[type=range] { width: 100%; accent-color: var(--accent); height: 24px; }
-  .setHint { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.45; }
-  .setSeg { display: flex; gap: 7px; }
-  .setSeg button { flex: 1; padding: 10px 0; border-radius: var(--r-sm); border: 1px solid var(--stroke); background: rgba(255,255,255,0.045); color: var(--text-dim); font-size: 13px; font-weight: 700; cursor: pointer; transition: all .12s; }
-  .setSeg button:hover { background: rgba(255,255,255,0.09); }
-  .setSeg button.active { background: linear-gradient(180deg, var(--accent), var(--accent-deep)); border-color: var(--accent-2); color: #0e1a08; box-shadow: 0 4px 12px rgba(70,145,58,0.4); }
-  #setClose { margin-top: 8px; text-align: center; padding: 12px; border-radius: var(--r); background: linear-gradient(180deg, var(--accent-2), var(--accent-deep)); color: #0e1a08; font-weight: 800; cursor: pointer; letter-spacing: 1px; box-shadow: 0 6px 18px rgba(70,145,58,0.4); transition: transform .08s; }
-  #setClose:hover { filter: brightness(1.06); }
-  #setClose:active { transform: translateY(2px) scale(0.99); }
-  .invToggleBtn { margin:0 auto 8px; width:fit-content; padding:6px 14px; border-radius: var(--r-sm); border:1px solid var(--stroke); background:rgba(255,255,255,0.05); color:var(--text-dim); font-size:12px; font-weight:700; cursor:pointer; transition: all .12s; }
-  .invToggleBtn:hover { background:rgba(255,255,255,0.09); }
-  .invToggleBtn:active { transform: scale(0.95); }
-  .invToggleBtn.on { background: linear-gradient(180deg, var(--accent), var(--accent-deep)); border-color:var(--accent-2); color:#0e1a08; }
-  #invClose { position:absolute; top:12px; right:14px; z-index:11; width:38px; height:38px; border-radius:var(--r-sm); border:1px solid var(--stroke-2); background:rgba(40,24,24,0.9); color:#ffd0d0; font-size:18px; line-height:36px; text-align:center; cursor:pointer; transition: background .12s, transform .06s; }
-  #invClose:active { background:rgba(120,50,50,0.95); transform: scale(0.92); }
+  #loading { position:fixed; left:50%; bottom:72px; transform:translateX(-50%); color:#fff; font-size:16px; font-family:var(--mc-font); text-shadow:var(--txt-sh-s); z-index:5; pointer-events:none; background:rgba(0,0,0,.4); padding:2px 10px; }
+
+  /* =====================  START-OVERLAY (Titelscreen)  ===================== */
+  #overlay { position:fixed; inset:0; pointer-events:auto; display:flex; flex-direction:column; align-items:center; justify-content:center; background:linear-gradient(rgba(0,0,0,.5),rgba(0,0,0,.6)), var(--dirt); background-color:#3a2a1b; background-size:auto, 48px 48px; image-rendering:pixelated; color:var(--txt); font-family:var(--mc-font); text-align:center; cursor:pointer; z-index:10; padding:16px; }
+  #overlay h1 { font-family:var(--mc-title); font-size:clamp(20px,7vw,36px); line-height:1.25; letter-spacing:1px; margin-bottom:14px; color:#fff; text-shadow:3px 3px 0 #2a2a2a, 4px 4px 0 rgba(0,0,0,.4); }
+  #overlay .tag { font-family:var(--mc-title); font-size:13px; color:var(--yellow2); margin-bottom:30px; transform:rotate(-14deg); text-shadow:2px 2px 0 #5a4a00; animation:splashPulse 0.9s ease-in-out infinite alternate; }
+  #nameInput { pointer-events:auto; font-family:var(--mc-font); font-size:20px; padding:9px 14px; width:260px; text-align:center; background:#000; color:#fff; border:2px solid #a0a0a0; box-shadow:inset 2px 2px 0 #2a2a2a; margin-bottom:18px; outline:none; }
+  #nameInput:focus { border-color:#fff; }
+  #playBtn { font-family:var(--mc-font); font-size:24px; letter-spacing:1px; padding:11px 44px; margin-bottom:26px; color:#fff; text-shadow:var(--txt-sh); background:var(--btn); border:2px solid var(--edge); box-shadow:inset 2px 2px 0 var(--btn-hi), inset -2px -2px 0 var(--btn-sh); transition:none; }
+  #playBtn:hover { background:var(--sel); box-shadow:inset 2px 2px 0 var(--sel-hi), inset -2px -2px 0 var(--sel-sh); color:#fff; }
+  #playBtn:active { box-shadow:inset -2px -2px 0 var(--sel-hi), inset 2px 2px 0 var(--sel-sh); }
+  #overlay .controls { font-size:16px; color:#dcdcdc; line-height:1.7; background:rgba(0,0,0,.55); border:2px solid var(--edge); box-shadow:inset 2px 2px 0 rgba(255,255,255,.12); padding:12px 18px; text-shadow:var(--txt-sh-s); max-width:92vw; }
+  #overlay .controls b { color:var(--yellow); }
+  #overlay.hidden { display:none; }
+
+  /* =====================  INVENTAR  ===================== */
+  #invScreen { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.62); z-index:9; pointer-events:auto; padding:12px; }
+  #invScreen.open { display:flex; }
+  #invPanel { position:relative; background:var(--gui); border:3px solid var(--edge); box-shadow:inset 3px 3px 0 var(--hi), inset -3px -3px 0 var(--sh2); padding:18px; display:flex; flex-direction:column; gap:12px; max-width:95vw; max-height:96vh; overflow-y:auto; zoom:var(--ui-scale); }
+  .invCraftRow { display:flex; align-items:center; justify-content:center; gap:16px; }
+  .craftGrid { display:grid; grid-template-columns:repeat(3,46px); grid-auto-rows:46px; gap:4px; padding:6px; background:var(--gui-d); box-shadow:inset 2px 2px 0 var(--sh2), inset -2px -2px 0 var(--hi); }
+  .craftArrow { color:#5a5a5a; font-size:26px; text-shadow:var(--lab-emb); }
+  .invGrid { display:grid; grid-template-columns:repeat(9,46px); grid-auto-rows:46px; gap:4px; }
+  .invHot { margin-top:6px; padding-top:12px; border-top:2px solid var(--sh2); box-shadow:0 -1px 0 var(--hi); }
+
+  /* Slots (Inventar) — versenkter Steinslot */
+  .islot { width:46px; height:46px; background:var(--slot); border:none; box-shadow:inset 2px 2px 0 var(--sh), inset -2px -2px 0 var(--hi); position:relative; cursor:pointer; }
+  .islot:hover { background:#9a9a9a; }
+  .islot.out { box-shadow:inset 2px 2px 0 var(--sh), inset -2px -2px 0 var(--hi), 0 0 0 2px var(--green); }
+  .islot:active { filter:brightness(1.15); }
+  .iswatch { position:absolute; inset:7px; image-rendering:pixelated; filter:drop-shadow(2px 2px 0 rgba(0,0,0,.3)); }
+  .icount { position:absolute; right:2px; bottom:0; font-size:16px; color:#fff; text-shadow:var(--txt-sh-s); font-family:var(--mc-font); }
+  #held { position:fixed; z-index:12; width:46px; height:46px; transform:translate(-50%,-50%); pointer-events:none; display:none; }
+  #held .iswatch { inset:5px; }
+  .slot .hcount { position:absolute; right:2px; bottom:0; font-size:16px; color:#fff; text-shadow:var(--txt-sh-s); }
+
+  /* Ofen */
+  .invFurnaceRow { display:flex; align-items:center; justify-content:center; gap:16px; }
+  .fceCol { display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .fceFlame { width:18px; height:18px; background:#2c2114; image-rendering:pixelated; transition:none; box-shadow:inset 1px 1px 0 rgba(0,0,0,.4); }
+  .fceFlame.lit { background:linear-gradient(0deg,#ff7a1a,#ffd24a); box-shadow:none; }
+  .fceArrowWrap { width:72px; height:11px; background:#000; overflow:hidden; box-shadow:inset 2px 2px 0 var(--sh); }
+  .fceProg { width:0%; height:100%; background:#dcdcdc; image-rendering:pixelated; }
+  .invHotRow { display:flex; align-items:center; gap:14px; }
+  .islot.offhand { box-shadow:inset 2px 2px 0 var(--sh), inset -2px -2px 0 var(--hi), 0 0 0 2px #3a6ea5; }
+  .islot.armor { box-shadow:inset 2px 2px 0 var(--sh), inset -2px -2px 0 var(--hi), 0 0 0 2px #7d8794; }
+  .invArmorRow { display:flex; align-items:center; gap:5px; justify-content:center; margin:6px 0; }
+  .armorLabel { font-size:15px; color:var(--lab); letter-spacing:2px; margin-right:4px; text-shadow:var(--lab-emb); }
+  #invTitle { text-align:center; color:var(--lab); font-size:20px; letter-spacing:1px; font-weight:400; text-transform:uppercase; text-shadow:var(--lab-emb); }
+
+  /* =====================  SCHADENS-/UMGEBUNGS-BLENDEN  ===================== */
+  #hurt { position:fixed; inset:0; pointer-events:none; z-index:4; background:radial-gradient(circle, rgba(170,0,0,0) 42%, rgba(170,0,0,.6) 100%); opacity:0; transition:opacity .08s; }
+  #burn { position:fixed; inset:0; pointer-events:none; z-index:4; background:radial-gradient(circle, rgba(255,90,0,0) 36%, rgba(255,64,0,.55) 100%); opacity:0; transition:opacity .12s; }
+  #water { position:fixed; inset:0; pointer-events:none; z-index:4; background:radial-gradient(circle, rgba(40,110,170,.28) 28%, rgba(18,58,108,.62) 100%); opacity:0; transition:opacity .22s; }
+  #vignette { position:fixed; inset:0; pointer-events:none; z-index:3; background:radial-gradient(ellipse at center, rgba(0,0,0,0) 56%, rgba(0,0,0,.3) 100%); }
+
+  /* =====================  VITALWERTE (Herzen, Hunger, Ruestung, Luft)  ===================== */
+  #vitals { position:fixed; left:50%; bottom:104px; transform:translateX(-50%); z-index:5; pointer-events:none; display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .vrow { display:flex; gap:1px; }
+  .pip { width:18px; height:18px; position:relative; background:none; box-shadow:none; filter:drop-shadow(1px 1px 0 rgba(0,0,0,.6)); }
+
+  /* Herz */
+  .pip.hp::before { content:""; position:absolute; inset:1px; clip-path:var(--heart); background:#000; }
+  .pip.hp::after  { content:""; position:absolute; inset:2px; clip-path:var(--heart); background:var(--red-empty); }
+  .pip.hp.on::after { background:var(--red); }
+
+  /* Hunger (Keule: Fleisch + Knochen) */
+  .pip.hg::before { content:""; position:absolute; left:1px; bottom:1px; width:62%; height:62%; clip-path:var(--octa); background:var(--meat-d); }
+  .pip.hg.on::before { background:var(--meat); }
+  .pip.hg::after { content:""; position:absolute; right:1px; top:3px; width:52%; height:26%; background:#7a6a4a; transform:rotate(38deg); transform-origin:right center; box-shadow:inset 0 1px 0 rgba(255,255,255,.25); }
+  .pip.hg.on::after { background:var(--bone); }
+
+  /* Luftblasen */
+  .pip.air::before { content:""; position:absolute; inset:2px; clip-path:var(--octa); background:#0e2a3a; }
+  .pip.air.on::before { background:var(--air); }
+  .pip.air.on::after { content:""; position:absolute; left:3px; top:3px; width:30%; height:30%; background:#fff; clip-path:var(--octa); }
+
+  /* Ruestung (Schild) */
+  .pip.ar::before { content:""; position:absolute; inset:1px; clip-path:var(--shield); background:var(--steel-d); }
+  .pip.ar.on::before { background:var(--steel); }
+
+  #airRow { display:none; } #airRow.show { display:flex; }
+  #armorRow { display:none; } #armorRow.show { display:flex; }
+
+  /* =====================  TOD  ===================== */
+  #death { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:linear-gradient(rgba(60,8,8,.62),rgba(40,6,6,.78)), var(--dirt); background-color:#2a1010; background-size:auto, 48px 48px; image-rendering:pixelated; z-index:11; pointer-events:auto; text-align:center; color:#ffd8d8; font-family:var(--mc-font); }
+  #death.open { display:flex; }
+  #death > div { zoom:var(--ui-scale); }
+  #death h1 { font-family:var(--mc-title); font-size:clamp(16px,5.5vw,26px); line-height:1.4; letter-spacing:1px; margin-bottom:22px; color:#ff5454; text-shadow:3px 3px 0 #3a0808; }
+  #respawnBtn { font-family:var(--mc-font); font-size:22px; letter-spacing:.5px; padding:11px 36px; cursor:pointer; display:inline-block; color:#fff; text-shadow:var(--txt-sh); background:var(--btn); border:2px solid var(--edge); box-shadow:inset 2px 2px 0 var(--btn-hi), inset -2px -2px 0 var(--btn-sh); }
+  #respawnBtn:hover { background:var(--sel); box-shadow:inset 2px 2px 0 var(--sel-hi), inset -2px -2px 0 var(--sel-sh); }
+  #respawnBtn:active { box-shadow:inset -2px -2px 0 var(--sel-hi), inset 2px 2px 0 var(--sel-sh); }
+
+  /* =====================  EINSTELLUNGEN  ===================== */
+  #btnSettings { position:fixed; top:8px; right:8px; z-index:8; width:42px; height:42px; border:2px solid var(--edge); background:var(--btn); color:#fff; font-size:22px; line-height:38px; text-align:center; cursor:pointer; box-shadow:inset 2px 2px 0 var(--btn-hi), inset -2px -2px 0 var(--btn-sh); text-shadow:var(--txt-sh-s); }
+  #btnSettings:hover { background:var(--sel); box-shadow:inset 2px 2px 0 var(--sel-hi), inset -2px -2px 0 var(--sel-sh); }
+  #btnSettings:active { box-shadow:inset -2px -2px 0 var(--sel-hi), inset 2px 2px 0 var(--sel-sh); }
+  #settingsScreen { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.65)), var(--dirt); background-color:#3a2a1b; background-size:auto, 48px 48px; image-rendering:pixelated; z-index:10; padding:16px; }
+  #settingsScreen.open { display:flex; }
+  #settingsPanel { width:min(460px,94vw); max-height:90vh; overflow-y:auto; background:var(--gui); border:3px solid var(--edge); box-shadow:inset 3px 3px 0 var(--hi), inset -3px -3px 0 var(--sh2); padding:20px; color:var(--lab); zoom:var(--ui-scale); }
+  .setTitle { font-family:var(--mc-title); font-size:16px; letter-spacing:1px; text-align:center; margin-bottom:20px; color:var(--lab); text-transform:uppercase; text-shadow:var(--lab-emb); }
+  .setGroup { font-size:16px; letter-spacing:1px; text-transform:uppercase; color:#2a4a18; font-weight:400; margin:18px 0 11px; padding-bottom:6px; border-bottom:2px solid var(--sh2); box-shadow:0 1px 0 var(--hi); }
+  .setGroup:first-of-type { margin-top:2px; }
+  .setRow { margin-bottom:18px; }
+  .setLabel { font-size:17px; color:var(--lab); margin-bottom:8px; display:flex; justify-content:space-between; align-items:baseline; text-shadow:var(--lab-emb); }
+  .setVal { color:#2a4a18; font-family:var(--mc-font); font-size:17px; }
+  .setRow input[type=range] { width:100%; height:22px; -webkit-appearance:none; appearance:none; background:#000; box-shadow:inset 2px 2px 0 var(--sh); outline:none; }
+  .setRow input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:22px; background:var(--btn); border:2px solid var(--edge); box-shadow:inset 2px 2px 0 var(--btn-hi), inset -2px -2px 0 var(--btn-sh); cursor:pointer; }
+  .setRow input[type=range]::-moz-range-thumb { width:12px; height:20px; border-radius:0; background:var(--btn); border:2px solid var(--edge); box-shadow:inset 2px 2px 0 var(--btn-hi), inset -2px -2px 0 var(--btn-sh); cursor:pointer; }
+  .setHint { font-size:15px; color:var(--hint); margin-top:6px; line-height:1.35; }
+  .setSeg { display:flex; gap:6px; }
+  .setSeg button { flex:1; padding:9px 0; font-family:var(--mc-font); border:2px solid var(--edge); background:var(--btn); color:#fff; font-size:17px; cursor:pointer; text-shadow:var(--txt-sh-s); box-shadow:inset 2px 2px 0 var(--btn-hi), inset -2px -2px 0 var(--btn-sh); }
+  .setSeg button:hover { background:#8d8d8d; }
+  .setSeg button.active { background:var(--sel); box-shadow:inset -2px -2px 0 var(--sel-hi), inset 2px 2px 0 var(--sel-sh); color:#fff; }
+  #setClose { margin-top:8px; text-align:center; padding:12px; font-family:var(--mc-font); font-size:20px; background:var(--btn); border:2px solid var(--edge); color:#fff; cursor:pointer; letter-spacing:1px; text-shadow:var(--txt-sh); box-shadow:inset 2px 2px 0 var(--btn-hi), inset -2px -2px 0 var(--btn-sh); }
+  #setClose:hover { background:var(--sel); box-shadow:inset 2px 2px 0 var(--sel-hi), inset -2px -2px 0 var(--sel-sh); }
+  #setClose:active { box-shadow:inset -2px -2px 0 var(--sel-hi), inset 2px 2px 0 var(--sel-sh); }
+
+  .invToggleBtn { margin:0 auto 8px; width:fit-content; padding:6px 14px; font-family:var(--mc-font); border:2px solid var(--edge); background:var(--btn); color:#fff; font-size:16px; cursor:pointer; text-shadow:var(--txt-sh-s); box-shadow:inset 2px 2px 0 var(--btn-hi), inset -2px -2px 0 var(--btn-sh); }
+  .invToggleBtn:hover { background:#8d8d8d; }
+  .invToggleBtn:active { box-shadow:inset -2px -2px 0 var(--btn-hi), inset 2px 2px 0 var(--btn-sh); }
+  .invToggleBtn.on { background:var(--sel); box-shadow:inset -2px -2px 0 var(--sel-hi), inset 2px 2px 0 var(--sel-sh); color:#fff; }
+  #invClose { position:absolute; top:12px; right:14px; z-index:11; width:38px; height:38px; border:2px solid var(--edge); background:#8a3a3a; color:#fff; font-size:18px; line-height:34px; text-align:center; cursor:pointer; text-shadow:var(--txt-sh-s); box-shadow:inset 2px 2px 0 #b96a6a, inset -2px -2px 0 #5a2222; }
+  #invClose:active { box-shadow:inset -2px -2px 0 #b96a6a, inset 2px 2px 0 #5a2222; }
   .invToggleRow { display:flex; gap:8px; justify-content:center; }
   .invToggleRow .invToggleBtn { margin:0; }
-  #recipeBook { display:none; max-height:30vh; overflow-y:auto; -webkit-overflow-scrolling:touch; background:rgba(0,0,0,0.28); border:1px solid var(--stroke); border-radius:var(--r-sm); padding:7px; }
-  .rrow { display:flex; align-items:center; gap:5px; padding:6px 7px; border-radius:var(--r-sm); cursor:pointer; opacity:0.42; transition: background .1s, opacity .1s; }
-  .rrow.can { opacity:1; background:rgba(108,194,74,0.13); }
-  .rrow.can:active { background:rgba(108,194,74,0.3); }
-  .ribox { width:25px; height:25px; border-radius:5px; border:1px solid var(--stroke-2); display:inline-block; flex:0 0 auto; background-size:cover; image-rendering:pixelated; }
-  .ribox.out { border-color:var(--accent); }
-  .rixn { font-size:11px; color:var(--text-dim); margin-right:3px; font-weight:700; }
-  .rarrow { color:var(--accent-2); font-size:13px; margin:0 3px; }
-  /* ---- XP-Leiste (ueber der Hotbar) ---- */
-  #xpbar { position: fixed; left: 50%; bottom: 78px; transform: translateX(-50%); width: min(360px, 78vw); height: 8px; background: rgba(0,0,0,0.55); border-radius: 5px; overflow: hidden; z-index: 5; pointer-events: none; box-shadow: inset 0 0 0 1px var(--stroke); }
-  #xpfill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent-deep), var(--accent-2)); box-shadow: 0 0 8px rgba(124,224,90,0.6); transition: width 0.18s; }
-  #xplvl { position: fixed; left: 50%; bottom: 88px; transform: translateX(-50%); z-index: 6; color: var(--accent-2); font-size: 14px; font-weight: 800; text-shadow: 0 1px 3px #000, 0 0 6px rgba(0,0,0,0.85); pointer-events: none; font-family: var(--font); }
-  #xplvl.hidden { display: none; }
-  /* ---- Kompass (oben mittig) ---- */
-  #compass { position: fixed; left: 50%; top: 8px; transform: translateX(-50%); width: 210px; height: 26px; overflow: hidden; z-index: 5; pointer-events: none; background: var(--chip); border-radius: var(--r); border: 1px solid var(--stroke); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); box-shadow: var(--shadow); }
-  #compass .cmark { position: absolute; left: 50%; top: 0; width: 2px; height: 100%; background: var(--accent-2); box-shadow: 0 0 6px rgba(124,224,90,0.7); transform: translateX(-50%); }
-  #compass .clab { position: absolute; top: 5px; transform: translateX(-50%); font-size: 12px; font-weight: 800; color: var(--text); text-shadow: 0 1px 2px #000; font-family: var(--font); white-space: nowrap; }
-  #compass .clab.card { color: var(--warn); }
-  #compass .chome { position: absolute; top: 4px; transform: translateX(-50%); font-size: 14px; line-height: 18px; color: var(--info); text-shadow: 0 1px 2px #000; }
-  /* ---- Chat ---- */
-  #chatLog { position: fixed; left: 12px; bottom: 214px; width: min(380px, 70vw); z-index: 6; pointer-events: none; display: flex; flex-direction: column; gap: 4px; font-family: var(--font); }
-  #chatLog .cmsg { font-size: 13px; color: #eef3ff; background: var(--chip); border: 1px solid var(--stroke); padding: 3px 10px; border-radius: var(--r-sm); align-self: flex-start; max-width: 100%; text-shadow: 0 1px 2px #000; backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); transition: opacity 0.6s; word-break: break-word; }
-  #chatLog .cmsg b { color: var(--info); }
-  #chatLog .cmsg.sys { color: var(--warn); font-style: italic; }
-  #chatLog .cmsg.old { opacity: 0; }
-  #chatInput { position: fixed; left: 12px; bottom: 180px; width: min(380px, 70vw); z-index: 12; display: none; font-family: var(--font); font-size: 14px; padding: 9px 12px; border-radius: var(--r-sm); border: 1.5px solid var(--info); background: rgba(12,14,20,0.95); color: #fff; outline: none; pointer-events: auto; box-shadow: 0 0 0 3px rgba(86,168,255,0.2); }
-  #chatInput.open { display: block; }
-  #btnChat { left: 28px; bottom: 156px; width: 50px; height: 50px; font-size: 20px; }
-  /* ---- Schlaf-Blende ---- */
-  #sleepFade { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 9; transition: opacity 0.7s; }
-  #sleepFade.on { opacity: 1; }
-  /* ---- Verzauberungs-Glanz ---- */
-  .glint { position:absolute; inset:2px; border-radius:4px; pointer-events:none; box-shadow: inset 0 0 7px rgba(190,110,255,0.9); background: radial-gradient(circle at 50% 30%, rgba(205,130,255,0.24), transparent 72%); }
-  #enchBtn.ready { background: linear-gradient(180deg,#a070f0,#7a3ad0); border-color:#c79af5; color:#fff; }
-  #chestGridEl { grid-auto-rows: 44px; }
-  /* ---- Einblend-Animationen (Politur) ---- */
-  @keyframes uiPanelIn { from { opacity:0; transform: translateY(10px) scale(0.96); } to { opacity:1; transform: none; } }
+
+  #recipeBook { display:none; max-height:30vh; overflow-y:auto; -webkit-overflow-scrolling:touch; background:var(--gui-d); border:2px solid var(--edge); box-shadow:inset 2px 2px 0 var(--sh2), inset -2px -2px 0 var(--hi); padding:7px; }
+  .rrow { display:flex; align-items:center; gap:5px; padding:6px 7px; cursor:pointer; opacity:.42; transition:opacity .1s; }
+  .rrow.can { opacity:1; background:rgba(95,168,60,.22); }
+  .rrow.can:active { background:rgba(95,168,60,.4); }
+  .ribox { width:26px; height:26px; border:2px solid var(--edge); box-shadow:inset 1px 1px 0 var(--sh); display:inline-block; flex:0 0 auto; background-size:cover; image-rendering:pixelated; }
+  .ribox.out { box-shadow:inset 1px 1px 0 var(--sh), 0 0 0 1px var(--green); }
+  .rixn { font-size:15px; color:var(--lab); margin-right:3px; }
+  .rarrow { color:#5a5a5a; font-size:15px; margin:0 3px; }
+
+  /* =====================  XP-LEISTE  ===================== */
+  #xpbar { position:fixed; left:50%; bottom:80px; transform:translateX(-50%); width:min(360px,78vw); height:10px; background:#000; overflow:hidden; z-index:5; pointer-events:none; box-shadow:inset 2px 2px 0 var(--sh), inset -2px -2px 0 #4a4a4a; }
+  #xpfill { height:100%; width:0%; background:var(--xp); image-rendering:pixelated; box-shadow:inset 0 -2px 0 var(--xp-d); transition:width .18s; }
+  #xplvl { position:fixed; left:50%; bottom:90px; transform:translateX(-50%); z-index:6; color:var(--xp); font-size:22px; text-shadow:2px 2px 0 #000, -1px -1px 0 #1a3a00; pointer-events:none; font-family:var(--mc-font); }
+  #xplvl.hidden { display:none; }
+
+  /* =====================  KOMPASS  ===================== */
+  #compass { position:fixed; left:50%; top:8px; transform:translateX(-50%); width:214px; height:28px; overflow:hidden; z-index:5; pointer-events:none; background:rgba(0,0,0,.55); border:2px solid var(--edge); box-shadow:inset 2px 2px 0 rgba(255,255,255,.14); }
+  #compass .cmark { position:absolute; left:50%; top:0; width:2px; height:100%; background:var(--yellow); transform:translateX(-50%); }
+  #compass .clab { position:absolute; top:6px; transform:translateX(-50%); font-size:17px; color:#fff; text-shadow:var(--txt-sh-s); font-family:var(--mc-font); white-space:nowrap; }
+  #compass .clab.card { color:var(--yellow); }
+  #compass .chome { position:absolute; top:5px; transform:translateX(-50%); font-size:16px; line-height:18px; color:var(--air); text-shadow:var(--txt-sh-s); }
+
+  /* =====================  CHAT  ===================== */
+  #chatLog { position:fixed; left:10px; bottom:214px; width:min(380px,70vw); z-index:6; pointer-events:none; display:flex; flex-direction:column; gap:2px; font-family:var(--mc-font); }
+  #chatLog .cmsg { font-size:16px; color:#fff; background:rgba(0,0,0,.5); border:none; padding:2px 8px; align-self:flex-start; max-width:100%; text-shadow:var(--txt-sh-s); transition:opacity .6s; word-break:break-word; line-height:1.25; }
+  #chatLog .cmsg b { color:#fff; }
+  #chatLog .cmsg.sys { color:var(--yellow); }
+  #chatLog .cmsg.old { opacity:0; }
+  #chatInput { position:fixed; left:10px; bottom:180px; width:min(380px,70vw); z-index:12; display:none; font-family:var(--mc-font); font-size:18px; padding:8px 11px; border:2px solid var(--edge); background:rgba(0,0,0,.78); color:#fff; outline:none; pointer-events:auto; box-shadow:inset 2px 2px 0 var(--sh); }
+  #chatInput.open { display:block; }
+  #btnChat { left:28px; bottom:156px; width:50px; height:50px; font-size:22px; }
+
+  /* =====================  SCHLAF / DIMENSION  ===================== */
+  #sleepFade { position:fixed; inset:0; background:#000; opacity:0; pointer-events:none; z-index:9; transition:opacity .7s; }
+  #sleepFade.on { opacity:1; }
+
+  /* =====================  VERZAUBERUNG  ===================== */
+  .glint { position:absolute; inset:3px; pointer-events:none; box-shadow:inset 0 0 6px rgba(190,110,255,.9); background:radial-gradient(circle at 50% 30%, rgba(205,130,255,.28), transparent 72%); }
+  #enchBtn.ready { background:#7a3ad0; box-shadow:inset 2px 2px 0 #b07af0, inset -2px -2px 0 #4a1a8a; color:#fff; }
+  #chestGridEl { grid-auto-rows:46px; }
+
+  /* =====================  EINBLEND-ANIMATIONEN  ===================== */
+  @keyframes splashPulse { from { transform:rotate(-14deg) scale(1); } to { transform:rotate(-14deg) scale(1.08); } }
+  @keyframes uiPanelIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
   @keyframes uiFadeIn { from { opacity:0; } to { opacity:1; } }
-  @keyframes uiPopIn { from { opacity:0; transform: scale(0.8); } to { opacity:1; transform: scale(1); } }
-  #invScreen.open, #settingsScreen.open, #death.open { animation: uiFadeIn .16s ease; }
-  #invScreen.open #invPanel, #settingsScreen.open #settingsPanel, #death.open > div { animation: uiPanelIn .2s cubic-bezier(.2,.9,.3,1); }
-  #overlay:not(.hidden) { animation: uiFadeIn .3s ease; }
-  #btnSettings { animation: uiPopIn .25s cubic-bezier(.2,1.3,.4,1); }
+  @keyframes uiPopIn { from { opacity:0; transform:scale(.8); } to { opacity:1; transform:scale(1); } }
+  #invScreen.open, #settingsScreen.open, #death.open { animation:uiFadeIn .14s steps(2); }
+  #invScreen.open #invPanel, #settingsScreen.open #settingsPanel, #death.open > div { animation:uiPanelIn .14s steps(3); }
+  #overlay:not(.hidden) { animation:uiFadeIn .25s ease; }
+  #btnSettings { animation:uiPopIn .2s steps(3); }
   @media (prefers-reduced-motion: reduce){
     #invScreen.open, #settingsScreen.open, #death.open,
     #invScreen.open #invPanel, #settingsScreen.open #settingsPanel, #death.open > div,
-    #overlay:not(.hidden), #btnSettings { animation: none !important; }
+    #overlay:not(.hidden), #btnSettings, #overlay .tag { animation:none !important; }
   }
 </style>
 </head>
@@ -324,6 +409,11 @@
       <div class="setHint">Pixel-Aufloesung der Block-Texturen. Wirkt sofort.</div>
     </div>
     <div class="setRow">
+      <div class="setLabel">GUI-Groesse <span id="setUIVal" class="setVal"></span></div>
+      <input id="setUI" type="range" min="50" max="130" step="5">
+      <div class="setHint">Groesse von Menues (Inventar, Einstellungen) und Hotbar. Kleiner stellen, falls am Handy etwas abgeschnitten ist.</div>
+    </div>
+    <div class="setRow">
       <div class="setLabel">Smooth Lighting (AO)</div>
       <div class="setSeg" id="setAO">
         <button data-ao="0">Aus</button>
@@ -395,9 +485,9 @@
 
 <div id="death"><div><h1>DU BIST GESTORBEN</h1><div id="deathStats"></div><div id="respawnBtn">Wiederbeleben</div></div></div>
 
-<canvas id="minimap" width="150" height="150" style="position:fixed;top:54px;right:10px;width:150px;height:150px;border:1px solid rgba(255,255,255,.18);border-radius:12px;image-rendering:pixelated;background:rgba(16,20,27,.9);box-shadow:0 12px 34px rgba(0,0,0,.5);z-index:30;display:none;"></canvas>
-<div id="achToast" style="position:fixed;top:18px;left:50%;transform:translateX(-50%) translateY(-120px);background:linear-gradient(180deg,#2a2436,#181420);border:1px solid #b070f0;border-radius:14px;padding:11px 18px;color:#e9f1df;font-family:ui-monospace,monospace;font-size:13px;z-index:60;transition:transform .4s cubic-bezier(.2,1.3,.4,1);box-shadow:0 16px 40px rgba(0,0,0,.6),0 0 18px rgba(176,112,240,.35);max-width:280px;text-align:center;pointer-events:none;"></div>
-<div id="effects" style="position:fixed;left:10px;bottom:140px;display:flex;flex-direction:column;gap:5px;z-index:30;font-family:ui-monospace,monospace;font-size:11px;pointer-events:none;"></div>
+<canvas id="minimap" width="150" height="150" style="position:fixed;top:56px;right:10px;width:150px;height:150px;border:2px solid #0d0d10;outline:3px solid #8b8b8b;border-radius:0;image-rendering:pixelated;background:#181818;z-index:30;display:none;"></canvas>
+<div id="achToast" style="position:fixed;top:18px;left:50%;transform:translateX(-50%) translateY(-120px);background:rgba(22,18,12,.97);border:2px solid #0d0d10;border-radius:0;padding:10px 16px;color:#fff;font-family:'VT323',ui-monospace,monospace;font-size:17px;line-height:1.25;z-index:60;transition:transform .4s steps(5);box-shadow:inset 2px 2px 0 #7a6a44,inset -2px -2px 0 #1a1208;max-width:300px;text-align:center;pointer-events:none;text-shadow:1px 1px 0 rgba(0,0,0,.6);"></div>
+<div id="effects" style="position:fixed;left:10px;bottom:140px;display:flex;flex-direction:column;gap:3px;z-index:30;font-family:'VT323',ui-monospace,monospace;font-size:16px;pointer-events:none;text-shadow:1px 1px 0 rgba(0,0,0,.6);"></div>
 
 <div id="loading"></div>
 
@@ -450,9 +540,11 @@ const PRESETS = {
 };
 const SETTINGS_KEY = 'voxelcraft_settings_v1';
 const DEFAULT_PRESET = isTouch ? 'niedrig' : 'mittel';
-let settings = Object.assign({ preset: DEFAULT_PRESET, blockRes:16, volume:0.7, keepInv:false, fov:72, sensitivity:1.0, skin:0x4a90d9, ao:true, bloom:!isTouch }, PRESETS[DEFAULT_PRESET]);
+let settings = Object.assign({ preset: DEFAULT_PRESET, blockRes:16, volume:0.7, keepInv:false, fov:72, sensitivity:1.0, skin:0x4a90d9, ao:true, bloom:!isTouch, uiScale:1.0 }, PRESETS[DEFAULT_PRESET]);
 try { const _raw = localStorage.getItem(SETTINGS_KEY); if(_raw){ Object.assign(settings, JSON.parse(_raw)); } } catch(_){}
 function saveSettings(){ try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch(_){} }
+function applyUIScale(){ document.documentElement.style.setProperty('--ui-scale', settings.uiScale); }
+applyUIScale();
 let settingsOpen = false;
 let baseFov = settings.fov;
 let RENDER_DISTANCE = settings.renderDist;
@@ -1328,6 +1420,7 @@ function biomeAt(wx,wz){ const h=terrainHeight(wx,wz); if(h<=WATER_LEVEL+1) retu
 let dimension=0, genDim=0;
 const NETHER_TOP=48, NETHER_LAVA=8;
 const lootChests=new Set();   // Welt-Positionen von Struktur-Truhen (bekommen beim ersten Oeffnen Beute)
+const richChests=new Set();   // Teilmenge: Tempel/Ruinen-Portal/Festung -> wertvollere Beute
 function generateChunkData(cx,cz){
   if(genDim===1) return generateNetherData(cx,cz);
   if(genDim===2) return generateEndData(cx,cz);
@@ -1420,6 +1513,7 @@ function generateNetherData(cx,cz){
       data[((y-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=b;
     }
   }
+  placeNetherStructures(data, ox, oz);
   return data;
 }
 
@@ -1477,6 +1571,7 @@ function placeStructures(data,cx,cz,ox,oz){
     const czv=gz*VCELL + 30 + ((hash2(gx*23-13,gz*37+5)*(VCELL-60))|0);
     buildVillage(data, ox, oz, cxv, czv, gx, gz);
   }
+  placeSpecialStructures(data, ox, oz);
 }
 function buildVillage(data, ox, oz, cx, cz, gx, gz){
   const base=terrainHeight(cx, cz);
@@ -1549,8 +1644,158 @@ function buildDungeon(data,ox,oz,ax,az){
     const edge=(Math.abs(dx)===W||Math.abs(dz)===W||h===0||h===3);
     setTreeBlock(data,ox,oz, ax+dx, fy+h, az+dz, edge?COBBLE:AIR, false);
   }
-  setTreeBlock(data,ox,oz, ax, fy+1, az, CHEST, false);
-  lootChests.add(ax+'_'+(fy+1)+'_'+az);
+  setTreeBlock(data,ox,oz, ax, fy+1, az, SPAWNER, false);        // klassischer Monster-Spawner (Zombie/Skelett/Spinne)
+  setTreeBlock(data,ox,oz, ax+1, fy+1, az+1, CHEST, false);
+  lootChests.add((ax+1)+'_'+(fy+1)+'_'+(az+1));
+}
+
+// ---- Spezial-Strukturen (biom-abhaengig, eigenes Raster -> seltener) ----
+function placeSpecialStructures(data,ox,oz){
+  const CELL=112, M=14;
+  for(let gz=Math.floor((oz-M)/CELL); gz<=Math.floor((oz+CHUNK_SIZE+M)/CELL); gz++)
+  for(let gx=Math.floor((ox-M)/CELL); gx<=Math.floor((ox+CHUNK_SIZE+M)/CELL); gx++){
+    const r=hash2(gx*523+41, gz*617-29);
+    if(r>0.55) continue;                                       // ~55% der Spezial-Zellen leer
+    const ax=gx*CELL + 12 + ((hash2(gx*61+3,gz*47+13)*(CELL-24))|0);
+    const az=gz*CELL + 12 + ((hash2(gx*29-7,gz*71+5)*(CELL-24))|0);
+    const bi=biomeAt(ax,az);
+    if(bi==='desert')      buildDesertTemple(data,ox,oz,ax,az);
+    else if(bi==='snow')   buildIgloo(data,ox,oz,ax,az);
+    else if(bi==='ocean'){                                     // flaches Wasser -> Hexenhaus, tiefes -> Ozean-Ruine
+      if(terrainHeight(ax,az) >= WATER_LEVEL-3 && hash2(ax*9+5,az*9-5)<0.5) buildWitchHut(data,ox,oz,ax,az);
+      else buildOceanRuin(data,ox,oz,ax,az);
+    }
+    else if(r<0.30)        buildRuinedPortal(data,ox,oz,ax,az); // sonst manchmal ein Ruinen-Portal
+  }
+}
+// Wuestentempel: gestufte Sand-Pyramide mit versteckter Schatzkammer + TNT-Falle
+function buildDesertTemple(data,ox,oz,ax,az){
+  const base=terrainHeight(ax,az);
+  if(base<=WATER_LEVEL+1) return;
+  for(let layer=0;layer<=4;layer++){                           // Pyramide 9x9 -> Spitze
+    const w=4-layer, y=base+layer;
+    for(let dz=-w;dz<=w;dz++) for(let dx=-w;dx<=w;dx++)
+      setTreeBlock(data,ox,oz, ax+dx, y, az+dz, SAND, false);
+  }
+  // Innenraum aushoehlen + Eingang an +z
+  for(let h=1;h<=3;h++) for(let dz=-2;dz<=2;dz++) for(let dx=-2;dx<=2;dx++)
+    if(Math.abs(dx)<2&&Math.abs(dz)<2) setTreeBlock(data,ox,oz, ax+dx, base+h, az+dz, AIR, false);
+  for(let h=1;h<=2;h++) setTreeBlock(data,ox,oz, ax, base+h, az+4, AIR, false);
+  setTreeBlock(data,ox,oz, ax, base+3, az, GLOWSTONE, false);  // Deko-Licht oben
+  // Versteckte Kammer tief unter dem Zentrum
+  const fy=base-6;
+  for(let h=0;h<=4;h++) for(let dz=-2;dz<=2;dz++) for(let dx=-2;dx<=2;dx++){
+    const edge=(Math.abs(dx)===2||Math.abs(dz)===2||h===0||h===4);
+    setTreeBlock(data,ox,oz, ax+dx, fy+h, az+dz, edge?SAND:AIR, false);
+  }
+  setTreeBlock(data,ox,oz, ax, fy, az, TNT, false);            // klassische TNT-Falle unter den Truhen
+  for(const s of [[-1,0],[1,0],[0,-1],[0,1]]){
+    const cx=ax+s[0], cz=az+s[1];
+    setTreeBlock(data,ox,oz, cx, fy+1, cz, CHEST, false);
+    const k=cx+'_'+(fy+1)+'_'+cz; lootChests.add(k); richChests.add(k);
+  }
+}
+// Iglu: Schnee-Kuppel mit Bett, Werkbank, Fackel und Truhe
+function buildIgloo(data,ox,oz,ax,az){
+  const base=terrainHeight(ax,az);
+  if(base<=WATER_LEVEL+1) return;
+  const R=3;
+  for(let dy=0;dy<=R;dy++){
+    const ry=Math.round(Math.sqrt(Math.max(0,R*R-dy*dy)));
+    for(let dz=-ry;dz<=ry;dz++) for(let dx=-ry;dx<=ry;dx++){
+      const d=Math.hypot(dx,dz); if(d>ry+0.3) continue;
+      const shell=(dy===0)||(d>ry-1);
+      setTreeBlock(data,ox,oz, ax+dx, base+dy, az+dz, shell?SNOW:AIR, false);
+    }
+  }
+  setTreeBlock(data,ox,oz, ax, base+1, az+R, AIR, false);      // Tueroeffnung
+  setTreeBlock(data,ox,oz, ax, base+2, az+R, AIR, false);
+  setTreeBlock(data,ox,oz, ax-1, base+1, az-1, BED, false);
+  setTreeBlock(data,ox,oz, ax+1, base+1, az-2, CRAFTING_TABLE, false);
+  setTreeBlock(data,ox,oz, ax+2, base+2, az,  TORCH, false);
+  setTreeBlock(data,ox,oz, ax-2, base+1, az+1, CHEST, false);
+  lootChests.add((ax-2)+'_'+(base+1)+'_'+(az+1));
+}
+// Ruinen-Portal: zerfallener Obsidianrahmen + Netherrack/Glowstone + Schatztruhe
+function buildRuinedPortal(data,ox,oz,ax,az){
+  const base=terrainHeight(ax,az);
+  if(base<=WATER_LEVEL) return;
+  for(let h=0;h<=4;h++) for(let w=0;w<=3;w++){
+    if(!(w===0||w===3||h===0||h===4)) continue;               // nur Rahmen
+    if(hash2(ax*7+w*13, az*5+h*17) < 0.28) continue;          // ~28% fehlen -> Ruine
+    setTreeBlock(data,ox,oz, ax+w, base+h, az, OBSIDIAN, false);
+  }
+  for(let dz=-2;dz<=2;dz++) for(let dx=-1;dx<=4;dx++){         // Netherrack/Glowstone-Streu
+    if(hash2(ax+dx*3+1, az+dz*3-1) >= 0.2) continue;
+    const gy=terrainHeight(ax+dx, az+dz);
+    setTreeBlock(data,ox,oz, ax+dx, gy, az+dz, (hash2(ax+dx,az+dz+9)<0.2?GLOWSTONE:NETHERRACK), false);
+  }
+  setTreeBlock(data,ox,oz, ax-1, base,   az, NETHERRACK, false);
+  setTreeBlock(data,ox,oz, ax-1, base+1, az, CHEST, false);
+  const k=(ax-1)+'_'+(base+1)+'_'+az; lootChests.add(k); richChests.add(k);
+}
+// Hexenhaus: Holzhuette auf Stelzen ueber flachem Wasser (Sumpf-Stil) mit Braustand
+function buildWitchHut(data,ox,oz,ax,az){
+  const seabed=terrainHeight(ax,az); if(seabed<WATER_LEVEL-6) return;
+  const floor=WATER_LEVEL+1;
+  for(const s of [[-2,-2],[2,-2],[-2,2],[2,2]])                // 4 Stelzen vom Grund bis zum Boden
+    for(let y=seabed+1;y<=floor;y++) setTreeBlock(data,ox,oz, ax+s[0], y, az+s[1], LOG, false);
+  for(let dz=-2;dz<=2;dz++) for(let dx=-2;dx<=2;dx++) setTreeBlock(data,ox,oz, ax+dx, floor, az+dz, WOOD, false); // Boden
+  for(let dz=-2;dz<=2;dz++) for(let dx=-2;dx<=2;dx++){          // Waende
+    if(Math.abs(dx)===2||Math.abs(dz)===2) for(let h=1;h<=2;h++) setTreeBlock(data,ox,oz, ax+dx, floor+h, az+dz, (h===2?LOG:WOOD), false);
+  }
+  for(let dz=-3;dz<=3;dz++) for(let dx=-3;dx<=3;dx++) setTreeBlock(data,ox,oz, ax+dx, floor+3, az+dz, WOOD, false); // ueberstehendes Dach
+  setTreeBlock(data,ox,oz, ax, floor+1, az+2, AIR, false); setTreeBlock(data,ox,oz, ax, floor+2, az+2, AIR, false); // Tuer
+  setTreeBlock(data,ox,oz, ax-1, floor+1, az-1, BREWING_STAND, false);
+  setTreeBlock(data,ox,oz, ax+1, floor+1, az-1, CRAFTING_TABLE, false);
+  setTreeBlock(data,ox,oz, ax-1, floor+1, az+1, TORCH, false);
+  setTreeBlock(data,ox,oz, ax+1, floor+1, az+1, CHEST, false);
+  lootChests.add((ax+1)+'_'+(floor+1)+'_'+(az+1));
+}
+// Ozean-Ruine: kleiner zerfallener Steinbau auf dem Meeresgrund mit Schatztruhe
+function buildOceanRuin(data,ox,oz,ax,az){
+  const sb=terrainHeight(ax,az); if(sb<Y_MIN+4 || sb>WATER_LEVEL-2) return;
+  const W=2;
+  for(let dz=-W;dz<=W;dz++) for(let dx=-W;dx<=W;dx++){
+    setTreeBlock(data,ox,oz, ax+dx, sb, az+dz, COBBLE, false); // Boden
+    if(Math.abs(dx)===W||Math.abs(dz)===W) for(let h=1;h<=2;h++){
+      if(hash2(ax+dx*5+h, az+dz*5-h) < 0.45) continue;          // eingestuerzte Luecken
+      setTreeBlock(data,ox,oz, ax+dx, sb+h, az+dz, (hash2(ax+dx,az+dz)<0.35?STONE:COBBLE), false);
+    }
+  }
+  setTreeBlock(data,ox,oz, ax, sb+1, az, CHEST, false);
+  const k=ax+'_'+(sb+1)+'_'+az; lootChests.add(k); richChests.add(k);
+}
+// ---- Nether-Strukturen: kleine Festung (Brueckenbau aus Ziegel) ----
+function placeNetherStructures(data,ox,oz){
+  const CELL=88, M=12;
+  for(let gz=Math.floor((oz-M)/CELL); gz<=Math.floor((oz+CHUNK_SIZE+M)/CELL); gz++)
+  for(let gx=Math.floor((ox-M)/CELL); gx<=Math.floor((ox+CHUNK_SIZE+M)/CELL); gx++){
+    if(hash2(gx*733+17, gz*811-19) > 0.4) continue;            // ~40% der Zellen
+    const ax=gx*CELL + 10 + ((hash2(gx*37+9,gz*43+1)*(CELL-20))|0);
+    const az=gz*CELL + 10 + ((hash2(gx*53-5,gz*59+7)*(CELL-20))|0);
+    buildNetherFortress(data,ox,oz,ax,az);
+  }
+}
+function buildNetherFortress(data,ox,oz,ax,az){
+  const y0=NETHER_LAVA+6;                                      // ueber dem Lava-See
+  for(let h=-1;h<=5;h++) for(let dz=-4;dz<=4;dz++) for(let dx=-4;dx<=4;dx++)
+    setTreeBlock(data,ox,oz, ax+dx, y0+h, az+dz, AIR, false);  // Hohlraum freiraeumen
+  for(let dz=-3;dz<=3;dz++) for(let dx=-3;dx<=3;dx++){
+    setTreeBlock(data,ox,oz, ax+dx, y0, az+dz, BRICKS, false); // Boden
+    setTreeBlock(data,ox,oz, ax+dx, y0+4, az+dz, BRICKS, false); // Dach
+    if(Math.abs(dx)===3||Math.abs(dz)===3)
+      for(let h=1;h<=3;h++) setTreeBlock(data,ox,oz, ax+dx, y0+h, az+dz, BRICKS, false); // Wand
+  }
+  for(let h=1;h<=2;h++){                                       // zwei Durchgaenge
+    setTreeBlock(data,ox,oz, ax,   y0+h, az+3, AIR, false);
+    setTreeBlock(data,ox,oz, ax+3, y0+h, az,   AIR, false);
+  }
+  for(let dz=-1;dz<=1;dz++) setTreeBlock(data,ox,oz, ax-2, y0+1, az+dz, SOUL_SAND, false); // Warzenbeet-Untergrund
+  setTreeBlock(data,ox,oz, ax,   y0+3, az,   GLOWSTONE, false);
+  setTreeBlock(data,ox,oz, ax,   y0+1, az,   SPAWNER, false);   // Blaze-Spawner (funktioniert)
+  setTreeBlock(data,ox,oz, ax+2, y0+1, az-2, CHEST, false);
+  const k=(ax+2)+'_'+(y0+1)+'_'+(az-2); lootChests.add(k); richChests.add(k);
 }
 
 // =====================================================================
@@ -3371,6 +3616,7 @@ function syncSettingsUI(){
   setSD.value=settings.simDist;    setSDVal.textContent=settings.simDist;
   setFov.value=settings.fov;       setFovVal.textContent=settings.fov+'°';
   setSens.value=Math.round(settings.sensitivity*100); setSensVal.textContent=Math.round(settings.sensitivity*100)+'%';
+  setUI.value=Math.round(settings.uiScale*100); setUIVal.textContent=Math.round(settings.uiScale*100)+'%';
   markSegButtons(); syncVol();
 }
 function applyPreset(name){
@@ -3396,6 +3642,8 @@ setBloomEl.addEventListener('click', (e)=>{ const b=e.target.closest('button'); 
 const setVol=document.getElementById('setVol'), setVolVal=document.getElementById('setVolVal');
 const setFov=document.getElementById('setFov'), setFovVal=document.getElementById('setFovVal');
 const setSens=document.getElementById('setSens'), setSensVal=document.getElementById('setSensVal');
+const setUI=document.getElementById('setUI'), setUIVal=document.getElementById('setUIVal');
+setUI.addEventListener('input', ()=>{ settings.uiScale=+setUI.value/100; setUIVal.textContent=setUI.value+'%'; applyUIScale(); saveSettings(); });
 function syncVol(){ const v=Math.round((settings.volume!=null?settings.volume:0.7)*100); setVol.value=v; setVolVal.textContent=v+'%'; }
 setVol.addEventListener('input', ()=>{ settings.volume=+setVol.value/100; SFX.setVolume(settings.volume); setVolVal.textContent=setVol.value+'%'; saveSettings(); });
 setFov.addEventListener('input', ()=>{ settings.fov=+setFov.value; setFovVal.textContent=settings.fov+'°'; baseFov=settings.fov; camera.fov=settings.fov; camera.updateProjectionMatrix(); saveSettings(); });
@@ -4798,6 +5046,52 @@ function updateNetherMobs(dt){
   for(const [id,m] of mobsMap){ if(m.local && !m.boss && Math.hypot(m.group.position.x-player.x, m.group.position.z-player.z)>64) removeMob(id); }
 }
 
+// ---- Funktionierende Mob-Spawner (Festung/Dungeon) ----
+const SPAWN_KINDS_OVER=['zombie','skeleton','spider'];
+const _spawnerCd=new Map();          // "x_y_z" -> naechster Spawn-Zeitpunkt (ms)
+let _spawnerScanT=0;
+function updateSpawners(dt, now){
+  _spawnerScanT-=dt; if(_spawnerScanT>0) return;
+  _spawnerScanT=1.2;
+  if(dimension===0 && net.connected) return;                  // MP-Oberwelt: Mobs macht der Server
+  let localCount=0; for(const [,m] of mobsMap) if(m.local) localCount++;
+  if(localCount>=20) return;                                   // globales Limit
+  const px=Math.floor(player.x), py=Math.floor(player.y), pz=Math.floor(player.z), R=11;
+  for(let dy=-6;dy<=6;dy++){ const y=py+dy; if(y<Y_MIN||y>=Y_MAX) continue;
+    for(let dz=-R;dz<=R;dz++) for(let dx=-R;dx<=R;dx++){
+      const x=px+dx, z=pz+dz;
+      if(world.getBlock(x,y,z)!==SPAWNER) continue;
+      const key=x+'_'+y+'_'+z;
+      if((_spawnerCd.get(key)||0) > now) continue;
+      // nicht ueberfuellen: Mobs nahe diesem Spawner zaehlen
+      let near=0; for(const [,m] of mobsMap){ if(!m.local) continue; const p=m.group.position; if(Math.abs(p.x-(x+0.5))<8 && Math.abs(p.z-(z+0.5))<8 && Math.abs(p.y-y)<6) near++; }
+      if(near>=5){ _spawnerCd.set(key, now+3000); continue; }
+      if(spawnFromSpawner(x,y,z)) _spawnerCd.set(key, now + 7000 + Math.random()*5000);
+      else _spawnerCd.set(key, now+2000);
+    }
+  }
+}
+function spawnFromSpawner(x,y,z){
+  const fly=(dimension===1);                                  // Nether-Spawner -> Blaze (fliegend)
+  const want=1+((Math.random()*3)|0); let made=0;
+  for(let i=0;i<10 && made<want;i++){
+    const sx=x+((Math.random()*5-2)|0), sz=z+((Math.random()*5-2)|0);
+    if(fly){
+      if(world.getBlock(sx,y+1,sz)!==AIR) continue;
+      spawnFlyingMob('blaze', sx+0.5, y+1, sz+0.5); made++;
+    } else {
+      if(world.getBlock(sx,y,sz)!==AIR || world.getBlock(sx,y+1,sz)!==AIR) continue;
+      if(isSolid(world.getBlock(sx,y-1,sz))===false) continue; // fester Boden noetig
+      const kind=SPAWN_KINDS_OVER[(Math.random()*SPAWN_KINDS_OVER.length)|0];
+      const id=spawnLocalMob(kind, sx+0.5, sz+0.5);
+      const m=mobsMap.get(id); if(m) m.group.position.y=y;     // an der Spawner-Hoehe halten (sonst Oberflaeche)
+      made++;
+    }
+  }
+  if(made>0){ for(let k=0;k<6;k++){ const mat=new THREE.MeshBasicMaterial({color:dimension===1?0xff7a2a:0x7a2a9a, transparent:true}); const mesh=new THREE.Mesh(_boomGeo,mat); mesh.position.set(x+0.5+(Math.random()-0.5),y+0.6+Math.random(),z+0.5+(Math.random()-0.5)); mesh.scale.setScalar(0.16); scene.add(mesh); particles.push({mesh, vx:(Math.random()-0.5)*0.4, vy:0.6+Math.random()*0.6, vz:(Math.random()-0.5)*0.4, life:0.6, max:0.6}); } }
+  return made>0;
+}
+
 // =====================================================================
 //  BOSSE: Enderdrache, Wither, Ghast, Blaze, End-Kristalle (fliegende KI)
 // =====================================================================
@@ -4972,6 +5266,11 @@ function fillLoot(arr,key){
   const pool=[ {id:IRON_INGOT,min:1,max:4},{id:COAL,min:1,max:6},{id:GOLD_INGOT,min:0,max:2},{id:DIAMOND,min:0,max:2},
                {id:COOKED_BEEF,min:0,max:3},{id:ARROW_ITEM,min:0,max:8},{id:BONE,min:0,max:4},{id:LEATHER,min:0,max:3},
                {id:SADDLE,min:0,max:1},{id:APPLE,min:0,max:2},{id:WHEAT_SEEDS,min:0,max:3},{id:BOOK,min:0,max:2} ];
+  if(richChests.has(key)){                                     // Tempel/Ruinen-Portal/Festung: wertvollere Beute
+    pool.push({id:DIAMOND,min:1,max:3},{id:EMERALD,min:1,max:4},{id:GOLD_INGOT,min:2,max:5},
+              {id:OBSIDIAN,min:1,max:4},{id:GOLD_BLOCK,min:0,max:1},{id:BOOK,min:1,max:2});
+    richChests.delete(key);
+  }
   let slot=0;
   for(const p of pool){ if(rnd()<0.6){ const n=p.min+Math.floor(rnd()*(p.max-p.min+1)); if(n>0 && slot<CHEST_SIZE){ arr[slot++]={id:p.id,count:n}; } } }
 }
@@ -4999,6 +5298,7 @@ function frame(now){
   tickV2(dt);
   updateLocalMobs(dt, now);
   updateNetherMobs(dt);
+  updateSpawners(dt, now);
   updateBosses(dt);
   updateBossProjectiles(dt);
   updateMobs(dt);
@@ -5299,7 +5599,7 @@ function unlockAch(id){
   achUnlocked.add(id);
   try{ localStorage.setItem(ACH_KEY, JSON.stringify([...achUnlocked])); }catch(_){}
   const a=ACHIEVEMENTS[id];
-  achToastEl.innerHTML='<div style="color:#c084fc;font-weight:700;">🏆 Fortschritt erreicht!</div><div style="margin-top:3px;font-weight:700;">'+a.name+'</div><div style="color:#8fa07d;font-size:11px;">'+a.desc+'</div>';
+  achToastEl.innerHTML='<div style="color:#ffe64a;">🏆 Fortschritt gemacht!</div><div style="margin-top:2px;">'+a.name+'</div><div style="color:#b8c0a8;font-size:15px;">'+a.desc+'</div>';
   achToastEl.style.transform='translateX(-50%) translateY(0)';
   if(SFX.levelup) SFX.levelup();
   clearTimeout(_achTimer); _achTimer=setTimeout(()=>{ achToastEl.style.transform='translateX(-50%) translateY(-120px)'; }, 4000);
@@ -5308,7 +5608,7 @@ function showDeathStats(){
   const el=document.getElementById('deathStats'); if(!el) return;
   const t=Math.round((performance.now()-gameStats.started)/1000);
   const mm=Math.floor(t/60), ss=t%60;
-  el.innerHTML='<div style="margin:14px 0;color:#c9d6bd;font-size:13px;line-height:1.9;">'+
+  el.innerHTML='<div style="margin:14px 0;color:#e8d8d8;font-size:18px;line-height:1.8;text-shadow:1px 1px 0 rgba(0,0,0,.6);">'+
     '⏱️ Überlebt: '+mm+'m '+ss+'s<br>'+
     '⛏️ Blöcke abgebaut: '+gameStats.blocksMined+'<br>'+
     '⚔️ Mobs besiegt: '+gameStats.mobsKilled+'<br>'+
