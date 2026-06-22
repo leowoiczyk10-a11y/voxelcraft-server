@@ -1414,8 +1414,21 @@ const DESERT_T = 0.62;
 function biomeNoise(wx,wz){ return (perlin(wx/240+1000, wz/240-1000)+1)*0.5; }
 // Temperatur-Rauschen fuer Biome (kalt -> Schnee/Eis). 0..1
 function tempNoise(wx,wz){ return (perlin(wx/300-2000, wz/300+2000)+1)*0.5; }
+// Feuchtigkeits-Rauschen -> Wald/Dschungel/Sumpf. 0..1
+function moistNoise(wx,wz){ return (perlin(wx/210+5000, wz/210-5000)+1)*0.5; }
 function isCold(wx,wz){ return terrainHeight(wx,wz) > WATER_LEVEL+16 || tempNoise(wx,wz) < 0.32; }
-function biomeAt(wx,wz){ const h=terrainHeight(wx,wz); if(h<=WATER_LEVEL+1) return 'ocean'; if(isCold(wx,wz)) return 'snow'; if(biomeNoise(wx,wz)>DESERT_T) return 'desert'; if(tempNoise(wx,wz)>0.7 && biomeNoise(wx,wz)<0.4) return 'savanna'; return 'plains'; }
+function biomeAt(wx,wz){
+  const h=terrainHeight(wx,wz);
+  if(h<=WATER_LEVEL+1) return 'ocean';
+  if(isCold(wx,wz)) return 'snow';
+  const bn=biomeNoise(wx,wz), tn=tempNoise(wx,wz), mo=moistNoise(wx,wz);
+  if(bn>DESERT_T) return 'desert';
+  if(h<=WATER_LEVEL+3 && mo>0.6) return 'swamp';            // tief gelegen + feucht
+  if(tn>0.7 && bn<0.4) return 'savanna';
+  if(tn>0.6 && mo>0.66) return 'jungle';                    // heiss + sehr feucht
+  if(mo>0.56) return 'forest';                              // gemaessigt + feucht
+  return 'plains';
+}
 // ---- Dimensionen (0 = Oberwelt, 1 = Nether) ----
 let dimension=0, genDim=0;
 const NETHER_TOP=48, NETHER_LAVA=8;
@@ -1458,9 +1471,18 @@ function generateChunkData(cx,cz){
       } else if(snowy){
         if(pr<0.6) data[((top-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=SNOW_LAYER;   // Schneedecke
       } else {
-        if(pr<0.10){ data[((top-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=TALL_GRASS; }
-        else if(pr<0.115){ data[((top-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=(hash2(wx+5,wz+5)<0.5)?FLOWER_RED:FLOWER_YELLOW; }
-        else if(pr<0.119){ data[((top-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x]=PUMPKIN; }   // seltene Kuerbisse in Wiesen
+        const bio2=biomeAt(wx,wz), ti=((top-Y_MIN)*CHUNK_SIZE+z)*CHUNK_SIZE+x;
+        if(bio2==='swamp'){            // Sumpf: viel Gras + abgestorbene Buesche, keine Blumen
+          if(pr<0.20) data[ti]=TALL_GRASS; else if(pr<0.24) data[ti]=DEAD_BUSH;
+        } else if(bio2==='jungle'){    // Dschungel: dichter Bodenbewuchs
+          if(pr<0.30) data[ti]=TALL_GRASS; else if(pr<0.34) data[ti]=(hash2(wx+5,wz+5)<0.5)?FLOWER_RED:FLOWER_YELLOW;
+        } else if(bio2==='forest'){    // Wald: mehr Blumen + Gras
+          if(pr<0.18) data[ti]=TALL_GRASS; else if(pr<0.23) data[ti]=(hash2(wx+5,wz+5)<0.5)?FLOWER_RED:FLOWER_YELLOW;
+        } else {                        // Wiese
+          if(pr<0.10) data[ti]=TALL_GRASS;
+          else if(pr<0.115) data[ti]=(hash2(wx+5,wz+5)<0.5)?FLOWER_RED:FLOWER_YELLOW;
+          else if(pr<0.119) data[ti]=PUMPKIN;   // seltene Kuerbisse in Wiesen
+        }
       }
     } else if(h===WATER_LEVEL+1 && top<Y_MAX){
       // Strand-Rand: Zuckerrohr am Wasser
@@ -1473,21 +1495,34 @@ function generateChunkData(cx,cz){
     }
   }
   // Baeume: deterministisch, chunk-uebergreifend (Rand-Spalten mit-scannen, M=Kronenradius)
-  const M=2;
+  const M=3;
   for(let tz=-M; tz<CHUNK_SIZE+M; tz++) for(let tx=-M; tx<CHUNK_SIZE+M; tx++){
     const wx=ox+tx, wz=oz+tz;
-    if(hash2(wx,wz) > 0.012) continue;                 // Baum-Dichte
+    const bio=biomeAt(wx,wz);
+    let dens; // Baum-Dichte je Biom
+    if(bio==='jungle') dens=0.085; else if(bio==='forest') dens=0.06;
+    else if(bio==='swamp') dens=0.02; else if(bio==='savanna') dens=0.006;
+    else if(bio==='plains') dens=0.012; else continue;   // Wueste/Schnee/Ozean: keine Baeume
+    if(hash2(wx,wz) > dens) continue;
     const gh=terrainHeight(wx,wz);
     if(gh<=WATER_LEVEL+1 || gh>WATER_LEVEL+18) continue; // nicht am Wasser, nicht auf Schnee
-    if(biomeNoise(wx,wz) > DESERT_T) continue;            // keine Baeume in der Wueste
-    const trunk = 4 + ((hash2(wx+7,wz-7)*3)|0);        // 4..6 hoch
+    const big = (bio==='jungle');
+    const trunk = (big ? 8 + ((hash2(wx-3,wz+3)*5)|0) : 4 + ((hash2(wx+7,wz-7)*3)|0));   // Dschungel 8..12, sonst 4..6
     const topY = gh + trunk;
     for(let i=1;i<=trunk;i++) setTreeBlock(data, ox, oz, wx, gh+i, wz, LOG, false);
+    const baseR = big?3:2;
     for(let ly=topY-2; ly<=topY+1; ly++){
-      const r = (ly>=topY)?1:2;
+      const r = (ly>=topY) ? (big?2:1) : baseR;
       for(let lz=-r; lz<=r; lz++) for(let lx=-r; lx<=r; lx++){
         if(Math.abs(lx)===r && Math.abs(lz)===r) continue; // Ecken weg -> runder
         setTreeBlock(data, ox, oz, wx+lx, ly, wz+lz, LEAVES, true);
+      }
+    }
+    if(big){ // Dschungel-Ranken: ein paar haengende Blattsaeulen unter der Krone
+      for(let v=0; v<3; v++){
+        const vx=wx+((hash2(wx+v,wz-v)*5|0)-2), vz=wz+((hash2(wx-v,wz+v)*5|0)-2);
+        const vlen=2+((hash2(vx,vz)*4)|0);
+        for(let k=0;k<vlen;k++) setTreeBlock(data, ox, oz, vx, topY-2-k, vz, LEAVES, true);
       }
     }
   }
@@ -2491,7 +2526,7 @@ function faceShade(dir){ if(dir[1]>0) return 1.0; if(dir[1]<0) return 0.6; if(di
 // ---- Ambient Occlusion: weiche Verschattung in Ecken/Kanten (klassischer Voxel-Look) ----
 const AO_LUT = [0.42, 0.62, 0.82, 1.0];   // Helligkeit je AO-Stufe (0 = stark verdeckt .. 3 = offen)
 // Biom-Toenung fuer Gras-Oberseiten & Laub (Multiplikator auf die gruene Textur)
-function biomeTint(b){ if(b==='desert') return [1.15,1.05,0.62]; if(b==='savanna') return [1.06,1.0,0.7]; if(b==='snow') return [0.84,0.95,0.96]; return [1,1,1]; }
+function biomeTint(b){ if(b==='desert') return [1.15,1.05,0.62]; if(b==='savanna') return [1.06,1.0,0.7]; if(b==='snow') return [0.84,0.95,0.96]; if(b==='swamp') return [0.7,0.82,0.55]; if(b==='jungle') return [0.72,1.05,0.6]; if(b==='forest') return [0.85,1.02,0.78]; return [1,1,1]; }
 function occ1(bx,by,bz,axis,sg){ let x=bx,y=by,z=bz; if(axis===0)x+=sg; else if(axis===1)y+=sg; else z+=sg; return isOpaque(world.getBlock(x,y,z))?1:0; }
 function occ2(bx,by,bz,a1,s1,a2,s2){ let x=bx,y=by,z=bz; if(a1===0)x+=s1; else if(a1===1)y+=s1; else z+=s1; if(a2===0)x+=s2; else if(a2===1)y+=s2; else z+=s2; return isOpaque(world.getBlock(x,y,z))?1:0; }
 // Face sichtbar? Luft -> ja. Opaker Nachbar -> nein. Transparenter Nachbar:
@@ -3461,7 +3496,15 @@ invPanel.addEventListener('mousemove', (e)=>{
 });
 invPanel.addEventListener('mouseleave', ()=>{ slotTipEl.style.display='none'; });
 invPanel.addEventListener('contextmenu', (e)=>{ const el=e.target.closest('.islot'); e.preventDefault(); if(!el) return; setPointer(e); handleSlot(el.dataset.zone, +el.dataset.idx, true); });
-invPanel.addEventListener('touchstart', (e)=>{ const el=e.target.closest('.islot'); if(!el) return; e.preventDefault(); setPointer(e.changedTouches[0]); handleSlot(el.dataset.zone, +el.dataset.idx, splitMode); }, {passive:false});
+// Mobile: beim Antippen kurz den Item-Namen einblenden (kein Hover auf Touch)
+let _tipTimer=null;
+function showSlotTipTouch(item, x, y){
+  if(!item){ slotTipEl.style.display='none'; return; }
+  const t=thing(item.id); slotTipEl.textContent=t?t.name:'';
+  slotTipEl.style.left=x+'px'; slotTipEl.style.top=y+'px'; slotTipEl.style.display='block';
+  clearTimeout(_tipTimer); _tipTimer=setTimeout(()=>{ slotTipEl.style.display='none'; }, 1400);
+}
+invPanel.addEventListener('touchstart', (e)=>{ const el=e.target.closest('.islot'); if(!el) return; e.preventDefault(); const tch=e.changedTouches[0]; const s=slotItemAt(el.dataset.zone, +el.dataset.idx); setPointer(tch); handleSlot(el.dataset.zone, +el.dataset.idx, splitMode); showSlotTipTouch(s, tch.clientX, tch.clientY); }, {passive:false});
 document.addEventListener('mousemove', (e)=>{ if(invOpen && held){ setPointer(e); renderHeld(); } });
 const splitToggleEl=document.getElementById('splitToggle');
 function updateSplitToggle(){ splitToggleEl.textContent='Einzeln: '+(splitMode?'an':'aus'); splitToggleEl.classList.toggle('on',splitMode); }
@@ -3752,7 +3795,7 @@ net.connect();
 // =====================================================================
 const HEALTH_MAX=10, HUNGER_MAX=10, AIR_MAX=10;
 let health=HEALTH_MAX, hunger=HUNGER_MAX, air=AIR_MAX, dead=false, hurtT=0, burnT=0;
-let lastDrown=0, lastStatSent=0, lastH=-1, lastHu=-1, lastBurnDmg=0;
+let lastDrown=0, lastStatSent=0, lastH=-1, lastHu=-1, lastBurnDmg=0, lastCactus=0;
 
 const hurtEl=document.getElementById('hurt'), burnEl=document.getElementById('burn'), waterEl=document.getElementById('water'), hpRow=document.getElementById('hpRow'), hungerRow=document.getElementById('hungerRow'), airRow=document.getElementById('airRow'), armorRow=document.getElementById('armorRow');
 const deathEl=document.getElementById('death'), respawnBtn=document.getElementById('respawnBtn');
@@ -4024,11 +4067,11 @@ const MOB_DROP = {
   squid:       [{id:INK_SAC,    min:1, max:3}],
   shulker:     [{id:SHULKER_SHELL, min:1, max:2}],
 };
-function rollDrops(kind){
+function rollDrops(kind,x,y,z){
   const tbl=MOB_DROP[kind]; if(!tbl) return;
-  let got=false;
-  for(const d of tbl){ const n=d.min + Math.floor(Math.random()*(d.max-d.min+1)); if(n>0){ addItem(d.id, n); got=true; } }
-  if(got) SFX.pickup();
+  // Position bekannt? -> physische Welt-Drops, sonst (Fallback) direkt ins Inventar
+  const drop = (x!=null) ? ((id,n)=>spawnGroundItem(id,n,x,y,z)) : ((id,n)=>addItem(id,n));
+  for(const d of tbl){ const n=d.min + Math.floor(Math.random()*(d.max-d.min+1)); if(n>0) drop(d.id, n); }
 }
 let lastAtk=0, lastEat=0;
 function attackMob(id){
@@ -4093,9 +4136,9 @@ function onMobDead(id){
     spawnXPOrbs(m.group.position.x, m.group.position.y+0.6, m.group.position.z, MOB_XP[m.kind]||1);
     gameStats.mobsKilled++; unlockAch('first_kill');
     if(m.kind==='ender_dragon'){ unlockAch('dragon'); onDragonDead(m); }
-    else if(m.kind==='wither'){ rollDrops('wither'); }
-  } else if(m && t && performance.now()-t<4000){ rollDrops(m.kind);   // nur wer kurz vorher traf, kriegt Drop + XP
-    if(m.kind==='horse' && m.saddled) addItem(SADDLE,1);              // Sattel kommt mit zurueck
+    else if(m.kind==='wither'){ rollDrops('wither', m.group.position.x, m.group.position.y+0.6, m.group.position.z); }
+  } else if(m && t && performance.now()-t<4000){ const p=m.group.position; rollDrops(m.kind, p.x, p.y+0.6, p.z);   // nur wer kurz vorher traf, kriegt Drop + XP
+    if(m.kind==='horse' && m.saddled) spawnGroundItem(SADDLE,1,p.x,p.y+0.6,p.z);   // Sattel kommt mit zurueck
     spawnXPOrbs(m.group.position.x, m.group.position.y+0.6, m.group.position.z, MOB_XP[m.kind]||1);
     gameStats.mobsKilled++; unlockAch('first_kill'); }
   if(m && m.kind==='end_crystal'){ spawnExplosion(m.group.position.x, m.group.position.y, m.group.position.z); }
@@ -4203,6 +4246,16 @@ function survivalUpdate(dt, now){
     burnT = Math.max(0, burnT - dt);
     const iv = inLava ? 500 : 1000, dmg = inLava ? 2 : 1; // in Lava schneller + haerter
     if(now - lastBurnDmg > iv){ lastBurnDmg = now; SFX.sizzle(); damagePlayer(dmg); }
+  }
+  // Kaktus: Beruehrungsschaden, wenn der Spieler an einen Kaktus stoesst (Minecraft-konform)
+  if(now - lastCactus > 700){
+    const y0=Math.floor(player.y), y1=Math.floor(player.y+1.2); let touch=false;
+    for(let yy=y0; yy<=y1 && !touch; yy++){
+      for(const o of [[0.301,0],[-0.301,0],[0,0.301],[0,-0.301]]){
+        if(world.getBlock(Math.floor(player.x+o[0]), yy, Math.floor(player.z+o[1]))===CACTUS){ touch=true; break; }
+      }
+    }
+    if(touch){ lastCactus=now; damagePlayer(1); }
   }
   for(const [id,m] of mobsMap){
     if(!m.hostile) continue;
@@ -4598,6 +4651,38 @@ function updateParticles(dt){
   }
 }
 
+// ---- Welt-Item-Drops: physische Items, die der Spieler durch Annaehern einsammelt ----
+const groundItems=[];                 // {id,count,mesh,x,y,z,vx,vy,vz,grounded,age,bob}
+const _dropGeo=new THREE.BoxGeometry(0.3,0.3,0.3);
+function dropColor(id){ const t=thing(id); return (t&&(t.color!=null?t.color:t.top))!=null ? (t.color!=null?t.color:t.top) : 0xffffff; }
+function spawnGroundItem(id,count,x,y,z){
+  if(!id || id===AIR || count<=0) return;
+  const mesh=new THREE.Mesh(_dropGeo, new THREE.MeshLambertMaterial({color:dropColor(id)}));
+  mesh.position.set(x,y,z); scene.add(mesh);
+  const a=Math.random()*6.283, sp=0.5+Math.random()*0.7;
+  groundItems.push({ id, count, mesh, x, y, z, vx:Math.cos(a)*sp, vy:1.4+Math.random()*1.2, vz:Math.sin(a)*sp, grounded:false, age:0, bob:Math.random()*6.283 });
+}
+function updateGroundItems(dt){
+  if(dt>0.05) dt=0.05;
+  for(let i=groundItems.length-1;i>=0;i--){
+    const g=groundItems[i]; g.age+=dt;
+    if(!g.grounded){
+      g.vy-=20*dt;
+      g.x+=g.vx*dt; g.y+=g.vy*dt; g.z+=g.vz*dt;
+      const below=world.getBlock(Math.floor(g.x), Math.floor(g.y-0.2), Math.floor(g.z));
+      if(g.vy<0 && isSolid(below) && below!==AIR){ g.y=Math.floor(g.y-0.2)+1.18; g.grounded=true; g.vx=g.vy=g.vz=0; }
+      else { g.vx*=0.98; g.vz*=0.98; }
+      if(g.y<Y_MIN){ scene.remove(g.mesh); g.mesh.material.dispose(); groundItems.splice(i,1); continue; }
+    }
+    g.bob+=dt*2.5;
+    g.mesh.position.set(g.x, g.y+(g.grounded?Math.sin(g.bob)*0.07:0), g.z);
+    g.mesh.rotation.y+=dt*1.6;
+    const d=Math.hypot(g.x-player.x, g.y-(player.y+0.6), g.z-player.z);
+    if(g.age>0.5 && d<1.5){ addItem(g.id, g.count); SFX.pickup(); scene.remove(g.mesh); g.mesh.material.dispose(); groundItems.splice(i,1); continue; }
+    if(g.age>300){ scene.remove(g.mesh); g.mesh.material.dispose(); groundItems.splice(i,1); }   // verschwinden nach 5 min
+  }
+}
+
 // ---- Schwebende Schadenszahlen ueber Mobs ----
 const dmgPops=[];
 function makeTextSprite(text, color){
@@ -4659,10 +4744,10 @@ function addToolItem(id){ for(let i=0;i<SLOT_COUNT;i++){ if(!inv[i]){ inv[i]={id
 function addArmorItem(id){ for(let i=0;i<SLOT_COUNT;i++){ if(!inv[i]){ inv[i]={id,count:1,dur:ARMOR[id].dur}; renderHotbar(); if(invOpen) renderInventory(); return; } } }
 function damageTool(){ const t=inv[selectedSlot]; if(!t||!isTool(t.id)) return; t.dur--; if(t.dur<=0) inv[selectedSlot]=null; renderHotbar(); if(invOpen) renderInventory(); }
 function breakBlock(x,y,z,bid,info,tool){
-  if(bid===FURNACE){ const fk=x+'_'+y+'_'+z, f=furnaces.get(fk); if(f){ for(const s of f.slots){ if(s) addItem(s.id,s.count); } furnaces.delete(fk); } }
+  if(bid===FURNACE){ const fk=x+'_'+y+'_'+z, f=furnaces.get(fk); if(f){ for(const s of f.slots){ if(s) spawnGroundItem(s.id,s.count,x+0.5,y+0.6,z+0.5); } furnaces.delete(fk); } }
   if(bid===CHEST||bid===BARREL){ const ck=x+'_'+y+'_'+z;                     // Truhen/Fass-Inhalt ausschuetten
     if(lootChests.has(ck)){ fillLoot(chestAt(ck),ck); lootChests.delete(ck); }
-    const arr=chests.get(ck); if(arr){ for(const s of arr) if(s) addItem(s.id,s.count); chests.delete(ck); }
+    const arr=chests.get(ck); if(arr){ for(const s of arr) if(s) spawnGroundItem(s.id,s.count,x+0.5,y+0.6,z+0.5); chests.delete(ck); }
     if(net.connected && dimension===0) net.send({t:'chest',pos:ck,slots:[]}); else saveChestsLocal();
   }
   const k=x+'_'+y+'_'+z;
@@ -4674,10 +4759,10 @@ function breakBlock(x,y,z,bid,info,tool){
   world.setBlock(x,y,z,AIR);
   if(wasRedstone) updateRedstone(x,y,z);                                     // Netz neu auswerten
   const okTool = !info.needsTool || (tool && isTool(tool.id) && TOOL[tool.id].cat===info.tool && TOOL[tool.id].tier >= (info.minTier||1));
-  if(okTool){ const dr=dropFor(bid); if(dr!==AIR) addItem(dr,1);
-    if(bid===WHEAT_S3) addItem(WHEAT_SEEDS, 1+(Math.random()*2|0));          // reifer Weizen: Samen extra
-    if(bid===SOUL_SAND && Math.random()<0.18) addItem(NETHER_WART,1);        // Netherwarze gelegentlich
-    if(bid===GRASS && Math.random()<0.12) addItem(WHEAT_SEEDS,1);            // Samen aus Gras
+  if(okTool){ const cx=x+0.5, cy=y+0.55, cz=z+0.5; const dr=dropFor(bid); if(dr!==AIR) spawnGroundItem(dr,1,cx,cy,cz);
+    if(bid===WHEAT_S3) spawnGroundItem(WHEAT_SEEDS, 1+(Math.random()*2|0), cx,cy,cz);   // reifer Weizen: Samen extra
+    if(bid===SOUL_SAND && Math.random()<0.18) spawnGroundItem(NETHER_WART,1,cx,cy,cz);  // Netherwarze gelegentlich
+    if(bid===GRASS && Math.random()<0.12) spawnGroundItem(WHEAT_SEEDS,1,cx,cy,cz);      // Samen aus Gras
   }
   if(okTool && ORE_XP[bid]) spawnXPOrbs(x+0.5, y+0.5, z+0.5, ORE_XP[bid]);   // Erze geben Erfahrung
   if(tool && isTool(tool.id)) damageTool();
@@ -4827,6 +4912,12 @@ function updateAmbient(dt){
 const fireflies=[];
 { const geo=new THREE.SphereGeometry(0.05,5,4);
   for(let i=0;i<14;i++){ const m=new THREE.Mesh(geo, new THREE.MeshBasicMaterial({color:0xcde85a, transparent:true, opacity:0, depthWrite:false, blending:THREE.AdditiveBlending, fog:false})); m.visible=false; m.userData={ph:Math.random()*6.28, sp:0.5+Math.random(), bx:0,by:0,bz:0, placed:false}; scene.add(m); fireflies.push(m); } }
+// ---- Fledermaeuse (nachts) + Bienen (tagsueber) — reine Atmosphaere, kein Server ----
+const bats=[], bees=[];
+{ const bgeo=new THREE.BoxGeometry(0.5,0.12,0.28);
+  for(let i=0;i<8;i++){ const m=new THREE.Mesh(bgeo, new THREE.MeshLambertMaterial({color:0x2a2530})); m.visible=false; m.userData={ph:Math.random()*6.28, sp:0.8+Math.random()*0.8, bx:0,by:0,bz:0, placed:false}; scene.add(m); bats.push(m); }
+  const egeo=new THREE.BoxGeometry(0.16,0.16,0.22);
+  for(let i=0;i<10;i++){ const m=new THREE.Mesh(egeo, new THREE.MeshLambertMaterial({color:0xf0c324})); m.visible=false; m.userData={ph:Math.random()*6.28, sp:1.2+Math.random(), bx:0,by:0,bz:0, placed:false}; scene.add(m); bees.push(m); } }
 let _ambFxT=0;
 function updateAmbientFX(dt){
   if(dimension!==0){ for(const f of fireflies) if(f.visible) f.visible=false; return; }
@@ -4850,6 +4941,27 @@ function updateAmbientFX(dt){
       if(Math.abs(f.position.x-player.x)>16 || Math.abs(f.position.z-player.z)>16){ u.bx=player.x+(Math.random()*16-8); u.bz=player.z+(Math.random()*16-8); u.by=player.y+1+Math.random()*3; }
       f.material.opacity=0.85*(0.4+0.6*Math.abs(Math.sin(u.ph*2)));
     } else { u.placed=false; if(f.visible){ f.material.opacity=Math.max(0,f.material.opacity-dt*2); if(f.material.opacity<=0.01) f.visible=false; } }
+  }
+  // Fledermaeuse: nachts, hoch + erratisch fliegend mit Fluegelschlag
+  for(const b of bats){ const u=b.userData;
+    if(night){
+      if(!u.placed){ u.bx=player.x+(Math.random()*24-12); u.by=player.y+3+Math.random()*5; u.bz=player.z+(Math.random()*24-12); u.placed=true; }
+      u.ph+=dt*u.sp; b.visible=true;
+      b.position.set(u.bx+Math.sin(u.ph)*3, u.by+Math.sin(u.ph*2.3)*1.2, u.bz+Math.cos(u.ph*0.7)*3);
+      b.rotation.y=u.ph*0.7; b.scale.x=0.6+0.5*Math.abs(Math.sin(u.ph*8));   // Fluegelschlag
+      if(Math.abs(b.position.x-player.x)>26 || Math.abs(b.position.z-player.z)>26){ u.bx=player.x+(Math.random()*24-12); u.bz=player.z+(Math.random()*24-12); u.by=player.y+3+Math.random()*5; }
+    } else { u.placed=false; b.visible=false; }
+  }
+  // Bienen: tagsueber bei klarem Wetter, knapp ueber dem Boden schwirrend
+  const day = dayTime>0.25 && dayTime<0.72;
+  for(const e of bees){ const u=e.userData;
+    if(day && weather==='clear'){
+      if(!u.placed){ u.bx=player.x+(Math.random()*20-10); u.bz=player.z+(Math.random()*20-10); u.by=mobGroundY(u.bx,u.bz)+0.6+Math.random()*1.2; u.placed=true; }
+      u.ph+=dt*u.sp; e.visible=true;
+      e.position.set(u.bx+Math.sin(u.ph*1.3)*1.6, u.by+Math.sin(u.ph*2)*0.3, u.bz+Math.cos(u.ph)*1.6);
+      e.rotation.y=u.ph;
+      if(Math.abs(e.position.x-player.x)>22 || Math.abs(e.position.z-player.z)>22){ u.bx=player.x+(Math.random()*20-10); u.bz=player.z+(Math.random()*20-10); u.by=mobGroundY(u.bx,u.bz)+0.6+Math.random()*1.2; }
+    } else { u.placed=false; e.visible=false; }
   }
 }
 
@@ -5304,6 +5416,7 @@ function frame(now){
   updateMobs(dt);
   updateArrows(dt);
   updateParticles(dt);
+  updateGroundItems(dt);
   updateDamagePops(dt);
   updateXPOrbs(dt);
   updateAim(dt);
