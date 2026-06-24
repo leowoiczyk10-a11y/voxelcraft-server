@@ -278,26 +278,55 @@
 
 ## Dev Tools (nicht für normale Spieler sichtbar)
 
-### [P1] Creative Mode via Chat-Command
-- Command: `/changemode creative` oder `/changemode survival` (Groß/Klein egal)
-- Kein sichtbarer Tip oder Hinweis im Spiel — reines Dev-Tool
-- **Creative Mode:**
-  - Kein Hunger, kein Fallschaden, kein Mob-Schaden, kein Sterben
-  - Fliegen: Doppel-Leertaste aktiviert Flug, Leertaste = hoch, Shift = runter
-  - Abbau sofort (mining.progress = 1 instant)
-  - Keine Item-Verbrauch beim Platzieren (`consumeSelected` überspringen)
-  - Keine Werkzeug-Durability
-  - Inventar bleibt beim Tod erhalten (irrelevant da kein Tod)
-- **Survival Mode:** alles zurücksetzen auf normale Werte
-- Implementierung: `let gameMode = 'survival'` global; in `sendChat()` vor dem Senden abfangen:
-  ```js
-  if(text.toLowerCase().startsWith('/changemode ')){
-    const mode = text.slice(12).trim().toLowerCase();
-    if(mode==='creative'||mode==='survival'){ gameMode=mode; return; }
+### [P1] Creative Mode via Chat-Command (/op-Tool)
+Zweck: Feature-Testing ohne Einschränkungen. Funktioniert wie Minecraft /op — voller Zugriff auf alles.
+- Command: `/changemode creative` oder `/changemode survival` (Gross/Klein egal)
+- Kein sichtbarer Tip, kein Chat-Output, keine Bestaetigung — reines Dev-Tool
+- Wird nicht an den Server gesendet (vor `net.sendChat` abfangen)
+
+**Creative Mode — vollstaendiger Umfang:**
+- Inventar sofort mit ALLEN Items befuellen (jede Block-ID, jedes Item, jedes Tool, jede Ruestung, je 64 Stueck bzw. 1 bei Werkzeugen/Ruestung)
+- Kein Hunger, kein Fallschaden, kein Mob-Schaden, kein Sterben
+- Fliegen: Doppel-Leertaste aktiviert/deaktiviert Flug; Leertaste = hoch, Shift = runter
+- Abbau sofort (instant break, kein Mining-Progress)
+- Kein Item-Verbrauch beim Platzieren (`consumeSelected` ueberspringen)
+- Keine Werkzeug-Durability
+- Unendliche Blocks: Stack bleibt bei 64 nach Platzieren
+
+**Survival Mode:** Inventar bleibt (nicht leeren), alle Einschraenkungen wieder aktiv, Fliegen aus
+
+**Implementierung:**
+```js
+let gameMode = 'survival';
+let flying = false;
+
+// in sendChat() VOR net.sendChat / addChatMsg:
+if(text.toLowerCase().startsWith('/changemode ')){
+  const mode = text.slice(12).trim().toLowerCase();
+  if(mode === 'creative'){
+    gameMode = 'creative'; flying = false;
+    let si = 0;
+    for(const id in BLOCKS){ if(si<36) inv[si++]={id:+id, count:64}; }
+    for(const id in ITEM){   if(si<36) inv[si++]={id:+id, count:64}; }
+    for(const id in TOOL){   if(si<36) inv[si++]={id:+id, count:1, dur:TOOL[id].dur}; }
+    for(const id in ARMOR){  if(si<36) inv[si++]={id:+id, count:1, dur:ARMOR[id].dur}; }
+    renderHotbar(); if(invOpen) renderInventory();
+  } else if(mode === 'survival'){
+    gameMode = 'survival'; flying = false;
   }
-  ```
-- In `updatePlayer()`, `survivalUpdate()`, `breakBlock()`, `consumeSelected()`, `damagePlayer()` jeweils `if(gameMode==='creative') return/skip` einbauen
-- Keine Ausgabe im Chat, keine Bestätigung — stiller Wechsel
+  return;
+}
+
+// Doppel-Leertaste fuer Fly-Toggle (nur Creative):
+// keydown 'Space': if(gameMode==='creative' && lastSpace > Date.now()-300){ flying=!flying; }
+
+// updatePlayer(): wenn flying → Gravity + Kollision ueberspringen, Y via Space/Shift steuern
+// survivalUpdate(): if(gameMode==='creative') return
+// damagePlayer(): if(gameMode==='creative') return
+// damageTool(): if(gameMode==='creative') return
+// consumeSelected(): if(gameMode==='creative') return
+// updateAim(): if(gameMode==='creative') mining.progress = 1 sofort
+```
 
 ---
 
