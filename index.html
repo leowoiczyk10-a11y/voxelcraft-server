@@ -934,6 +934,7 @@ const SWEET_BERRIES=207, COOKIE=208;   // Nahrung (additiv)
 const BOWL=209, MUSHROOM_STEW=210;     // Schuessel + Pilzsuppe (additiv)
 const FLINT=211;                       // Feuerstein aus Kies (10% Drop)
 const SHEARS=212;                       // Schere: Schaf scheren -> Wolle
+const PHANTOM_MEMBRANE=213;             // Drop vom Phantom (Nachtflieger)
 const ITEM = {
   [STRING]:        { name:'Faden',          color:0xe8e8e8 },
   [ENDER_PEARL]:   { name:'Enderperle',     color:0x18a08a },
@@ -952,6 +953,7 @@ const ITEM = {
   [MUSHROOM_STEW]: { name:'Pilzsuppe',      color:0xb05a3a },
   [FLINT]:         { name:'Feuerstein',     color:0x3a3d42 },
   [SHEARS]:        { name:'Schere',         color:0xcfd4dc },
+  [PHANTOM_MEMBRANE]:{ name:'Phantommembran', color:0x8a90a0 },
   [FISHING_ROD]:   { name:'Angel',          color:0x9a7842 },
   [RAW_FISH]:      { name:'Roher Fisch',    color:0x8aa0b0 },
   [COOKED_FISH]:   { name:'Gebratener Fisch',color:0xc8a060 },
@@ -2503,6 +2505,7 @@ function itemIconSpec(id){
     case COAL:         return {type:'lump',      col:0x36383e};
     case FLINT:        return {type:'lump',      col:0x3a3d42};
     case SHEARS:       return {type:'sword',     col:0xcfd4dc};
+    case PHANTOM_MEMBRANE: return {type:'lump',  col:0x8a90a0};
     case RAW_COPPER:   return {type:'lump',      col:0xc07850};
     case RAW_IRON:     return {type:'lump',      col:0xd8b89a};
     case RAW_GOLD:     return {type:'lump',      col:0xd8b840};
@@ -4081,8 +4084,9 @@ const MOB_DEF = {
   villager:    { hostile:false, hw:0.4,  hh:1.0 },
   squid:       { hostile:false, hw:0.45, hh:0.55, fly:true },   // aquatisch: fly=true gibt uns manuelle Hoehensteuerung
   shulker:     { hostile:true,  hw:0.45, hh:0.5,  fly:true },    // ortsfest an der End-Stadt, schiesst Projektile
+  phantom:     { hostile:true,  hw:0.5,  hh:0.3,  fly:true },    // Nachtflieger, taucht im Sturzflug auf den Spieler
 };
-const MOB_HP_MAX = { cow:8, sheep:6, chicken:4, pig:8, rabbit:4, fox:6, goat:8, llama:10, zombie:10, skeleton:8, creeper:10, spider:9, enderman:20, wolf:8, horse:15, ghast:10, blaze:12, ender_dragon:120, wither:80, end_crystal:5, slime:8, slime_small:3, villager:10, squid:6, shulker:15 }; // muss zum Server passen (squid/shulker nur lokal)
+const MOB_HP_MAX = { cow:8, sheep:6, chicken:4, pig:8, rabbit:4, fox:6, goat:8, llama:10, zombie:10, skeleton:8, creeper:10, spider:9, enderman:20, wolf:8, horse:15, ghast:10, blaze:12, ender_dragon:120, wither:80, end_crystal:5, slime:8, slime_small:3, villager:10, squid:6, shulker:15, phantom:7 }; // muss zum Server passen (squid/shulker nur lokal)
 function makeMobModel(kind){
   const g=new THREE.Group(); const legs=[], arms=[];
   if(kind==='zombie' || kind==='skeleton'){
@@ -4150,6 +4154,15 @@ function makeMobModel(kind){
     const l1=legPivot(0.12,0.42,0.12, fur, -0.13,0.42, off), l2=legPivot(0.12,0.42,0.12, fur, 0.13,0.42, off);
     const l3=legPivot(0.12,0.42,0.12, fur, -0.13,0.42,-off), l4=legPivot(0.12,0.42,0.12, fur, 0.13,0.42,-off);
     g.add(l1); g.add(l2); g.add(l3); g.add(l4); legs.push(l1,l2,l3,l4);
+  } else if(kind==='phantom'){
+    const bd=0x2a4a6a, wg=0x35597a;   // flach um y~0.3 gebaut, passt zur Treffer-AABB (hh 0.3)
+    g.add(boxMesh(0.5,0.2,0.7, bd, 0,0.3,0));                // flacher Koerper
+    g.add(boxMesh(0.3,0.18,0.3, bd, 0,0.32,0.45));           // Kopf
+    g.add(boxMesh(0.1,0.06,0.02, 0x9ad0ff, -0.08,0.36,0.6)); g.add(boxMesh(0.1,0.06,0.02, 0x9ad0ff, 0.08,0.36,0.6)); // leuchtende Augen
+    const wL=boxMesh(0.7,0.05,0.5, wg, -0.55,0.3,0); wL.rotation.z=0.25;
+    const wR=boxMesh(0.7,0.05,0.5, wg,  0.55,0.3,0); wR.rotation.z=-0.25;
+    g.add(wL); g.add(wR); arms.push(wL,wR);                  // Fluegel als arms -> Flatter-Animation
+    g.add(boxMesh(0.12,0.1,0.5, bd, 0,0.3,-0.5));            // Schwanz
   } else if(kind==='ghast'){
     g.add(boxMesh(1.6,1.6,1.6, 0xeae6e0, 0,2.0,0));          // grosser weisser Wuerfel
     g.add(boxMesh(0.2,0.12,0.02, 0x803030, -0.35,2.0,0.82)); g.add(boxMesh(0.2,0.12,0.02, 0x803030, 0.35,2.0,0.82)); // Augen
@@ -4381,6 +4394,7 @@ const MOB_DROP = {
   slime_small: [{id:SLIME_BALL, min:0, max:1}],
   villager:    [{id:EMERALD,    min:0, max:1}],
   squid:       [{id:INK_SAC,    min:1, max:3}],
+  phantom:     [{id:PHANTOM_MEMBRANE, min:0, max:1}],
   shulker:     [{id:SHULKER_SHELL, min:1, max:2}],
 };
 function rollDrops(kind,x,y,z){
@@ -4598,6 +4612,7 @@ function survivalUpdate(dt, now){
 //  Im Multiplayer uebernimmt der Server; diese Funktion haelt sich dann zurueck.
 // =====================================================================
 let localMobSeq = 1, _mobSpawnTimer = 1.5, _slimeSpawnTimer = 6, _squidSpawnTimer = 4, _caveSpawnTimer = 3;
+let sleeplessDays = 0, _wasNight = false;   // Phantom-Motivation: Tage ohne Schlaf zaehlen
 const LOCAL_PASSIVE = ['cow','sheep','chicken','pig','rabbit','fox','goat','llama','horse','wolf','villager'];
 const LOCAL_HOSTILE = ['zombie','skeleton','creeper','spider'];
 function localMobCount(hostile){ let n=0; for(const [,m] of mobsMap) if(m.local && m.hostile===hostile) n++; return n; }
@@ -4668,12 +4683,16 @@ function updateSquidAI(m, p, dt){
 }
 function updateLocalMobs(dt, now){
   if(net.connected || dimension!==0) return;
+  const _nightNow=isNightTime();
+  if(_wasNight && !_nightNow) sleeplessDays++;   // jeder Morgen ohne Schlaf erhoeht den Zaehler
+  _wasNight=_nightNow;
   _mobSpawnTimer-=dt;
   if(_mobSpawnTimer<=0){
     _mobSpawnTimer = 2.0 + Math.random()*2.5;
     const night=isNightTime();
     if(localMobCount(false)<8){ const sp=trySpawnPoint(); if(sp && (sp.ground===GRASS||sp.ground===SNOW)) spawnLocalMob(LOCAL_PASSIVE[(Math.random()*LOCAL_PASSIVE.length)|0], sp.x, sp.z); }
     if(night && localMobCount(true)<11){ const sp=trySpawnPoint(); if(sp){ const d=Math.hypot(sp.x-player.x, sp.z-player.z); if(d>11) spawnLocalMob(LOCAL_HOSTILE[(Math.random()*LOCAL_HOSTILE.length)|0], sp.x, sp.z); } }
+    if(night && sleeplessDays>=3){ let ph=0; for(const [,mm] of mobsMap) if(mm.kind==='phantom') ph++; if(ph<3 && Math.random()<0.6){ const px=player.x+(Math.random()-0.5)*10, pz=player.z+(Math.random()-0.5)*10; spawnFlyingMob('phantom', px, player.y+12, pz); } }   // Phantome bei 3+ schlaflosen Naechten
   }
   // Slimes spawnen in tiefen Bloecken (y<40) ODER nachts in Wiesen, eher selten
   _slimeSpawnTimer-=dt;
@@ -5201,7 +5220,7 @@ function addXP(n){
   while(xp>=xpForLevel(xpLevel)){ xp-=xpForLevel(xpLevel); xpLevel++; SFX.levelup(); }
   renderXP();
 }
-const MOB_XP = { cow:1, sheep:1, chicken:1, pig:1, rabbit:1, fox:1, goat:1, llama:1, zombie:5, skeleton:5, creeper:5, spider:5, enderman:10, wolf:0, horse:0, ghast:5, blaze:10, ender_dragon:500, wither:50, end_crystal:0, slime:4, slime_small:1, villager:2, squid:3, shulker:5 };
+const MOB_XP = { cow:1, sheep:1, chicken:1, pig:1, rabbit:1, fox:1, goat:1, llama:1, zombie:5, skeleton:5, creeper:5, spider:5, enderman:10, wolf:0, horse:0, ghast:5, blaze:10, ender_dragon:500, wither:50, end_crystal:0, slime:4, slime_small:1, villager:2, squid:3, shulker:5, phantom:5 };
 const ORE_XP = { [COAL_ORE]:1, [COPPER_ORE]:1, [IRON_ORE]:2, [GOLD_ORE]:3, [DIAMOND_ORE]:5 };
 // Schwebende XP-Kuegelchen, die zum Spieler fliegen und dort gutgeschrieben werden
 const xpOrbs=[];
@@ -5275,7 +5294,7 @@ function trySleep(bx,by,bz){
   bedSpawn={x:bx+0.5, y:by+1, z:bz+0.5};                 // hier wieder aufwachen / respawnen
   saveInv();
   if(!isNightTime()){ flashMsg('Du kannst nur nachts schlafen.'); return; }
-  sleeping=true; SFX.ui();
+  sleeping=true; sleeplessDays=0; SFX.ui();   // ausgeschlafen -> keine Phantome
   sleepFadeEl.classList.add('on');
   if(net.connected) net.sendSleep();
   setTimeout(()=>{
@@ -5715,6 +5734,17 @@ function updateBosses(dt){
       m.vy=((player.y+3)-p.y)*2;
       if(dist>4){ m.dir=Math.atan2(dx,dz); m.vx=Math.sin(m.dir)*2.6; m.vz=Math.cos(m.dir)*2.6; } else { m.vx=0; m.vz=0; }
       m.shootCd=(m.shootCd||0)-dt; if(dist<22 && m.shootCd<=0){ m.shootCd=2; bossShoot(p,'blaze'); }
+      continue;
+    }
+    if(m.kind==='phantom'){
+      if(!isNightTime()){ spawnFireParticle(p.x,p.y,p.z); m.hp-=dt*2; onMobHp(id, Math.max(0,m.hp)); if(m.hp<=0){ onMobDead(id); } continue; }   // verbrennt am Morgen
+      m.diveT=(m.diveT==null?1.8:m.diveT)-dt;
+      if(m.diveT<=0){ m.diving=!m.diving; m.diveT=m.diving?1.4:2.6; }
+      const ty = m.diving ? player.y+0.5 : player.y+8;
+      m.vy=(ty-p.y)*1.8; m.dir=Math.atan2(dx,dz);
+      const sp=m.diving?6:3.2; m.vx=Math.sin(m.dir)*sp; m.vz=Math.cos(m.dir)*sp;
+      const _nw=performance.now();
+      if(Math.hypot(dx,dz)<1.4 && Math.abs(p.y-player.y)<1.8 && _nw-(m.lastAttack||0)>1000){ m.lastAttack=_nw; damagePlayer(2); }
       continue;
     }
     if(m.kind==='shulker'){
