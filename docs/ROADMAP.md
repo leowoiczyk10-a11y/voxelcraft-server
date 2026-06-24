@@ -273,3 +273,145 @@
 - Shield-Blocker Animation (Shield-Item vorhanden, nur Damage-Reduction)
 - Schneefall + Schnee-Akkumulation (Snow Layer Block vorhanden)
 - Tropfstein / Stalagmiten (Schaden)
+
+---
+
+## Dev Tools (nicht für normale Spieler sichtbar)
+
+### [P1] Creative Mode via Chat-Command
+- Command: `/changemode creative` oder `/changemode survival` (Groß/Klein egal)
+- Kein sichtbarer Tip oder Hinweis im Spiel — reines Dev-Tool
+- **Creative Mode:**
+  - Kein Hunger, kein Fallschaden, kein Mob-Schaden, kein Sterben
+  - Fliegen: Doppel-Leertaste aktiviert Flug, Leertaste = hoch, Shift = runter
+  - Abbau sofort (mining.progress = 1 instant)
+  - Keine Item-Verbrauch beim Platzieren (`consumeSelected` überspringen)
+  - Keine Werkzeug-Durability
+  - Inventar bleibt beim Tod erhalten (irrelevant da kein Tod)
+- **Survival Mode:** alles zurücksetzen auf normale Werte
+- Implementierung: `let gameMode = 'survival'` global; in `sendChat()` vor dem Senden abfangen:
+  ```js
+  if(text.toLowerCase().startsWith('/changemode ')){
+    const mode = text.slice(12).trim().toLowerCase();
+    if(mode==='creative'||mode==='survival'){ gameMode=mode; return; }
+  }
+  ```
+- In `updatePlayer()`, `survivalUpdate()`, `breakBlock()`, `consumeSelected()`, `damagePlayer()` jeweils `if(gameMode==='creative') return/skip` einbauen
+- Keine Ausgabe im Chat, keine Bestätigung — stiller Wechsel
+
+---
+
+## Weitere wichtige Features (Erweiterung)
+
+### [P1][MC] Hunger sinkt bei Aktionen
+**Problem:** Hunger-Variable existiert, sinkt aber nur minimal im Multiplayer.
+- Solo: Hunger sinkt auch ohne Server
+- Raten: passiv -0.3/min, Sprint -0.5/min extra, Angriff -0.5 pro Hit, Sprung -0.1
+- Schaden bei Hunger=0: auf 1 HP dämpfen (nie direkt töten im Easy-Modus)
+
+### [P1][MC] Ofen öffnet Panel
+**Problem:** `openFurnace()` existiert, aber doPlace() triggert es nicht korrekt.
+- `doPlace()` bei Raycast auf FURNACE → `openFurnace(key)` aufrufen
+- Ofen-Panel: Input-Slot, Fuel-Slot, Output-Slot + animierter Fortschrittsbalken
+- Schmelzrezepte: Iron Ore→Ingot, Gold Ore→Ingot, Sand→Glass, Log→Charcoal, Raw Fish→Cooked Fish, Cobble→Stone
+- Fuel-Werte: Coal/Charcoal=8s, Log=3s, Planks=1.5s
+
+### [P1][MC] Unterirdisches Mob-Spawning
+- Surface-Y-Cache: `surfaceCache[cx][cz]` → `Int16Array` für schnelle Lookup
+- Spawn-Check: `y < surfaceY(x,z) - 1` UND Block über Spawn ist AIR
+- Betrifft: Zombie, Skeleton, Creeper, Spider
+- Lichtlevel-Simulation: spawn nur wenn >3 Blöcke von Oberfläche entfernt (approximiert Dunkelheit)
+
+### [P2][MC] Schneefall + Schnee-Akkumulation
+- Snow Layer Block (schon vorhanden als ID) auf Oberflächen-Blöcken in Snow-Biom
+- Bei Regen in kalten Biomen → Schnee statt Regen-Partikel
+- Schnee akkumuliert bis zu 1 Block Höhe (8 Layer)
+- Wasser gefriert zu Eis in kalten Biomen
+
+### [P2][MC] Elytra fliegen
+- Item schon vorhanden (ELYTRA), Gleit-Mechanik schon in `updatePlayer()`
+- Echter Flug: Doppel-Leertaste im Survival nicht möglich → nur mit Feuerwerk-Rakete beschleunigen
+- Firework Rocket: Item + in Hand → Schub beim Gleiten
+- Crafting: Paper + Gunpowder = Firework Rocket
+
+### [P2][MC] Trident
+- Neues Weapon-Item: TRIDENT
+- Werfen: wie Bogen, aber Trident fliegt und kehrt zurück (Loyality-Enchant)
+- Schaden: 9 Herzen (stärker als Schwert)
+- Channeling-Enchant: bei Gewitter → Blitz beschwören
+- Drop: sehr selten von Drowned
+
+### [P2][MC] Drowned Mob
+- Unterwasser-Zombie: spawnt in Flüssen/Meeren (Y < WATER_LEVEL)
+- KI: schwimmt zum Spieler, Melee-Angriff
+- Drops: Rotten Flesh, selten Trident (1% Chance), selten Copper Ingot
+- Wirft Trident wenn er einen hat
+
+### [P2][MC] Phantom Mob
+- Spawnt wenn Spieler 3+ In-Game-Tage nicht geschlafen hat (Schlaf-Counter nötig)
+- Fliegt hoch, stürzt dann auf Spieler herab
+- Schaden: 2 Herzen, Reichweite von oben
+- Drops: Phantom Membrane (für Elytra-Reparatur)
+- Motivation: Bett benutzen zu wollen
+
+### [P2] Schaf Wolle + Farben
+- Schaf hat zufällige Woll-Farbe bei Spawn (weiß/grau/braun/schwarz/rot/gelb)
+- Schere (2x Iron Ingot) → klicken auf Schaf → Wool-Drop (1–3)
+- Wollfarbe bestimmt Drop-Farbe
+- Wool → Bett crafting (3 Wool + 3 Planks)
+- Wool + Dye → gefärbte Wolle (8 Farben)
+
+### [P2] Kuh melken
+- Rechtsklick mit Empty Bucket auf Kuh → Milk Bucket
+- Milk Bucket konsumieren → alle Status-Effekte aufheben (Poison, Hunger etc.)
+- Cooldown: Kuh kann erst nach 5 Minuten erneut gemolken werden
+
+### [P2][PERF] Frustum Culling
+- Chunks außerhalb des Kamera-Frustums komplett überspringen beim Rendern
+- THREE.Frustum + Chunk-AABB (16×384×16)
+- Implementierung in `frame()` vor dem render()-Aufruf: Mesh.visible = frustumIntersects
+- Erwarteter Gewinn: 20–40% FPS auf schwacher Hardware
+
+### [P2] Renderable Lichtquellen
+- THREE.PointLight Pool (max 8 aktive Lights gleichzeitig, nach Distanz priorisiert)
+- Fackel: Radius 6, orange (0xff8833), intensity 0.8
+- Lava: Radius 10, rot-orange (0xff4400), intensity 1.2
+- Glowstone: Radius 8, gelb (0xffee88), intensity 1.0
+- Campfire: Radius 7, warm-orange, flackert (Intensity ±0.15 random)
+- `scanDynLights()` läuft schon — nur THREE.PointLight-Erstellung fehlt
+
+### [P3][MC] Copper + Oxidation
+- Copper Ore (neues Erz, Y 16–112)
+- Copper Ingot → Copper Block, Cut Copper, Copper Stairs/Slab
+- Oxidation: 4 Stufen (frisch → belegt → verwittert → oxidiert) über Zeit
+- Wachsed Copper: mit Wachs behandelt → oxidiert nicht
+- Blitz trifft Copper → zurück zu frisch
+
+### [P3][MC] Amethyst
+- Amethyst Geode: sphärische Struktur in Y -64–30
+- Schichten: Smooth Basalt → Calcite → Amethyst
+- Budding Amethyst → wächst Amethyst Cluster (4 Stages)
+- Drop: Amethyst Shard (4x von vollreifem Cluster)
+- Verwendung: Spyglass (Fernglas), Tinted Glass
+
+### [P3] Spyglass / Fernglas
+- Item: Copper Ingot + Amethyst Shard
+- Rechtsklick gehalten → Zoom-Effekt (FOV auf 10–15 reduzieren)
+- Crosshair wird kreisförmig (CSS-Overlay)
+- Loslassen → FOV zurück
+
+### [P3][MC] Warden + Deep Dark
+- Neues Biom: Deep Dark (ab Y -40, Sculk-Blöcke, kein normales Mob-Spawn)
+- Sculk Sensor: registriert Lärm (Schritte, Abbau) → aktiviert sich
+- Warden: stärkster Mob im Spiel (500 HP, 30 Schaden pro Hit)
+- Spawn: Sculk Shrieker ruft Warden bei zu viel Lärm
+- Drops: Sculk Catalyst
+- Strategie: schleichen, nicht kämpfen
+
+### [P3] Angeln vollständig machen
+- `fishingState` und `tickFishing()` vorhanden, aber nur Flash-Message
+- Echter Bobber als Entity (kleines Mesh im Wasser)
+- Beißen-Animation: Bobber taucht unter
+- Rechtsklick einziehen → Item-Drop (Fish, Schatz, Müll je nach Luck)
+- Schatz: Enchanted Book, Saddle, Name Tag, Bow (selten)
+- Müll: Lily Pad, Stick, String, Boots (beschädigt)
