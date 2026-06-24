@@ -234,16 +234,25 @@
 
 ---
 
+## Erledigt (Session 2026-06-24)
+- **Hunger sinkt jetzt auch solo** — survivalUpdate() ungated; Sprint/Sprung/Angriff zehren extra (useHunger). Hunger tötet nicht mehr (Floor bei 1 HP, Easy).
+- **Sand/Kies-Schwerkraft** — applyGravityAt() fällt Säulen ein, Hook in breakBlock + doPlace, fällt durch Wasser bis fester Boden.
+- **Zombie/Skelett verbrennen im Sonnenlicht** — Tag + offener Himmel → 1 HP/s + Feuerpartikel, in updateLocalMobs().
+- **Enchant-Level in Item-Namen** — Tooltip (Hover/Touch) + Hotbar-Name zeigen z.B. "Diamantschwert · Schärfe II" (enchSuffix).
+- **Unterirdisches Mob-Spawning** — tryCaveSpawnPoint() (dunkler Hohlraum ≥6 unter Oberfläche) + mobFloorY() (Höhlenboden statt Surface-Snap) + cave-Flag; Zombie/Skelett/Spider/Creeper, Tag+Nacht, kein Tag-Despawn.
+- **Spider tagsüber neutral** — jagt nur nachts oder wenn provoziert (m.provoked via attackMob/arrowHitMob); kein Kontaktschaden am Tag.
+- **Kies → Feuerstein** — neues FLINT-Item (id 211), 10% Drop beim Kies-Abbau.
+- **Dev-Command Creative Mode** — `/changemode creative|survival` (silent, nicht an Server): alle Items ins Inventar, kein Hunger/Schaden/Tod, Fliegen (Doppel-Space, Space=hoch/Shift=runter), Instant-Break, kein Item-/Tool-Verbrauch.
+- Verifiziert bereits vorhanden (Doc war veraltet): Ofen-UI, Chunk-Unloading, Item-Namen-Basis, Zombie+Spider-Mobs, Cow-Melken, Keep-Inventory-Toggle, dyn. Lichter.
+
 ## Bekannte Bugs
 
 | Bug | Priorität | Fix |
 |---|---|---|
-| Chunk-Memory Leak (kein Unloading) | P1[PERF] | disposeSection bei Chunks außer Reichweite |
-| Hunger sinkt nicht | P1[MC] | survivalUpdate(): hunger -= dt * rate |
-| Ofen öffnet kein Panel | P1 | useBlock() → openFurnace(key) verbinden |
-| Mobs spawnen nicht in Höhlen | P1 | surfaceY-Cache in spawnLocalMob() |
-| Sand/Gravel fallen nicht | P2 | Gravity-Check in setBlock() |
 | Wasser kein Flowing | P2 | floodWater() bei Block-Abbau aufrufen |
+| Lava kein Flowing | P2 | analog zu Wasser |
+| Mob-Pathfinding (hängt an Wänden) | P3 | A*-Lite |
+| AO nur rudimentär | P3 | echtes Vertex-AO in buildSectionGeometry |
 | Lava kein Flowing | P2 | analog zu Wasser |
 | Mob-Pathfinding (hängt an Wänden) | P3 | A*-Lite |
 | Cactus-Schaden fehlt | P2 | survivalUpdate(): AABB check gegen Cactus |

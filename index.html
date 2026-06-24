@@ -930,6 +930,7 @@ const SLIME_BALL=201, EMERALD=202, PUMPKIN_SEEDS=203, INK_SAC=204, SHULKER_SHELL
 const SUGAR=206;              // aus Zuckerrohr -> Zutat fuer Kuchen
 const SWEET_BERRIES=207, COOKIE=208;   // Nahrung (additiv)
 const BOWL=209, MUSHROOM_STEW=210;     // Schuessel + Pilzsuppe (additiv)
+const FLINT=211;                       // Feuerstein aus Kies (10% Drop)
 const ITEM = {
   [STRING]:        { name:'Faden',          color:0xe8e8e8 },
   [ENDER_PEARL]:   { name:'Enderperle',     color:0x18a08a },
@@ -946,6 +947,7 @@ const ITEM = {
   [COOKIE]:        { name:'Keks',           color:0xb07a3a },
   [BOWL]:          { name:'Schüssel',       color:0x8a5a32 },
   [MUSHROOM_STEW]: { name:'Pilzsuppe',      color:0xb05a3a },
+  [FLINT]:         { name:'Feuerstein',     color:0x3a3d42 },
   [FISHING_ROD]:   { name:'Angel',          color:0x9a7842 },
   [RAW_FISH]:      { name:'Roher Fisch',    color:0x8aa0b0 },
   [COOKED_FISH]:   { name:'Gebratener Fisch',color:0xc8a060 },
@@ -2488,6 +2490,7 @@ function itemIconSpec(id){
   switch(id){
     case STICK:        return {type:'stick',     col:0x9a7842};
     case COAL:         return {type:'lump',      col:0x36383e};
+    case FLINT:        return {type:'lump',      col:0x3a3d42};
     case RAW_COPPER:   return {type:'lump',      col:0xc07850};
     case RAW_IRON:     return {type:'lump',      col:0xd8b89a};
     case RAW_GOLD:     return {type:'lump',      col:0xd8b840};
@@ -3095,6 +3098,7 @@ function updateWorld(pcx,pcz){
 // =====================================================================
 const player={ x:8.5, y:0, z:8.5, vx:0, vy:0, vz:0, onGround:false };
 let yaw=0, pitch=0;
+let gameMode='survival', flying=false, _lastSpaceTap=0;   // Dev-Tool: /changemode creative|survival
 for(let dz=-1;dz<=1;dz++) for(let dx=-1;dx<=1;dx++) world.ensureChunkData(dx,dz);
 player.y=Math.max(terrainHeight(8,8),WATER_LEVEL)+2;
 
@@ -3142,7 +3146,10 @@ function updatePlayer(dt){
   const inWater = world.getBlock(Math.floor(player.x), Math.floor(player.y), Math.floor(player.z))===WATER
                || world.getBlock(Math.floor(player.x), Math.floor(player.y+0.9), Math.floor(player.z))===WATER;
   const wantUp = keys.has('Space')||jumpHeld;
-  if(inWater){
+  if(flying){                                // Creative-Flug: keine Schwerkraft, Space=hoch, Shift=runter
+    const down=(keys.has('ShiftLeft')||keys.has('ShiftRight'))?1:0;
+    player.vy=((wantUp?1:0)-down)*WALK_SPEED*1.7; player.vx*=1.35; player.vz*=1.35; player.onGround=false;
+  } else if(inWater){
     player.vy -= GRAVITY*0.16*dt;          // viel schwaechere Schwerkraft -> langsames Sinken
     player.vy *= 0.86;                       // Wasser-Reibung daempft Fallen UND Steigen
     if(wantUp) player.vy = SWIM_UP;          // hochpaddeln solange Sprung gehalten wird
@@ -3151,13 +3158,13 @@ function updatePlayer(dt){
     player.onGround = false;
   } else {
     player.vy-=GRAVITY*dt;
-    if(wantUp&&player.onGround){ player.vy=JUMP_VELOCITY*(mountedHorse?1.3:1); player.onGround=false; }
+    if(wantUp&&player.onGround){ player.vy=JUMP_VELOCITY*(mountedHorse?1.3:1); player.onGround=false; if(!mountedHorse) useHunger(sprinting?0.08:0.04); }
     if(player.vy<TERMINAL_VY) player.vy=TERMINAL_VY;
   }
 
   // ---- Elytra-Gleiten: Elytra im Offhand-Slot + in der Luft + fallend + Sprung gehalten ----
   gliding=false;
-  if((offhand&&offhand.id===ELYTRA) && !player.onGround && !inWater && player.vy<1.0 && wantUp){
+  if((offhand&&offhand.id===ELYTRA) && !flying && !player.onGround && !inWater && player.vy<1.0 && wantUp){
     gliding=true;
     const gd=new THREE.Vector3(); camera.getWorldDirection(gd);
     const gs=14;                                       // Gleit-Tempo
@@ -3367,13 +3374,14 @@ function doPlace(){
   if(s.id===SAPLING && world.getBlock(px,py-1,pz)!==GRASS && world.getBlock(px,py-1,pz)!==DIRT) return;
   if(s.id===MUSHROOM && !isSolid(world.getBlock(px,py-1,pz))) return;
   if(canPlaceAt(px,py,pz)){ world.setBlock(px,py,pz,s.id); SFX.place(s.id,{x:px+0.5,y:py+0.5,z:pz+0.5});
+    if(s.id===SAND||s.id===GRAVEL) applyGravityAt(px,py,pz);                  // Schwerkraft fuer Sand/Kies
     if(isWire(s.id)||isLever(s.id)||isLamp(s.id)) updateRedstone(px,py,pz);
     if(s.id===SAPLING) saplings.set(px+'_'+py+'_'+pz, 30+Math.random()*40);   // waechst nach ~30-70s
     if(s.id===BEACON) checkBeacon(px,py,pz);
     consumeSelected(1); }
 }
-function damageHeldTool(){ const t=inv[selectedSlot]; if(t&&isTool(t.id)&&t.dur!=null){ t.dur--; if(t.dur<=0) inv[selectedSlot]=null; renderHotbar(); if(invOpen) renderInventory(); } }
-function consumeSelected(n){ const s=inv[selectedSlot]; if(!s) return; s.count-=n; if(s.count<=0) inv[selectedSlot]=null; renderHotbar(); if(invOpen) renderInventory(); }
+function damageHeldTool(){ if(gameMode==='creative') return; const t=inv[selectedSlot]; if(t&&isTool(t.id)&&t.dur!=null){ t.dur--; if(t.dur<=0) inv[selectedSlot]=null; renderHotbar(); if(invOpen) renderInventory(); } }
+function consumeSelected(n){ if(gameMode==='creative') return; const s=inv[selectedSlot]; if(!s) return; s.count-=n; if(s.count<=0) inv[selectedSlot]=null; renderHotbar(); if(invOpen) renderInventory(); }
 // Q wirft 1 Item aus dem aktiven Slot nach vorn (nur stapelbare Items -> keine Haltbarkeitsverluste)
 function dropSelected(){
   const s=inv[selectedSlot]; if(!s || isTool(s.id) || isArmor(s.id)) return;
@@ -3408,6 +3416,7 @@ addEventListener('keydown', (e)=>{
   if(e.code==='KeyM'){ e.preventDefault(); toggleMinimap(); }
   if(e.code==='KeyQ' && !invOpen && (isTouch?touchPlaying:locked)){ e.preventDefault(); dropSelected(); }
   if(e.code==='Escape'){ if(invOpen) closeInv(); else if(settingsOpen) closeSettings(); }
+  if(e.code==='Space' && !e.repeat && gameMode==='creative' && !invOpen){ const t=performance.now(); if(t-_lastSpaceTap<300){ flying=!flying; player.vy=0; } _lastSpaceTap=t; }   // Doppel-Space = Flug an/aus (Creative)
 });
 addEventListener('keyup', (e)=>keys.delete(e.code));
 document.addEventListener('pointerlockchange', ()=>{ locked=document.pointerLockElement===canvas; if(!invOpen) overlay.classList.toggle('hidden',locked); if(!locked) keys.clear(); });
@@ -3496,12 +3505,14 @@ const bioTimeEl=document.getElementById('bioTime');
 // ---- Item-Namen (MC-Style): kurzer Name ueber der Hotbar + Tooltip im Inventar ----
 const hotbarNameEl=document.getElementById('hotbarName'), slotTipEl=document.getElementById('slotTip');
 let _nameTimer=null;
-function showItemName(id){
+const ROMAN=['','I','II','III','IV','V'];
+function enchSuffix(slot){ return (slot && slot.ench && ENCH_NAME[slot.ench.kind]) ? (' · '+ENCH_NAME[slot.ench.kind]+' '+(ROMAN[slot.ench.lvl]||slot.ench.lvl)) : ''; }
+function showItemName(id, slot){
   if(!hotbarNameEl) return; const t=thing(id); if(!t) return;
-  hotbarNameEl.textContent=t.name||''; hotbarNameEl.classList.add('show');
+  hotbarNameEl.textContent=(t.name||'')+enchSuffix(slot); hotbarNameEl.classList.add('show');
   clearTimeout(_nameTimer); _nameTimer=setTimeout(()=>hotbarNameEl.classList.remove('show'), 1400);
 }
-function showSelectedName(){ const s=inv[selectedSlot]; if(s) showItemName(s.id); else if(hotbarNameEl) hotbarNameEl.classList.remove('show'); }
+function showSelectedName(){ const s=inv[selectedSlot]; if(s) showItemName(s.id, s); else if(hotbarNameEl) hotbarNameEl.classList.remove('show'); }
 const ctrlHint=document.getElementById('ctrlHint');
 ctrlHint.innerHTML = isTouch
   ? '<b>Joystick</b> Bewegen (voll=Sprint) &nbsp; <b>Rechts wischen</b> Umsehen<br><b>ABBAU halten</b> Abbauen (tippen=Schlagen) &nbsp; <b>SETZEN</b> Setzen/Essen &nbsp; <b>ITEMS</b> Inventar'
@@ -3692,7 +3703,7 @@ function slotItemAt(zone,idx){
 invPanel.addEventListener('mousemove', (e)=>{
   const el=e.target.closest('.islot');
   if(el && !held){ const s=slotItemAt(el.dataset.zone, +el.dataset.idx);
-    if(s){ const t=thing(s.id); slotTipEl.textContent=t?t.name:''; slotTipEl.style.left=e.clientX+'px'; slotTipEl.style.top=e.clientY+'px'; slotTipEl.style.display='block'; return; }
+    if(s){ const t=thing(s.id); slotTipEl.textContent=(t?t.name:'')+enchSuffix(s); slotTipEl.style.left=e.clientX+'px'; slotTipEl.style.top=e.clientY+'px'; slotTipEl.style.display='block'; return; }
   }
   slotTipEl.style.display='none';
 });
@@ -3702,7 +3713,7 @@ invPanel.addEventListener('contextmenu', (e)=>{ const el=e.target.closest('.islo
 let _tipTimer=null;
 function showSlotTipTouch(item, x, y){
   if(!item){ slotTipEl.style.display='none'; return; }
-  const t=thing(item.id); slotTipEl.textContent=t?t.name:'';
+  const t=thing(item.id); slotTipEl.textContent=(t?t.name:'')+enchSuffix(item);
   slotTipEl.style.left=x+'px'; slotTipEl.style.top=y+'px'; slotTipEl.style.display='block';
   clearTimeout(_tipTimer); _tipTimer=setTimeout(()=>{ slotTipEl.style.display='none'; }, 1400);
 }
@@ -4287,6 +4298,12 @@ function makeHpBar(){
 // ---- Mob-Verwaltung ----
 const mobsMap = new Map(); // id -> {group, kind, hostile, hw, hh, tx, tz, dir, lastAttack, hp, maxHp, tint[], flash, hpShow, hpBar}
 function mobGroundY(x,z){ return Math.max(terrainHeight(Math.floor(x), Math.floor(z)), WATER_LEVEL) + 1; }
+// Hoehlenboden: vom aktuellen Stand nach unten suchen (max 24 Bloecke), damit Hoehlen-Mobs nicht zur Oberflaeche springen
+function mobFloorY(x,z,y){
+  const xi=Math.floor(x), zi=Math.floor(z), top=Math.floor(y)+1, bot=Math.max(Y_MIN+1, top-24);
+  for(let yy=top; yy>bot; yy--){ if(isSolid(world.getBlock(xi,yy-1,zi))) return yy; }
+  return mobGroundY(x,z);
+}
 function addMob(mob){
   if(!mob || mobsMap.has(mob.id)) return;
   const def = MOB_DEF[mob.kind] || MOB_DEF.cow;
@@ -4369,7 +4386,8 @@ function attackMob(id){
   net.send({t:'mobhit', mobId:id, dmg});
   myHits.set(id, now);
   SFX.hit();
-  const mm=mobsMap.get(id); if(mm){ if(bossInvulnerable(mm)){ flashMsg('Zerstöre erst die End-Kristalle!'); SFX.ui(); } else { mm.hp=Math.max(0, mm.hp-dmg); onMobHp(id, mm.hp); crosshairHit(); if(mm.local && mm.hp<=0) onMobDead(id); } } // sofortiges Feedback; lokal: direkt sterben
+  useHunger(0.1);                                                // Angreifen macht hungrig
+  const mm=mobsMap.get(id); if(mm){ mm.provoked=true; if(bossInvulnerable(mm)){ flashMsg('Zerstöre erst die End-Kristalle!'); SFX.ui(); } else { mm.hp=Math.max(0, mm.hp-dmg); onMobHp(id, mm.hp); crosshairHit(); if(mm.local && mm.hp<=0) onMobDead(id); } } // sofortiges Feedback; lokal: direkt sterben
   if(sel && isTool(sel.id)) damageTool();                      // Werkzeug nutzt sich ab
 }
 // ---- Bogen: Pfeil abschiessen ----
@@ -4395,7 +4413,7 @@ function arrowHitMob(id){
   const dmg=4+lastBowPower;
   net.send({t:'mobhit', mobId:id, dmg});
   myHits.set(id, performance.now());
-  const mm=mobsMap.get(id); if(mm){ if(bossInvulnerable(mm)){ flashMsg('Zerstöre erst die End-Kristalle!'); } else { mm.hp=Math.max(0, mm.hp-dmg); onMobHp(id, mm.hp); if(mm.local && mm.hp<=0) onMobDead(id); } }
+  const mm=mobsMap.get(id); if(mm){ mm.provoked=true; if(bossInvulnerable(mm)){ flashMsg('Zerstöre erst die End-Kristalle!'); } else { mm.hp=Math.max(0, mm.hp-dmg); onMobHp(id, mm.hp); if(mm.local && mm.hp<=0) onMobDead(id); } }
   SFX.hit();
 }
 function eat(){
@@ -4469,7 +4487,7 @@ function mobInView(maxT){
 function degradeArmor(by){ let broke=false; for(let i=0;i<4;i++){ const a=armor[i]; if(a){ a.dur-=by; if(a.dur<=0){ armor[i]=null; broke=true; } } } if(broke) SFX.hit(); if(invOpen) renderInventory(); }
 let shieldCd=0;
 function damagePlayer(amount, bypassArmor){
-  if(dead) return;
+  if(dead || gameMode==='creative') return;
   addShake(0.05 + Math.min(0.15, (amount||1)*0.02));   // Treffer-Wackler
   if(!bypassArmor && amount>0 && offhand && offhand.id===SHIELD_ITEM && shieldCd<=0){   // Schild blockt 50% von vorne
     amount*=0.5; if(amount>=2) shieldCd=1.2; SFX.hit();
@@ -4509,6 +4527,7 @@ respawnBtn.addEventListener('click', respawn);
 respawnBtn.addEventListener('touchstart', (e)=>{ e.preventDefault(); respawn(); }, {passive:false});
 
 // ---- Survival pro Frame ----
+function useHunger(n){ hunger=Math.max(0, hunger-n); }   // diskreter Hungerverbrauch (Sprung/Angriff)
 function survivalUpdate(dt, now){
   if(dead) return;
   if(portalCooldown>0) portalCooldown-=dt;                       // Portal: nach kurzem Stehen wechseln
@@ -4517,9 +4536,12 @@ function survivalUpdate(dt, now){
     else if(inEndPortalBlock()){ portalT+=dt; if(portalT>0.7){ portalT=0; useEndPortal(); } }
     else portalT=0;
   } else portalT=0;
-  if(net.connected){ hunger = Math.max(0, hunger - dt*0.015); if(sprinting) hunger=Math.max(0,hunger-dt*0.05); } // Hunger nur im MP
-  if(hunger>6 && health<HEALTH_MAX){ health=Math.min(HEALTH_MAX, health+dt*0.4); if(net.connected) hunger=Math.max(0,hunger-dt*0.05); }
-  else if(net.connected && hunger<=0 && health>0){ health=Math.max(0, health-dt*0.2); if(health<=0) die(); }
+  if(gameMode==='creative'){ health=HEALTH_MAX; hunger=HUNGER_MAX; air=AIR_MAX; burnT=0; if(hurtT>0) hurtT=Math.max(0,hurtT-dt); return; }   // Creative: keine Survival-Mechanik (Portale oben bleiben aktiv)
+  // Hunger sinkt aktiv (Solo + Multiplayer). Sprint zehrt zusaetzlich; Springen/Angreifen kosten extra (useHunger).
+  hunger = Math.max(0, hunger - dt*0.015);
+  if(sprinting) hunger = Math.max(0, hunger - dt*0.05);
+  if(hunger>6 && health<HEALTH_MAX){ health=Math.min(HEALTH_MAX, health+dt*0.4); hunger=Math.max(0, hunger-dt*0.05); }  // satt -> Regen, kostet Hunger
+  else if(hunger<=0 && health>1){ health=Math.max(1, health-dt*0.2); }   // leerer Magen schwaecht, toetet aber nicht (Easy-Modus)
   const eb = world.getBlock(Math.floor(player.x), Math.floor(player.y+EYE_HEIGHT), Math.floor(player.z));
   if(eb===WATER){ air=Math.max(0,air-dt); if(air<=0 && now-lastDrown>1000){ lastDrown=now; damagePlayer(1, true); } }
   else air=AIR_MAX;
@@ -4546,6 +4568,7 @@ function survivalUpdate(dt, now){
   }
   for(const [id,m] of mobsMap){
     if(!m.hostile) continue;
+    if(m.kind==='spider' && !isNightTime() && !m.provoked) continue;   // tagsueber friedliche Spinne macht keinen Kontaktschaden
     const p=m.group.position, dd=Math.hypot(p.x-player.x, p.z-player.z);
     if(dd<1.6 && Math.abs(p.y-player.y)<2 && now-m.lastAttack>1000){ m.lastAttack=now; damagePlayer(2); }
   }
@@ -4559,7 +4582,7 @@ function survivalUpdate(dt, now){
 //  LOKALES MOB-SPAWNING + KI  (Solo-Modus: ohne Server gibt es sonst keine Mobs)
 //  Im Multiplayer uebernimmt der Server; diese Funktion haelt sich dann zurueck.
 // =====================================================================
-let localMobSeq = 1, _mobSpawnTimer = 1.5, _slimeSpawnTimer = 6, _squidSpawnTimer = 4;
+let localMobSeq = 1, _mobSpawnTimer = 1.5, _slimeSpawnTimer = 6, _squidSpawnTimer = 4, _caveSpawnTimer = 3;
 const LOCAL_PASSIVE = ['cow','sheep','chicken','pig','rabbit','fox','goat','llama','horse','wolf','villager'];
 const LOCAL_HOSTILE = ['zombie','skeleton','creeper','spider'];
 function localMobCount(hostile){ let n=0; for(const [,m] of mobsMap) if(m.local && m.hostile===hostile) n++; return n; }
@@ -4580,6 +4603,18 @@ function trySpawnPoint(){
   if(!isSolid(ground)||ground===LEAVES) return null;
   if(isSolid(world.getBlock(xi,h+1,zi))||isSolid(world.getBlock(xi,h+2,zi))) return null;
   return { x:xi+0.5, z:zi+0.5, ground };
+}
+// Hoehlen-Spawn: dunkler Lufthohlraum >=6 Bloecke unter der Oberflaeche, fester Boden + 2 Luft drueber
+function tryCaveSpawnPoint(){
+  const ang=Math.random()*6.283, r=8+Math.random()*16;
+  const xi=Math.floor(player.x+Math.cos(ang)*r), zi=Math.floor(player.z+Math.sin(ang)*r);
+  world.ensureChunkData(Math.floor(xi/CHUNK_SIZE), Math.floor(zi/CHUNK_SIZE));
+  const surf=terrainHeight(xi,zi), yTop=surf-6;
+  if(yTop<=Y_MIN+4) return null;
+  const y=(Y_MIN+3)+Math.floor(Math.random()*(yTop-(Y_MIN+3)));
+  if(!isSolid(world.getBlock(xi,y-1,zi))) return null;                                   // fester Boden
+  if(world.getBlock(xi,y,zi)!==AIR || world.getBlock(xi,y+1,zi)!==AIR) return null;       // 2 Bloecke Luft (Hohlraum)
+  return { x:xi+0.5, z:zi+0.5, y };
 }
 function localSquidCount(){ let n=0; for(const [,m] of mobsMap) if(m.local && m.kind==='squid') n++; return n; }
 // Spawn-Punkt mitten in einer tiefen Wassersaeule (Ozean) finden
@@ -4638,6 +4673,19 @@ function updateLocalMobs(dt, now){
       }
     }
   }
+  // Hoehlen-Mobs: jederzeit (Tag/Nacht) tief unter der Oberflaeche, wo es dunkel ist
+  _caveSpawnTimer-=dt;
+  if(_caveSpawnTimer<=0){
+    _caveSpawnTimer = 2.5 + Math.random()*3;
+    if(localMobCount(true)<14){
+      const sp=tryCaveSpawnPoint();
+      if(sp){
+        const CAVE_KINDS=['zombie','skeleton','spider','creeper'];
+        const id=spawnLocalMob(CAVE_KINDS[(Math.random()*CAVE_KINDS.length)|0], sp.x, sp.z);
+        const m=mobsMap.get(id); if(m){ m.cave=true; m.group.position.y=sp.y; m.tx=sp.x; m.tz=sp.z; }
+      }
+    }
+  }
   // Tintenfische unter Wasser im Ozean
   _squidSpawnTimer-=dt;
   if(_squidSpawnTimer<=0){
@@ -4656,7 +4704,15 @@ function updateLocalMobs(dt, now){
     if(m.loveCd>0) m.loveCd=Math.max(0,m.loveCd-dt);
     if(m.kind==='squid'){ updateSquidAI(m, p, dt); continue; }
     if(m.hostile){
-      if(!night && dist>22 && Math.random()<0.03 && m.kind!=='slime' && m.kind!=='slime_small'){ removeMob(id); continue; }  // tagsueber nach und nach despawnen
+      // Untote (Zombie/Skelett) verbrennen tagsueber im offenen Sonnenlicht
+      if((m.kind==='zombie'||m.kind==='skeleton') && !night){
+        const xi=Math.floor(p.x), zi=Math.floor(p.z);
+        let sky = Math.floor(p.y) >= terrainHeight(xi,zi)-1;
+        if(sky){ const top=Math.min(Y_MAX, Math.floor(p.y)+64); for(let yy=Math.floor(p.y)+2; yy<top; yy++){ if(world.getBlock(xi,yy,zi)!==AIR){ sky=false; break; } } }   // jeder Block drueber (Blatt/Glas/Wasser) = Schatten
+        if(sky){ m.sunT=(m.sunT||0)+dt; if(m.sunT>=1){ m.sunT=0; spawnFireParticle(p.x, p.y+0.9, p.z); m.hp=Math.max(0, m.hp-1); onMobHp(id, m.hp); m.flash=0.28; m.hpShow=Math.max(m.hpShow,1.5); if(m.hp<=0){ onMobDead(id); continue; } } }
+        else m.sunT=0;
+      }
+      if(!night && !m.cave && dist>22 && Math.random()<0.03 && m.kind!=='slime' && m.kind!=='slime_small'){ removeMob(id); continue; }  // tagsueber nach und nach despawnen (Hoehlen-Mobs bleiben)
       if(m.kind==='slime' || m.kind==='slime_small'){
         // Slime: huepft in Schueben Richtung Spieler. Boden-Geschw. nur waehrend Spruengen.
         m.hopT=(m.hopT||0)-dt;
@@ -4670,7 +4726,12 @@ function updateLocalMobs(dt, now){
         }
         continue;
       }
-      if(dist<26){
+      const passiveSpider = (m.kind==='spider' && !night && !m.provoked);   // Spinne tagsueber neutral
+      if(passiveSpider){
+        m.wanderT=(m.wanderT||0)-dt;
+        if(m.wanderT<=0){ m.wanderT=2+Math.random()*3; m.moving=Math.random()<0.5; m.dir=Math.random()*6.283; }
+        if(m.moving){ m.vx=Math.sin(m.dir)*1.2; m.vz=Math.cos(m.dir)*1.2; } else { m.vx=0; m.vz=0; }
+      } else if(dist<26){
         m.dir=Math.atan2(dx,dz);
         if(dist>1.3){ const sp=m.kind==='spider'?3.4:2.5; m.vx=Math.sin(m.dir)*sp; m.vz=Math.cos(m.dir)*sp; }
         else { m.vx=0; m.vz=0; }
@@ -4733,7 +4794,7 @@ function updateMobs(dt){
         m.lastAttack=_nw; damagePlayer(m.kind==='slime'?2:1);
       }
     }
-    else p.y = mobGroundY(p.x, p.z);
+    else p.y = m.cave ? mobFloorY(p.x, p.z, p.y) : mobGroundY(p.x, p.z);
     m.group.rotation.y = m.dir;
     // Lauf-Animation: Beine schwingen gegenphasig, Staerke nach Tempo
     const moved=Math.hypot(ndx,ndz);
@@ -5030,7 +5091,20 @@ let _crackStage=-1;
 const mining={x:null,y:null,z:null,progress:0};
 function addToolItem(id){ for(let i=0;i<SLOT_COUNT;i++){ if(!inv[i]){ inv[i]={id,count:1,dur:TOOL[id].dur}; renderHotbar(); if(invOpen) renderInventory(); return; } } }
 function addArmorItem(id){ for(let i=0;i<SLOT_COUNT;i++){ if(!inv[i]){ inv[i]={id,count:1,dur:ARMOR[id].dur}; renderHotbar(); if(invOpen) renderInventory(); return; } } }
-function damageTool(){ const t=inv[selectedSlot]; if(!t||!isTool(t.id)) return; t.dur--; if(t.dur<=0) inv[selectedSlot]=null; renderHotbar(); if(invOpen) renderInventory(); }
+function damageTool(){ if(gameMode==='creative') return; const t=inv[selectedSlot]; if(!t||!isTool(t.id)) return; t.dur--; if(t.dur<=0) inv[selectedSlot]=null; renderHotbar(); if(invOpen) renderInventory(); }
+// Sand/Kies fallen sofort, wenn der Block darunter Luft oder Wasser ist (Minecraft-Schwerkraft).
+function applyGravityAt(x,y,z){
+  const id=world.getBlock(x,y,z);
+  if(id!==SAND && id!==GRAVEL) return;
+  let ny=y;
+  while(ny>Y_MIN+1){ const b=world.getBlock(x,ny-1,z); if(b===AIR||b===WATER) ny--; else break; }
+  if(ny===y) return;
+  world.setBlock(x,y,z,AIR);
+  world.setBlock(x,ny,z,id);
+  SFX.dig(id,{x:x+0.5,y:ny+0.5,z:z+0.5});
+  spawnDust(x+0.5, ny+1, z+0.5, id, 4);
+  applyGravityAt(x,y+1,z);   // der Block, der jetzt ueberm Loch haengt, faellt nach
+}
 function breakBlock(x,y,z,bid,info,tool){
   if(bid===FURNACE){ const fk=x+'_'+y+'_'+z, f=furnaces.get(fk); if(f){ for(const s of f.slots){ if(s) spawnGroundItem(s.id,s.count,x+0.5,y+0.6,z+0.5); } furnaces.delete(fk); } }
   if(bid===CHEST||bid===BARREL){ const ck=x+'_'+y+'_'+z;                     // Truhen/Fass-Inhalt ausschuetten
@@ -5046,8 +5120,11 @@ function breakBlock(x,y,z,bid,info,tool){
   const wasRedstone = isWire(bid)||isLever(bid)||isLamp(bid);
   world.setBlock(x,y,z,AIR);
   if(wasRedstone) updateRedstone(x,y,z);                                     // Netz neu auswerten
+  applyGravityAt(x,y+1,z);                                                   // Sand/Kies ueber dem Loch faellt nach
   const okTool = !info.needsTool || (tool && isTool(tool.id) && TOOL[tool.id].cat===info.tool && TOOL[tool.id].tier >= (info.minTier||1));
-  if(okTool){ const cx=x+0.5, cy=y+0.55, cz=z+0.5; const dr=dropFor(bid); if(dr!==AIR) spawnGroundItem(dr,1,cx,cy,cz);
+  if(okTool){ const cx=x+0.5, cy=y+0.55, cz=z+0.5;
+    if(bid===GRAVEL){ spawnGroundItem(Math.random()<0.1?FLINT:GRAVEL,1,cx,cy,cz); }   // Kies: 10% Feuerstein
+    else { const dr=dropFor(bid); if(dr!==AIR) spawnGroundItem(dr,1,cx,cy,cz); }
     if(bid===WHEAT_S3) spawnGroundItem(WHEAT_SEEDS, 1+(Math.random()*2|0), cx,cy,cz);   // reifer Weizen: Samen extra
     if(bid===SOUL_SAND && Math.random()<0.18) spawnGroundItem(NETHER_WART,1,cx,cy,cz);  // Netherwarze gelegentlich
     if(bid===GRASS && Math.random()<0.12) spawnGroundItem(WHEAT_SEEDS,1,cx,cy,cz);      // Samen aus Gras
@@ -5076,6 +5153,7 @@ function updateAim(dt){
     let sp=(tool && isTool(tool.id) && TOOL[tool.id].cat===info.tool)?TOOL[tool.id].speed:1;
     if(tool && enchLvl(tool,'eff')) sp *= (1+0.35*enchLvl(tool,'eff'));   // Effizienz-Verzauberung
     mining.progress += dt*sp/Math.max(0.05,info.hard);
+    if(gameMode==='creative') mining.progress=1;                 // Creative: Sofort-Abbau
     // Riss-Ueberlagerung mit Fortschritt
     const stage=Math.max(0, Math.min(9, Math.floor(mining.progress*10)));
     if(stage!==_crackStage){ crackMat.map=_crackTex[stage]; crackMat.needsUpdate=true; _crackStage=stage; }
@@ -5315,8 +5393,23 @@ function closeChat(){
   chatLogEl.classList.add('dim');
   if(!isTouch && overlay.classList.contains('hidden') && !invOpen && !settingsOpen) canvas.requestPointerLock();
 }
+// ---- Dev-Tool: Creative/Survival per Chat-Command (wie Minecraft /op). Kein Chat-Output, nicht an Server. ----
+function fillCreativeInventory(){
+  let si=0;
+  const put=(id,extra)=>{ if(si<SLOT_COUNT) inv[si++]=Object.assign({id, count:(extra&&extra.dur!=null)?1:64}, extra||null); };
+  for(const id in BLOCKS){ if(+id!==AIR) put(+id); }
+  for(const id in ITEM)  { put(+id); }
+  for(const id in TOOL)  { put(+id, {dur:TOOL[id].dur}); }
+  for(const id in ARMOR) { put(+id, {dur:ARMOR[id].dur}); }
+  renderHotbar(); if(invOpen) renderInventory();
+}
+function applyGameMode(mode){
+  if(mode==='creative'){ gameMode='creative'; flying=false; fillCreativeInventory(); }
+  else if(mode==='survival'){ gameMode='survival'; flying=false; }
+}
 function sendChat(text){
   text=(text||'').trim(); if(!text) return;
+  if(text.toLowerCase().startsWith('/changemode ')){ applyGameMode(text.slice(12).trim().toLowerCase()); return; }   // Dev-Command abfangen
   if(net.connected) net.sendChat(text); else addChatMsg(playerName||'Du', text);
 }
 chatInputEl.addEventListener('keydown', (e)=>{
