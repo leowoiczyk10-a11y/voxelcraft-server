@@ -244,6 +244,7 @@
 - **Kies → Feuerstein** — neues FLINT-Item (id 211), 10% Drop beim Kies-Abbau.
 - **Dev-Command Creative Mode** — `/changemode creative|survival` (silent, nicht an Server): alle Items ins Inventar, kein Hunger/Schaden/Tod, Fliegen (Doppel-Space, Space=hoch/Shift=runter), Instant-Break, kein Item-/Tool-Verbrauch.
 - **Wasser/Lava-Flowing** — `floodWater()` war Dead-Code; jetzt `floodLiquid()` (generalisiert) + Trigger beim Block-Abbau neben Quelle. Wasser breit (budget 64, range 4), Lava knapp (16/2).
+- **Schaf scheren + Wolle** — neuer WOOL-Block (id100) + SHEARS-Item (id212, Rezept 2 Eisen). Rechtsklick-Schere auf Schaf → 1–3 Wolle (einmalig bis nachwächst-Stub); ungeschorenes Schaf droppt Wolle beim Tod. Bett-Rezept auf 3 Wolle + 3 Bretter umgestellt.
 - Verifiziert bereits vorhanden (Doc war veraltet): Ofen-UI, Chunk-Unloading, Item-Namen-Basis, Zombie+Spider-Mobs, Cow-Melken, Keep-Inventory-Toggle, dyn. Lichter.
 
 ## Bekannte Bugs

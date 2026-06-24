@@ -780,6 +780,7 @@ const CAKE=92;                // platzierbar, in 7 Bissen essbar (Status in cake
 const SANDSTONE=93, STONE_BRICKS=94, POLISHED_STONE=95, SMOOTH_SANDSTONE=96;  // Baubloecke (additiv, IDs 93-96)
 const MUSHROOM=97;            // Cross-Plant (additiv)
 const CRACKED_STONE_BRICKS=98, CHISELED_STONE_BRICKS=99;   // Steinziegel-Varianten (letzte Block-IDs <100)
+const WOOL=100;              // von Schafen (Schere) -> Bett-Crafting
 function isWheat(id){ return id===WHEAT_S0||id===WHEAT_S1||id===WHEAT_S2||id===WHEAT_S3; }
 function isStorageBlock(id){ return id===IRON_BLOCK||id===GOLD_BLOCK||id===DIAMOND_BLOCK||id===COAL_BLOCK||id===REDSTONE_BLOCK; }
 const BLOCKS = {
@@ -797,6 +798,7 @@ const BLOCKS = {
   [LEAVES]:{ name:'Laub',   solid:true,  opaque:true,  color:0x3f7a2f },
   [SNOW]:  { name:'Schnee', solid:true,  opaque:true,  color:0xeef3f8 },
   [GRAVEL]:{ name:'Kies',   solid:true,  opaque:true,  color:0x87827c },
+  [WOOL]:  { name:'Wolle',  solid:true,  opaque:true,  color:0xece9e2 },
   [CRAFTING_TABLE]:{ name:'Werkbank', solid:true, opaque:true, top:0xb9965f, side:0x7a5a30, bottom:0x6f5126 },
   [BEDROCK]:    { name:'Grundgestein', solid:true, opaque:true, color:0x33333a },
   [COAL_ORE]:   { name:'Kohleerz',   solid:true, opaque:true, color:0x4a4d52 },
@@ -931,6 +933,7 @@ const SUGAR=206;              // aus Zuckerrohr -> Zutat fuer Kuchen
 const SWEET_BERRIES=207, COOKIE=208;   // Nahrung (additiv)
 const BOWL=209, MUSHROOM_STEW=210;     // Schuessel + Pilzsuppe (additiv)
 const FLINT=211;                       // Feuerstein aus Kies (10% Drop)
+const SHEARS=212;                       // Schere: Schaf scheren -> Wolle
 const ITEM = {
   [STRING]:        { name:'Faden',          color:0xe8e8e8 },
   [ENDER_PEARL]:   { name:'Enderperle',     color:0x18a08a },
@@ -948,6 +951,7 @@ const ITEM = {
   [BOWL]:          { name:'Schüssel',       color:0x8a5a32 },
   [MUSHROOM_STEW]: { name:'Pilzsuppe',      color:0xb05a3a },
   [FLINT]:         { name:'Feuerstein',     color:0x3a3d42 },
+  [SHEARS]:        { name:'Schere',         color:0xcfd4dc },
   [FISHING_ROD]:   { name:'Angel',          color:0x9a7842 },
   [RAW_FISH]:      { name:'Roher Fisch',    color:0x8aa0b0 },
   [COOKED_FISH]:   { name:'Gebratener Fisch',color:0xc8a060 },
@@ -1078,6 +1082,7 @@ const BLOCK_MINE = {
   [SAND]:   {hard:0.5, tool:'shovel', needsTool:false},
   [GRAVEL]: {hard:0.6, tool:'shovel', needsTool:false},
   [SNOW]:   {hard:0.4, tool:'shovel', needsTool:false},
+  [WOOL]:   {hard:0.5, tool:null,     needsTool:false},
   [STONE]:  {hard:2.2, tool:'pick',   needsTool:true},
   [COBBLE]: {hard:2.2, tool:'pick',   needsTool:true},
   [BRICKS]: {hard:2.4, tool:'pick',   needsTool:true},
@@ -1253,7 +1258,8 @@ const RECIPES = [
   { shape:[".XL","X.L",".XL"], key:{X:STICK, L:LEATHER},          out:{id:BOW,        count:1} },
   { shape:["C","S","L"],       key:{C:COBBLE, S:STICK, L:LEATHER}, out:{id:ARROW_ITEM, count:4} },
   // ---- Bett (Leder statt Wolle, da keine Schafwolle im Spiel) ----
-  { shape:["LLL","XXX"],       key:{L:LEATHER, X:WOOD},            out:{id:BED,        count:1} },
+  { shape:["WWW","XXX"],       key:{W:WOOL, X:WOOD},               out:{id:BED,        count:1} },
+  { in:{[IRON_INGOT]:2},                                           out:{id:SHEARS,     count:1} },
   // ---- Stationen ----
   { shape:["XXX","X.X","XXX"], key:{X:WOOD},                       out:{id:CHEST,      count:1} },
   { shape:["III",".I.","III"], key:{I:IRON_INGOT},                 out:{id:ANVIL,      count:1} },
@@ -2097,6 +2103,10 @@ function paintTile(ctx, kind, ts, ox, oy){
       noiseFill(ctx,ox,oy,ts,rng,0x87827c,0.2);
       for(let i=0;i<Math.round(10*s*s);i++){ const x=(rng()*(ts-1))|0,y=(rng()*(ts-1))|0,f=rng()<0.5?0.7:1.18; rect(ctx,ox,oy,x,y,Math.max(1,s|0),Math.max(1,s|0),shadeHex(0x87827c,f)); }
       break; }
+    case 'wool': {
+      noiseFill(ctx,ox,oy,ts,rng,0xece9e2,0.06);
+      specks(ctx,ox,oy,ts,rng,0xd8d4cb,Math.round(5*s*s),1,0.9,1.05);
+      break; }
     case 'snow': {
       noiseFill(ctx,ox,oy,ts,rng,0xeef3f8,0.05);
       specks(ctx,ox,oy,ts,rng,0xdce8f5,Math.round(4*s*s),1,0.92,1.03);
@@ -2406,6 +2416,7 @@ function flowerTile(ctx,ox,oy,ts,rng,petalHex){
 
 // ---- Block -> Tile-Namen (top/side/bottom). String = alle Faces gleich. ----
 const TEX = {
+  [WOOL]:'wool',
   [GRASS]:{top:'grass_top',side:'grass_side',bottom:'dirt'},
   [DIRT]:'dirt', [STONE]:'stone', [SAND]:'sand', [WATER]:'water', [LAVA]:'lava', [OBSIDIAN]:'obsidian',
   [TALL_GRASS]:'tall_grass', [FLOWER_RED]:'flower_red', [FLOWER_YELLOW]:'flower_yellow', [CACTUS]:'cactus', [DEAD_BUSH]:'dead_bush',
@@ -2491,6 +2502,7 @@ function itemIconSpec(id){
     case STICK:        return {type:'stick',     col:0x9a7842};
     case COAL:         return {type:'lump',      col:0x36383e};
     case FLINT:        return {type:'lump',      col:0x3a3d42};
+    case SHEARS:       return {type:'sword',     col:0xcfd4dc};
     case RAW_COPPER:   return {type:'lump',      col:0xc07850};
     case RAW_IRON:     return {type:'lump',      col:0xd8b89a};
     case RAW_GOLD:     return {type:'lump',      col:0xd8b840};
@@ -3332,6 +3344,8 @@ function doPlace(){
   } } } }
   // Dorfbewohner: Tauschhandel (Emeralden)
   { const mh=mobInView(4.5); if(mh){ const m=mobsMap.get(mh.id); if(m&&m.kind==='villager'){ tradeWithVillager(m); return; } } }
+  // Schere: Schaf scheren -> Wolle
+  { const ssh=inv[selectedSlot]; if(ssh && ssh.id===SHEARS){ const mh=mobInView(4.5); if(mh){ const m=mobsMap.get(mh.id); if(m && m.kind==='sheep' && m.local){ if(m.wool){ m.wool=false; spawnGroundItem(WOOL, 1+(Math.random()*3|0), m.group.position.x, m.group.position.y+0.5, m.group.position.z); SFX.ui(); flashMsg('🐑 Geschoren'); } else flashMsg('🐑 Schon geschoren'); return; } } } }
   const s=inv[selectedSlot]; if(!s) return;
   // Komposter: kompostierbares Item einwerfen
   if(tb===COMPOSTER && COMPOSTABLE.has(s.id)){ fillComposter(h.x,h.y,h.z); return; }
@@ -4443,6 +4457,7 @@ function onMobDead(id){
     else if(m.kind==='wither'){ rollDrops('wither', m.group.position.x, m.group.position.y+0.6, m.group.position.z); }
   } else if(m && t && performance.now()-t<4000){ const p=m.group.position; rollDrops(m.kind, p.x, p.y+0.6, p.z);   // nur wer kurz vorher traf, kriegt Drop + XP
     if(m.kind==='horse' && m.saddled) spawnGroundItem(SADDLE,1,p.x,p.y+0.6,p.z);   // Sattel kommt mit zurueck
+    if(m.kind==='sheep' && m.wool) spawnGroundItem(WOOL,1,p.x,p.y+0.6,p.z);        // ungeschorenes Schaf gibt Wolle
     spawnXPOrbs(m.group.position.x, m.group.position.y+0.6, m.group.position.z, MOB_XP[m.kind]||1);
     gameStats.mobsKilled++; unlockAch('first_kill'); }
   if(m && m.kind==='end_crystal'){ spawnExplosion(m.group.position.x, m.group.position.y, m.group.position.z); }
@@ -4590,7 +4605,7 @@ function spawnLocalMob(kind, x, z){
   const id='L'+(localMobSeq++);
   addMob({ id, kind, x, z, dir:Math.random()*6.283 });
   const m=mobsMap.get(id);
-  if(m){ m.local=true; m.vx=0; m.vz=0; m.wanderT=0; m.moving=false; m.love=0; m.loveCd=0; m.baby=false; m.tame=false; m.saddled=false; }
+  if(m){ m.local=true; m.vx=0; m.vz=0; m.wanderT=0; m.moving=false; m.love=0; m.loveCd=0; m.baby=false; m.tame=false; m.saddled=false; if(kind==='sheep') m.wool=true; }
   return id;
 }
 // Sucht einen Spawn-Punkt in 16-36 Bloecken Abstand: offener Himmel, fester Boden, 2 Bloecke Luft drueber.
