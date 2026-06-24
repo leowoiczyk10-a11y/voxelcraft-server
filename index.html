@@ -5121,6 +5121,11 @@ function breakBlock(x,y,z,bid,info,tool){
   world.setBlock(x,y,z,AIR);
   if(wasRedstone) updateRedstone(x,y,z);                                     // Netz neu auswerten
   applyGravityAt(x,y+1,z);                                                   // Sand/Kies ueber dem Loch faellt nach
+  if(world.getBlock(x,y,z)===AIR){                                          // Fluessigkeiten fliessen in das frische Loch neben einer Quelle
+    const adj=(t)=> world.getBlock(x+1,y,z)===t||world.getBlock(x-1,y,z)===t||world.getBlock(x,y,z+1)===t||world.getBlock(x,y,z-1)===t||world.getBlock(x,y+1,z)===t;
+    if(adj(WATER)){ world.setBlock(x,y,z,WATER); floodLiquid(x,y,z,WATER,64,4); }
+    else if(adj(LAVA)){ world.setBlock(x,y,z,LAVA); floodLiquid(x,y,z,LAVA,16,2); }   // Lava breitet sich knapper aus
+  }
   const okTool = !info.needsTool || (tool && isTool(tool.id) && TOOL[tool.id].cat===info.tool && TOOL[tool.id].tier >= (info.minTier||1));
   if(okTool){ const cx=x+0.5, cy=y+0.55, cz=z+0.5;
     if(bid===GRAVEL){ spawnGroundItem(Math.random()<0.1?FLINT:GRAVEL,1,cx,cy,cz); }   // Kies: 10% Feuerstein
@@ -5779,14 +5784,16 @@ function toggleLever(x,y,z){ world.setBlock(x,y,z, world.getBlock(x,y,z)===LEVER
 // =====================================================================
 //  WASSER-FLUSS (begrenztes Fluten beim Ausgiessen)
 // =====================================================================
-function floodWater(sx,sy,sz){
-  const Q=[[sx,sy,sz,0]], seen=new Set([sx+','+sy+','+sz]); let budget=64;
+// Fluessigkeit per Flood-Fill ausbreiten: erst nach unten, dann seitlich bis range. budget begrenzt die Anzahl gesetzter Bloecke.
+function floodLiquid(sx,sy,sz,liq,budget,range){
+  const Q=[[sx,sy,sz,0]], seen=new Set([sx+','+sy+','+sz]);
   while(Q.length && budget>0){
     const [x,y,z,dist]=Q.shift();
-    if(world.getBlock(x,y-1,z)===AIR){ world.setBlock(x,y-1,z,WATER); budget--; const k=x+','+(y-1)+','+z; if(!seen.has(k)){ seen.add(k); Q.push([x,y-1,z,0]); } continue; }
-    if(dist<4) for(const d of [[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]]){ const nx=x+d[0],nz=z+d[2]; if(world.getBlock(nx,y,nz)===AIR){ world.setBlock(nx,y,nz,WATER); budget--; const k=nx+','+y+','+nz; if(!seen.has(k)){ seen.add(k); Q.push([nx,y,nz,dist+1]); } } }
+    if(world.getBlock(x,y-1,z)===AIR){ world.setBlock(x,y-1,z,liq); budget--; const k=x+','+(y-1)+','+z; if(!seen.has(k)){ seen.add(k); Q.push([x,y-1,z,0]); } continue; }
+    if(dist<range) for(const d of [[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]]){ const nx=x+d[0],nz=z+d[2]; if(world.getBlock(nx,y,nz)===AIR){ world.setBlock(nx,y,nz,liq); budget--; const k=nx+','+y+','+nz; if(!seen.has(k)){ seen.add(k); Q.push([nx,y,nz,dist+1]); } } }
   }
 }
+function floodWater(sx,sy,sz){ floodLiquid(sx,sy,sz,WATER,64,4); }   // Wasser: weit + breit
 
 // ---- Truhen-Loot (Strukturen): deterministisch beim ersten Oeffnen fuellen ----
 function fillLoot(arr,key){
