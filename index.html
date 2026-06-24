@@ -935,6 +935,7 @@ const BOWL=209, MUSHROOM_STEW=210;     // Schuessel + Pilzsuppe (additiv)
 const FLINT=211;                       // Feuerstein aus Kies (10% Drop)
 const SHEARS=212;                       // Schere: Schaf scheren -> Wolle
 const PHANTOM_MEMBRANE=213;             // Drop vom Phantom (Nachtflieger)
+const TRIDENT=214;                      // Wurf-/Nahkampfwaffe, seltener Drop vom Drowned
 const ITEM = {
   [STRING]:        { name:'Faden',          color:0xe8e8e8 },
   [ENDER_PEARL]:   { name:'Enderperle',     color:0x18a08a },
@@ -1050,6 +1051,8 @@ const TOOL = {
   [DIAMOND_SWORD]:  {cat:'sword', tier:4, speed:1,   dur:1000, dmg:9,name:'Diamantschwert',  color:0x52c7cf},
   // Bogen (Fernkampf - Schaden macht der Pfeil, Nahkampf nur minimal)
   [BOW]:            {cat:'bow',   tier:1, speed:1,   dur:120,  dmg:1, name:'Bogen',          color:0x8a5a2a},
+  // Dreizack: stark im Nahkampf (dmg 9 wie Diamantschwert), zusaetzlich werfbar (Rechtsklick)
+  [TRIDENT]:        {cat:'trident', tier:3, speed:1, dur:250, dmg:9, name:'Dreizack',        color:0x3aa6a0},
 };
 function isTool(id){ return TOOL[id]!==undefined; }
 function isBow(id){ return id===BOW; }
@@ -1299,7 +1302,7 @@ const RECIPES = [
   // Nahrung
   { shape:["WWW"],             key:{W:WHEAT},            out:{id:BREAD, count:1} },
   { shape:["GGG","GAG","GGG"], key:{G:GOLD_INGOT,A:APPLE}, out:{id:GOLDEN_APPLE, count:1} },
-  { in:{[SUGARCANE]:1},                                  out:{id:SUGAR, count:1} },
+  { in:{[SUGAR_CANE]:1},                                 out:{id:SUGAR, count:1} },   // SUGAR_CANE(Item) statt SUGARCANE(Pflanzen-Block) — Block ist nie im Inventar
   { shape:["MMM","SAS","WWW"], key:{M:MILK_BUCKET,S:SUGAR,A:APPLE,W:WHEAT}, out:{id:CAKE, count:1} },
   { in:{[WHEAT]:2,[SUGAR]:1},  out:{id:COOKIE, count:8} },   // Zucker-Kekse
   { shape:["X.X",".X."],       key:{X:WOOD},                 out:{id:BOWL, count:4} },          // Schuesseln
@@ -1353,7 +1356,7 @@ const RECIPES = [
   { shape:["XX","XX"],       key:{X:SAND},         out:{id:SANDSTONE,    count:1} },   // 4 Sand -> Sandstein
   { shape:["XX","XX"],       key:{X:STONE},        out:{id:STONE_BRICKS, count:4} },   // 4 Stein -> 4 Steinziegel
 ];
-function craftCounts(){ const c={}; for(let i=0;i<craftN*craftN;i++){ const s=craftGrid[i]; if(s) c[s.id]=(c[s.id]||0)+s.count; } return c; }
+function craftCounts(){ const c={}; for(let i=0;i<craftN*craftN;i++){ const s=craftGrid[i]; if(s) c[s.id]=(c[s.id]||0)+1; } return c; }  // zaehlt belegte ZELLEN (nicht Stapelgroesse) — MC-Semantik fuer formlose Rezepte
 function gridIds(){ const a=[]; for(let r=0;r<craftN;r++){ a.push([]); for(let c=0;c<craftN;c++){ const s=craftGrid[r*craftN+c]; a[r].push(s?s.id:null); } } return a; }
 function trimGrid(g){ let r0=9,r1=-1,c0=9,c1=-1; for(let r=0;r<g.length;r++)for(let c=0;c<g[r].length;c++) if(g[r][c]!=null){ if(r<r0)r0=r; if(r>r1)r1=r; if(c<c0)c0=c; if(c>c1)c1=c; } if(r1<0) return null; const o=[]; for(let r=r0;r<=r1;r++){ const row=[]; for(let c=c0;c<=c1;c++) row.push(g[r][c]); o.push(row); } return o; }
 function shapeIds(rc){ return rc.shape.map(row=>row.split('').map(ch=>(ch==='.'||ch===' ')?null:rc.key[ch])); }
@@ -1362,7 +1365,7 @@ function matchRecipe(){
   const tg=trimGrid(gridIds());
   for(const r of RECIPES){
     if(r.shape){ if(tg && eqGrid(tg, trimGrid(shapeIds(r)))) return r; }
-    else { const c=craftCounts(), ids=Object.keys(c), rids=Object.keys(r.in); if(rids.length!==ids.length) continue; let ok=true; for(const k of rids){ if(!(c[k]>=r.in[k])){ ok=false; break; } } if(ok) return r; }
+    else { const c=craftCounts(), ids=Object.keys(c), rids=Object.keys(r.in); if(rids.length!==ids.length) continue; let ok=true; for(const k of rids){ if(c[k]!==r.in[k]){ ok=false; break; } } if(ok) return r; }  // exakte Zellenzahl: sonst verschattet "2 Eisen=Schere" jedes reine-Eisen-Rezept (Amboss/Lore/Eisenblock)
   }
   return null;
 }
@@ -2592,6 +2595,12 @@ function paintItemIcon(ctx, id, ts, ox, oy){
     case 'bow':
       arc(4.5,8,7,-1.05,1.05,1.9,dark(0x6f4f28)); arc(4.5,8,7,-1.05,1.05,0.8,mid(0x9a7842));
       stroke(10.9,2.9,10.9,13.1, 0.6, lite(0xe8e8e8)); break;
+    case 'trident':
+      stroke(8,14.5,8,6, 1.7, dark(0x5a4a3a)); stroke(8,14.5,8,6, 0.7, mid(0x9a8a6a));   // Schaft
+      stroke(8,7,8,2.8, 1.5, mid(col));                                                    // mittlere Zinke
+      stroke(5.4,7,5.4,3.4, 1.5, mid(col)); stroke(10.6,7,10.6,3.4, 1.5, mid(col));        // seitliche Zinken
+      stroke(5.4,7,10.6,7, 1.5, mid(col));                                                 // Querbalken
+      dot(8,2.8,0.6,lite(col)); dot(5.4,3.4,0.5,lite(col)); dot(10.6,3.4,0.5,lite(col)); break;  // Spitzen
     case 'pick':
       handle(); arc(8,9,6.5,-1.25,-0.25,1.9,dark(col)); arc(8,9,6.5,-1.25,-0.25,0.8,lite(col)); break;
     case 'axe':
@@ -3317,6 +3326,7 @@ function startBreak(){
 function doPlace(){
   if(!isActive()||dead||invOpen) return;
   triggerSwing();
+  { const st=inv[selectedSlot]; if(st && st.id===TRIDENT){ throwTrident(); return; } }   // Dreizack werfen (auch ohne Block-Ziel)
   const h=raycast(); if(!h) return;
   const tb=world.getBlock(h.x,h.y,h.z);
   if(tb===FURNACE){ openFurnace(h.x+'_'+h.y+'_'+h.z); return; }
@@ -3564,7 +3574,7 @@ function setPointer(e){ if(e){ pointer.x=e.clientX; pointer.y=e.clientY; } }
 function durBar(s){ if(!s||s.dur==null) return ''; const md = isTool(s.id)?TOOL[s.id].dur : (isArmor(s.id)?ARMOR[s.id].dur:null); if(md==null) return ''; const f=Math.max(0,s.dur/md); const col=f>0.5?'#5fd35f':(f>0.25?'#e0c040':'#e24b4b'); return '<div class="durbar"><div style="width:'+Math.round(f*100)+'%;height:100%;background:'+col+'"></div></div>'; }
 function slotInner(s){ return s?('<div class="iswatch" style="'+swatchStyle(s.id)+'"></div>'+(s.ench?'<div class="glint"></div>':'')+(s.count>1?'<span class="icount">'+s.count+'</span>':'')+durBar(s)):''; }
 // ---- Verzauberungen: pro Item-Kategorie genau eine Verzauberung, Stufe waechst beim erneuten Verzaubern ----
-function enchKindFor(id){ if(isArmor(id)) return 'prot'; if(isTool(id)){ const c=TOOL[id].cat; if(c==='sword')return 'sharp'; if(c==='bow')return 'power'; return 'eff'; } return null; }
+function enchKindFor(id){ if(isArmor(id)) return 'prot'; if(isTool(id)){ const c=TOOL[id].cat; if(c==='sword'||c==='trident')return 'sharp'; if(c==='bow')return 'power'; return 'eff'; } return null; }
 function enchLvl(slot,kind){ return (slot && slot.ench && (!kind||slot.ench.kind===kind))?slot.ench.lvl:0; }
 const ENCH_NAME = { eff:'Effizienz', sharp:'Schärfe', power:'Stärke', prot:'Schutz' };
 function slotDiv(zone,idx,s){ return '<div class="islot" data-zone="'+zone+'" data-idx="'+idx+'">'+slotInner(s)+'</div>'; }
@@ -4085,13 +4095,14 @@ const MOB_DEF = {
   squid:       { hostile:false, hw:0.45, hh:0.55, fly:true },   // aquatisch: fly=true gibt uns manuelle Hoehensteuerung
   shulker:     { hostile:true,  hw:0.45, hh:0.5,  fly:true },    // ortsfest an der End-Stadt, schiesst Projektile
   phantom:     { hostile:true,  hw:0.5,  hh:0.3,  fly:true },    // Nachtflieger, taucht im Sturzflug auf den Spieler
+  drowned:     { hostile:true,  hw:0.35, hh:0.95, fly:true },    // Unterwasser-Zombie: fly=true -> manuelle Hoehensteuerung im Wasser
 };
-const MOB_HP_MAX = { cow:8, sheep:6, chicken:4, pig:8, rabbit:4, fox:6, goat:8, llama:10, zombie:10, skeleton:8, creeper:10, spider:9, enderman:20, wolf:8, horse:15, ghast:10, blaze:12, ender_dragon:120, wither:80, end_crystal:5, slime:8, slime_small:3, villager:10, squid:6, shulker:15, phantom:7 }; // muss zum Server passen (squid/shulker nur lokal)
+const MOB_HP_MAX = { cow:8, sheep:6, chicken:4, pig:8, rabbit:4, fox:6, goat:8, llama:10, zombie:10, skeleton:8, creeper:10, spider:9, enderman:20, wolf:8, horse:15, ghast:10, blaze:12, ender_dragon:120, wither:80, end_crystal:5, slime:8, slime_small:3, villager:10, squid:6, shulker:15, phantom:7, drowned:10 }; // muss zum Server passen (squid/shulker/drowned nur lokal)
 function makeMobModel(kind){
   const g=new THREE.Group(); const legs=[], arms=[];
-  if(kind==='zombie' || kind==='skeleton'){
-    const skin = kind==='zombie'?0x4a8f4a:0xe6e6de;
-    const cloth= kind==='zombie'?0x3a5a7a:0xcfcfc6;
+  if(kind==='zombie' || kind==='skeleton' || kind==='drowned'){
+    const skin = kind==='zombie'?0x4a8f4a : kind==='drowned'?0x3f8f86 : 0xe6e6de;   // Drowned: blaugruen
+    const cloth= kind==='zombie'?0x3a5a7a : kind==='drowned'?0x2c6f74 : 0xcfcfc6;
     g.add(boxMesh(0.5,0.65,0.28, cloth, 0,1.0,0));            // Rumpf
     g.add(boxMesh(0.46,0.46,0.46, skin, 0,1.58,0));          // Kopf
     g.add(boxMesh(0.12,0.1,0.02, 0x101014, -0.1,1.62,0.24)); // Augen
@@ -4395,6 +4406,7 @@ const MOB_DROP = {
   villager:    [{id:EMERALD,    min:0, max:1}],
   squid:       [{id:INK_SAC,    min:1, max:3}],
   phantom:     [{id:PHANTOM_MEMBRANE, min:0, max:1}],
+  drowned:     [{id:ROTTEN_FLESH, min:1, max:2}, {id:COPPER_INGOT, min:0, max:1}],   // Dreizack separat (nur Dreizack-Drowned, in onMobDead)
   shulker:     [{id:SHULKER_SHELL, min:1, max:2}],
 };
 function rollDrops(kind,x,y,z){
@@ -4472,6 +4484,7 @@ function onMobDead(id){
   } else if(m && t && performance.now()-t<4000){ const p=m.group.position; rollDrops(m.kind, p.x, p.y+0.6, p.z);   // nur wer kurz vorher traf, kriegt Drop + XP
     if(m.kind==='horse' && m.saddled) spawnGroundItem(SADDLE,1,p.x,p.y+0.6,p.z);   // Sattel kommt mit zurueck
     if(m.kind==='sheep' && m.wool) spawnGroundItem(WOOL,1,p.x,p.y+0.6,p.z);        // ungeschorenes Schaf gibt Wolle
+    if(m.kind==='drowned' && m.tridentHolder && Math.random()<0.5) spawnGroundItem(TRIDENT,1,p.x,p.y+0.6,p.z);  // nur Dreizack-Drowned droppen den Dreizack
     spawnXPOrbs(m.group.position.x, m.group.position.y+0.6, m.group.position.z, MOB_XP[m.kind]||1);
     gameStats.mobsKilled++; unlockAch('first_kill'); }
   if(m && m.kind==='end_crystal'){ spawnExplosion(m.group.position.x, m.group.position.y, m.group.position.z); }
@@ -4611,7 +4624,7 @@ function survivalUpdate(dt, now){
 //  LOKALES MOB-SPAWNING + KI  (Solo-Modus: ohne Server gibt es sonst keine Mobs)
 //  Im Multiplayer uebernimmt der Server; diese Funktion haelt sich dann zurueck.
 // =====================================================================
-let localMobSeq = 1, _mobSpawnTimer = 1.5, _slimeSpawnTimer = 6, _squidSpawnTimer = 4, _caveSpawnTimer = 3;
+let localMobSeq = 1, _mobSpawnTimer = 1.5, _slimeSpawnTimer = 6, _squidSpawnTimer = 4, _caveSpawnTimer = 3, _drownedSpawnTimer = 8;
 let sleeplessDays = 0, _wasNight = false;   // Phantom-Motivation: Tage ohne Schlaf zaehlen
 const LOCAL_PASSIVE = ['cow','sheep','chicken','pig','rabbit','fox','goat','llama','horse','wolf','villager'];
 const LOCAL_HOSTILE = ['zombie','skeleton','creeper','spider'];
@@ -4681,6 +4694,27 @@ function updateSquidAI(m, p, dt){
     m.dir += 2.4; m.vx = Math.sin(m.dir)*0.8; m.vz = Math.cos(m.dir)*0.8; m.swimT = Math.min(m.swimT, 0.4);
   }
 }
+// Drowned-KI: jagt den Spieler durchs Wasser (Kontaktschaden via survivalUpdate), bleibt in der Wassersaeule, strandet nicht
+function updateDrownedAI(m, p, dt){
+  const dx=player.x-p.x, dz=player.z-p.z, dy=player.y-p.y, dist=Math.hypot(dx,dz);
+  if(dist<24){
+    m.dir = Math.atan2(dx,dz);
+    const sp = 2.2;
+    m.vx = Math.sin(m.dir)*sp; m.vz = Math.cos(m.dir)*sp;
+    m.vy = Math.max(-2, Math.min(2, dy*1.2));
+  } else {
+    m.swimT=(m.swimT||0)-dt;
+    if(m.swimT<=0){ m.swimT=1.5+Math.random()*2; m.dir=Math.random()*6.283; const s=0.9; m.vx=Math.sin(m.dir)*s; m.vz=Math.cos(m.dir)*s; m.vy=(Math.random()-0.5)*0.8; }
+  }
+  const floorY = terrainHeight(Math.floor(p.x), Math.floor(p.z));
+  const minY = floorY + 0.6, maxY = WATER_LEVEL - 0.4;
+  if(p.y < minY){ p.y = minY; if(m.vy<0) m.vy = 0.3; }
+  if(p.y > maxY){ p.y = maxY; if(m.vy>0) m.vy = -0.3; }
+  const nx=p.x+Math.sin(m.dir)*0.7, nz=p.z+Math.cos(m.dir)*0.7;     // voraus kein Wasser -> abdrehen (nicht stranden)
+  if(world.getBlock(Math.floor(nx), Math.floor(p.y), Math.floor(nz)) !== WATER){
+    m.dir += 2.3; m.vx = Math.sin(m.dir)*0.8; m.vz = Math.cos(m.dir)*0.8;
+  }
+}
 function updateLocalMobs(dt, now){
   if(net.connected || dimension!==0) return;
   const _nightNow=isNightTime();
@@ -4729,6 +4763,18 @@ function updateLocalMobs(dt, now){
       if(sp){ const id=spawnLocalMob('squid', sp.x, sp.z); const sq=mobsMap.get(id); if(sq){ sq.group.position.y=sp.y; sq.tx=sp.x; sq.tz=sp.z; sq.vx=sq.vy=sq.vz=0; sq.swimT=0.6+Math.random()*1.5; } }
     }
   }
+  // Drowned (Unterwasser-Zombie) im tiefen Wasser, nachts haeufiger; ~15% tragen einen Dreizack
+  _drownedSpawnTimer-=dt;
+  if(_drownedSpawnTimer<=0){
+    _drownedSpawnTimer = 7 + Math.random()*7;
+    if(localMobCount(true)<14){
+      const sp=tryWaterSpawnPoint();
+      if(sp && Math.hypot(sp.x-player.x, sp.z-player.z)>12 && (isNightTime()||Math.random()<0.4)){
+        const id=spawnLocalMob('drowned', sp.x, sp.z); const dm=mobsMap.get(id);
+        if(dm){ dm.group.position.y=sp.y; dm.tx=sp.x; dm.tz=sp.z; dm.vx=dm.vy=dm.vz=0; dm.tridentHolder=Math.random()<0.15; }
+      }
+    }
+  }
   const night=isNightTime();
   for(const [id,m] of mobsMap){
     if(!m.local || m.ridden) continue;
@@ -4737,6 +4783,7 @@ function updateLocalMobs(dt, now){
     if(dist>74){ removeMob(id); continue; }                              // weit weg -> verschwindet
     if(m.loveCd>0) m.loveCd=Math.max(0,m.loveCd-dt);
     if(m.kind==='squid'){ updateSquidAI(m, p, dt); continue; }
+    if(m.kind==='drowned'){ updateDrownedAI(m, p, dt); continue; }
     if(m.hostile){
       // Untote (Zombie/Skelett) verbrennen tagsueber im offenen Sonnenlicht
       if((m.kind==='zombie'||m.kind==='skeleton') && !night){
@@ -4917,6 +4964,51 @@ function updateArrows(dt){
   }
 }
 
+// ---- Geworfener Dreizack: lokales Projektil, landet als aufsammelbares Item (Rueckholung) ----
+const _tridentGeo = new THREE.BoxGeometry(0.08,0.08,0.7);
+const _tridentMat = new THREE.MeshLambertMaterial({ color:0x3aa6a0 });
+function makeTridentMesh(){
+  const g=new THREE.Group();
+  g.add(new THREE.Mesh(_tridentGeo, _tridentMat));
+  const head=new THREE.Mesh(new THREE.BoxGeometry(0.24,0.05,0.12), _tridentMat); head.position.z=0.36; g.add(head);
+  return g;
+}
+const thrownTridents=[]; // {mesh, vx,vy,vz, life, dmg}
+function throwTrident(){
+  const now=performance.now(); if(now-lastShot<450) return; lastShot=now;
+  const sel=inv[selectedSlot]; if(!sel || sel.id!==TRIDENT) return;
+  const dir=new THREE.Vector3(); camera.getWorldDirection(dir);
+  const dmg = 9 + enchLvl(sel,'sharp');
+  const mesh=makeTridentMesh(); const o=camera.position;
+  mesh.position.set(o.x+dir.x*0.6, o.y+dir.y*0.6, o.z+dir.z*0.6); scene.add(mesh);
+  const sp=24;
+  thrownTridents.push({ mesh, vx:dir.x*sp, vy:dir.y*sp, vz:dir.z*sp, life:3, dmg });
+  consumeSelected(1); SFX.hit(); useHunger(0.1);
+}
+function updateThrownTridents(dt){
+  for(let i=thrownTridents.length-1;i>=0;i--){
+    const t=thrownTridents[i], p=t.mesh.position;
+    t.vy -= 9*dt;
+    p.x+=t.vx*dt; p.y+=t.vy*dt; p.z+=t.vz*dt;
+    t.mesh.lookAt(p.x+t.vx, p.y+t.vy, p.z+t.vz);
+    t.life-=dt;
+    let landed=false;
+    for(const [mid,m] of mobsMap){
+      const mp=m.group.position;
+      if(Math.abs(p.x-mp.x)<m.hw+0.3 && Math.abs(p.z-mp.z)<m.hw+0.3 && p.y>mp.y-0.2 && p.y<mp.y+m.hh*2+0.2){
+        net.send({t:'mobhit', mobId:mid, dmg:t.dmg}); myHits.set(mid, performance.now());
+        const mm=mobsMap.get(mid); if(mm){ mm.provoked=true; mm.hp=Math.max(0,mm.hp-t.dmg); onMobHp(mid,mm.hp); spawnDamagePop(mp.x,mp.y+m.hh*2,mp.z,t.dmg); if(mm.local&&mm.hp<=0) onMobDead(mid); }
+        landed=true; break;
+      }
+    }
+    if(!landed && isSolid(world.getBlock(Math.floor(p.x),Math.floor(p.y),Math.floor(p.z)))) landed=true;
+    if(landed || t.life<=0 || p.y<Y_MIN+2){
+      scene.remove(t.mesh);
+      spawnGroundItem(TRIDENT, 1, p.x, p.y, p.z);   // Dreizack zum Aufsammeln liegen lassen
+      thrownTridents.splice(i,1);
+    }
+  }
+}
 const particles=[]; // {mesh, vx,vy,vz, life, max}
 const _poofGeo = new THREE.BoxGeometry(0.18,0.18,0.18);
 function poofColor(kind){
@@ -4929,6 +5021,7 @@ function poofColor(kind){
   if(kind==='slime' || kind==='slime_small') return 0x6acf6a;
   if(kind==='villager') return 0x6f4a2e;
   if(kind==='squid') return 0x20203a;
+  if(kind==='drowned') return 0x3f8f86;
   if(kind==='shulker') return 0x9a6a9a;
   return 0xcccccc;
 }
@@ -5125,7 +5218,7 @@ let _crackStage=-1;
 const mining={x:null,y:null,z:null,progress:0};
 function addToolItem(id){ for(let i=0;i<SLOT_COUNT;i++){ if(!inv[i]){ inv[i]={id,count:1,dur:TOOL[id].dur}; renderHotbar(); if(invOpen) renderInventory(); return; } } }
 function addArmorItem(id){ for(let i=0;i<SLOT_COUNT;i++){ if(!inv[i]){ inv[i]={id,count:1,dur:ARMOR[id].dur}; renderHotbar(); if(invOpen) renderInventory(); return; } } }
-function damageTool(){ if(gameMode==='creative') return; const t=inv[selectedSlot]; if(!t||!isTool(t.id)) return; t.dur--; if(t.dur<=0) inv[selectedSlot]=null; renderHotbar(); if(invOpen) renderInventory(); }
+function damageTool(){ if(gameMode==='creative') return; const t=inv[selectedSlot]; if(!t||!isTool(t.id)) return; if(t.dur==null) t.dur=TOOL[t.id].dur; t.dur--; if(t.dur<=0) inv[selectedSlot]=null; renderHotbar(); if(invOpen) renderInventory(); }
 // Sand/Kies fallen sofort, wenn der Block darunter Luft oder Wasser ist (Minecraft-Schwerkraft).
 function applyGravityAt(x,y,z){
   const id=world.getBlock(x,y,z);
@@ -5220,7 +5313,7 @@ function addXP(n){
   while(xp>=xpForLevel(xpLevel)){ xp-=xpForLevel(xpLevel); xpLevel++; SFX.levelup(); }
   renderXP();
 }
-const MOB_XP = { cow:1, sheep:1, chicken:1, pig:1, rabbit:1, fox:1, goat:1, llama:1, zombie:5, skeleton:5, creeper:5, spider:5, enderman:10, wolf:0, horse:0, ghast:5, blaze:10, ender_dragon:500, wither:50, end_crystal:0, slime:4, slime_small:1, villager:2, squid:3, shulker:5, phantom:5 };
+const MOB_XP = { cow:1, sheep:1, chicken:1, pig:1, rabbit:1, fox:1, goat:1, llama:1, zombie:5, skeleton:5, creeper:5, spider:5, enderman:10, wolf:0, horse:0, ghast:5, blaze:10, ender_dragon:500, wither:50, end_crystal:0, slime:4, slime_small:1, villager:2, squid:3, shulker:5, phantom:5, drowned:5 };
 const ORE_XP = { [COAL_ORE]:1, [COPPER_ORE]:1, [IRON_ORE]:2, [GOLD_ORE]:3, [DIAMOND_ORE]:5 };
 // Schwebende XP-Kuegelchen, die zum Spieler fliegen und dort gutgeschrieben werden
 const xpOrbs=[];
@@ -5885,6 +5978,7 @@ function frame(now){
   updateBossProjectiles(dt);
   updateMobs(dt);
   updateArrows(dt);
+  updateThrownTridents(dt);
   updateParticles(dt);
   updateGroundItems(dt);
   updateDamagePops(dt);

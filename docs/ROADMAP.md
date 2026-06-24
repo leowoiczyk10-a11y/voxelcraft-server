@@ -234,6 +234,12 @@
 
 ---
 
+## Erledigt (Session 2026-06-24, Teil 2)
+- **Rezept-Matching gefixt** — formloses Matching zählte Stapelgrößen mit `>=` statt belegter Zellen exakt. Folge: das formlose „2 Eisen = Schere"-Rezept verschattete **jedes** rein-eiserne geformte Rezept dahinter → **Amboss (7 Eisen), Lore (5 Eisen), Eisenblock (9 Eisen) waren unbaubar**. Fix: `craftCounts()` zählt Zellen (`+1`), Matching `c[k]===r.in[k]`. Node-Test: alle 111 Rezepte liefern wieder ihren eigenen Output.
+- **Zucker-Rezept gefixt** — verlangte `SUGARCANE` (Pflanzen-Block id 76, nie im Inventar) statt `SUGAR_CANE` (Item id 194). Jetzt aus 1 Zuckerrohr-Item baubar.
+- **Drowned-Mob + Dreizack** — Unterwasser-Zombie (`kind:'drowned'`, HP 10): schwimmt zum Spieler, bleibt in der Wassersäule, strandet nicht; spawnt nachts in tiefem Wasser. Drops Rotten Flesh + Kupfer; ~15 % tragen einen **Dreizack** (id 214, dmg 9, werfbar per Rechtsklick als lokales Projektil, landet zum Aufsammeln). Kein Crafting (nur Drowned-Drop, MC-konform). Siehe `docs/MOBS.md`.
+- **Drive-by:** `damageTool()` initialisiert fehlende `dur` (aufgesammelte Werkzeuge hatten via `addItem` keine Haltbarkeit → `NaN`).
+
 ## Erledigt (Session 2026-06-24)
 - **Hunger sinkt jetzt auch solo** — survivalUpdate() ungated; Sprint/Sprung/Angriff zehren extra (useHunger). Hunger tötet nicht mehr (Floor bei 1 HP, Easy).
 - **Sand/Kies-Schwerkraft** — applyGravityAt() fällt Säulen ein, Hook in breakBlock + doPlace, fällt durch Wasser bis fester Boden.
@@ -271,15 +277,16 @@
 - Amethyst
 
 ### Mobs die fehlen:
-- Zombie (P1), Spider (P1), Slime (P3)
 - Pillager, Ravager (P3)
-- Drowned (Unterwasser-Zombie)
-- Phantom (tötet Spieler die nicht schlafen)
+- Magma Cube (Nether), Zombified Piglin (P3)
 - Bee (Atmosphäre)
+- Warden / Deep Dark (P3)
+- ~~Drowned~~ ✅, ~~Phantom~~ ✅, ~~Zombie/Spider/Slime~~ ✅ (erledigt)
 
 ### Mechaniken die fehlen:
 - Elytra fliegen (Item vorhanden, Mechanik fehlt)
-- Trident (Items fehlen)
+- ~~Trident~~ ✅ (id 214: Nahkampf dmg 9 + Wurf; Drowned-Drop)
+- Trident-Enchants (Loyalty=Rückkehr, Channeling=Blitz) fehlen noch
 - Shield-Blocker Animation (Shield-Item vorhanden, nur Damage-Reduction)
 - Schneefall + Schnee-Akkumulation (Snow Layer Block vorhanden)
 - Tropfstein / Stalagmiten (Schaden)

@@ -39,6 +39,15 @@ class Mob {
 - KEIN Trading implementiert
 - Spawn: (noch selten/zufällig, kein Dorf)
 
+### Drowned (Unterwasser-Zombie)  — *neu*
+- HP: 10, XP: 5, Schaden: 2 (Kontakt, generisch über `survivalUpdate`)
+- `kind:'drowned'`, `MOB_DEF.drowned = {hostile:true, hw:0.35, hh:0.95, fly:true}` (fly=true → manuelle Höhe im Wasser)
+- Modell: Zombie-Variante in Blaugrün (Branch `kind==='zombie'||'skeleton'||'drowned'` in `makeMobModel`)
+- KI: `updateDrownedAI()` — jagt den Spieler durchs Wasser, bleibt in der Wassersäule (clamp floor+0.6 … WATER_LEVEL-0.4), dreht vor Nicht-Wasser ab (strandet nicht)
+- Spawn: `tryWaterSpawnPoint()` (tiefes Wasser, Dist > 12), nachts häufiger; `_drownedSpawnTimer`; nur solo/lokal
+- Drops: Rotten Flesh (1–2), Kupferbarren (0–1); ~15 % der Drowned sind **Dreizack-Träger** (`m.tridentHolder`) → 50 % Dreizack-Drop in `onMobDead`
+- **Dreizack** (`TRIDENT`, id 214): Nahkampf dmg 9 (= Diamantschwert) + werfbar per Rechtsklick (`throwTrident()` → lokales Projektil `updateThrownTridents()`, landet als aufsammelbares Item). Kein Crafting (MC-konform: nur Drowned-Drop).
+
 ## KI State Machine (alle Mobs)
 ```
 IDLE ──(Spieler in Range)──► DETECT
