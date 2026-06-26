@@ -48,6 +48,16 @@ class Mob {
 - Drops: Rotten Flesh (1–2), Kupferbarren (0–1); ~15 % der Drowned sind **Dreizack-Träger** (`m.tridentHolder`) → 50 % Dreizack-Drop in `onMobDead`
 - **Dreizack** (`TRIDENT`, id 214): Nahkampf dmg 9 (= Diamantschwert) + werfbar per Rechtsklick (`throwTrident()` → lokales Projektil `updateThrownTridents()`, landet als aufsammelbares Item). Kein Crafting (MC-konform: nur Drowned-Drop).
 
+### Magmawürfel (Nether)  — *neu*
+- `kind:'magma_cube'` (HP 16, hw 0.45) + `kind:'magma_cube_small'` (HP 6, hw 0.25), beide `fly:true`
+- **Warum fly:true:** `updateLocalMobs()` läuft nur in der Oberwelt (`dimension!==0 return`) und `updateMobs()` cullt im Nether alles außer `m.local && m.fly`. Magma nutzt daher den fly-Pfad + eigene KI `magmaCubeAI()` (in `updateNetherMobs`).
+- Modell: Slime-Branch in `makeMobModel` erweitert (dunkle Obsidian-Kruste 0x3a0e08 + glühender Kern 0xff7a1e)
+- KI: hüpft in Schüben auf den Spieler zu (Sprung-Arc via `m.vy`, Landung clampt auf `mobFloorY`), Kontaktschaden 4 (groß) / 2 (klein)
+- **Feuerimmun:** es gibt keinen Mob-Lava/Feuer-Schaden-Pfad → automatisch immun (kein Extra-Code)
+- Splittet beim Tod in 2–3 `magma_cube_small` (generalisierter Slime-Split, übernimmt Eltern-Y im Nether)
+- Spawn: `updateNetherMobs()` ~35 % Bodenspawn (sonst Ghast/Blaze), Limit 6 lokale Mobs
+- Drops: **Magmacreme** (`MAGMA_CREAM`, id 216, Brau-Zutat für später), XP 6 (groß) / 2 (klein)
+
 ## KI State Machine (alle Mobs)
 ```
 IDLE ──(Spieler in Range)──► DETECT

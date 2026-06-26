@@ -234,6 +234,11 @@
 
 ---
 
+## Erledigt (Session 2026-06-26)
+- **Magmawürfel (Nether-Mob)** — slime-artiger Springer in zwei Größen (`magma_cube` HP 16 / `magma_cube_small` HP 6), `fly:true` + eigene `magmaCubeAI()` (nötig, weil `updateLocalMobs` nur Dim 0 läuft und `updateMobs` im Nether alles außer `local && fly` cullt). Dunkle Kruste + glühender Kern, hüpft auf den Spieler zu (Kontakt 4/2), feuerimmun (kein Mob-Lava-Pfad), splittet beim Tod in 2–3 kleine. Spawnt am Boden via `updateNetherMobs` (~35 %, sonst Ghast/Blaze). Neuer Drop **Magmacreme** (`MAGMA_CREAM`, id 216). Siehe `docs/MOBS.md`.
+- **Fernglas / Spyglass** — neues Item (`SPYGLASS`, id 217), Rezept Glas + 2 Kupfer (vertikal). Rechtsklick **halten** zoomt (FOV → 22°, sanfter Lerp), feineres Zielen (Sensitivität ∝ FOV) + runde Vignette (`#spyglassOverlay`). Loslassen/Inventar/Tod = Zoom aus. Desktop (Maus); kein Item-Verbrauch.
+- **Hinweis Frustum-Culling (Roadmap P2):** *nicht* umgesetzt — Three.js cullt Chunk-Section-Meshes bereits automatisch per `geometry.boundingSphere` (`makeMesh` ruft `computeBoundingSphere`) + Default `frustumCulled=true`. Manuelles Culling wäre redundanter Dead-Code. Roadmap-Item entsprechend obsolet.
+
 ## Erledigt (Session 2026-06-24, Teil 2)
 - **Rezept-Matching gefixt** — formloses Matching zählte Stapelgrößen mit `>=` statt belegter Zellen exakt. Folge: das formlose „2 Eisen = Schere"-Rezept verschattete **jedes** rein-eiserne geformte Rezept dahinter → **Amboss (7 Eisen), Lore (5 Eisen), Eisenblock (9 Eisen) waren unbaubar**. Fix: `craftCounts()` zählt Zellen (`+1`), Matching `c[k]===r.in[k]`. Node-Test: alle 111 Rezepte liefern wieder ihren eigenen Output.
 - **Zucker-Rezept gefixt** — verlangte `SUGARCANE` (Pflanzen-Block id 76, nie im Inventar) statt `SUGAR_CANE` (Item id 194). Jetzt aus 1 Zuckerrohr-Item baubar.
@@ -278,7 +283,7 @@
 
 ### Mobs die fehlen:
 - Pillager, Ravager (P3)
-- Magma Cube (Nether), Zombified Piglin (P3)
+- ~~Magma Cube (Nether)~~ ✅, Zombified Piglin (P3)
 - Bee (Atmosphäre)
 - Warden / Deep Dark (P3)
 - ~~Drowned~~ ✅, ~~Phantom~~ ✅, ~~Zombie/Spider/Slime~~ ✅ (erledigt)

@@ -561,6 +561,7 @@ function applyUIScale(){ document.documentElement.style.setProperty('--ui-scale'
 applyUIScale();
 let settingsOpen = false;
 let baseFov = settings.fov;
+let zoomActive = false;          // Fernglas-Zoom (Rechtsklick halten)
 let RENDER_DISTANCE = settings.renderDist;
 let SIM_DISTANCE = settings.simDist;
 let UNLOAD_DISTANCE = RENDER_DISTANCE + 2;
@@ -936,7 +937,11 @@ const FLINT=211;                       // Feuerstein aus Kies (10% Drop)
 const SHEARS=212;                       // Schere: Schaf scheren -> Wolle
 const PHANTOM_MEMBRANE=213;             // Drop vom Phantom (Nachtflieger)
 const TRIDENT=214;                      // Wurf-/Nahkampfwaffe, seltener Drop vom Drowned
+const MAGMA_CREAM=216;                  // Drop vom Magmawuerfel (Nether), Brau-Zutat (spaeter)
+const SPYGLASS=217;                     // Fernglas: Rechtsklick halten -> Zoom
 const ITEM = {
+  [MAGMA_CREAM]:   { name:'Magmacreme',     color:0xd24a10 },
+  [SPYGLASS]:      { name:'Fernglas',       color:0xb07a3a },
   [STRING]:        { name:'Faden',          color:0xe8e8e8 },
   [ENDER_PEARL]:   { name:'Enderperle',     color:0x18a08a },
   [BLAZE_ROD]:     { name:'Lohenrute',      color:0xf0a020 },
@@ -1227,6 +1232,7 @@ const RECIPES = [
   { shape:["XXX","X.X","XXX"], key:{X:COBBLE},          out:{id:FURNACE, count:1} },
   { shape:["C","S"],           key:{C:COAL,S:STICK},    out:{id:TORCH,   count:4} },
   { shape:["X.X",".X."],       key:{X:IRON_INGOT},      out:{id:EMPTY_BUCKET, count:1} },
+  { shape:["G","C","C"],       key:{G:GLASS,C:COPPER_INGOT}, out:{id:SPYGLASS, count:1} },   // Fernglas: Glaslinse + 2 Kupfer
   // Eisen-Werkzeuge (Eisenbarren + Stoecke)
   { shape:["XXX",".S.",".S."], key:{X:IRON_INGOT,S:STICK}, out:{id:IRON_PICKAXE, count:1} },
   { shape:["XX","XS",".S"],    key:{X:IRON_INGOT,S:STICK}, out:{id:IRON_AXE,     count:1} },
@@ -2836,6 +2842,12 @@ const hemi=new THREE.HemisphereLight(0xbcd6f5,0x6b5a40,0.85); scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xffffff,0.45); sun.position.set(0.4,1.0,0.25); scene.add(sun);
 const torchLight=new THREE.PointLight(0xffb84d, 0.0, 16, 1.0); scene.add(torchLight); // Fackel in Hand/Offhand -> Licht das mitlaeuft
 function holdingTorch(){ return (offhand && offhand.id===TORCH) || (inv[selectedSlot] && inv[selectedSlot].id===TORCH); }
+function holdingSpyglass(){ return !!(inv[selectedSlot] && inv[selectedSlot].id===SPYGLASS); }
+// Fernglas-Vignette: schwarzer Rand mit rundem Sichtfeld in der Mitte
+const spyOverlay=document.createElement('div'); spyOverlay.id='spyglassOverlay';
+spyOverlay.style.cssText='position:fixed;inset:0;pointer-events:none;display:none;z-index:30;background:radial-gradient(circle at center, rgba(0,0,0,0) 0 32%, rgba(0,0,0,0.96) 42%, #000 70%);';
+document.body.appendChild(spyOverlay);
+function setSpyglassOverlay(on){ const d=on?'block':'none'; if(spyOverlay.style.display!==d) spyOverlay.style.display=d; }
 function updateTorchGlow(){
   if(holdingTorch()){ torchLight.position.set(player.x, player.y+1.2, player.z); torchLight.intensity=1.6*(0.85+Math.random()*0.15); }   // leichtes Flackern
   else torchLight.intensity=0;
@@ -3163,8 +3175,10 @@ function updatePlayer(dt){
   if(buffSpeed>0) speed*=1.4;                       // Tempotrank / Beacon
   if(mountedHorse) speed=WALK_SPEED*1.9;            // Pferd ist schneller
   player.vx=dirX*speed; player.vz=dirZ*speed;
-  const tFov = sprinting?baseFov+8:baseFov;
-  if(Math.abs(camera.fov-tFov)>0.1){ camera.fov+=(tFov-camera.fov)*0.2; camera.updateProjectionMatrix(); }
+  const zooming = zoomActive && holdingSpyglass() && !invOpen && !dead;   // Fernglas-Zoom aktiv?
+  const tFov = zooming ? 22 : (sprinting?baseFov+8:baseFov);
+  if(Math.abs(camera.fov-tFov)>0.1){ camera.fov+=(tFov-camera.fov)*0.25; camera.updateProjectionMatrix(); }
+  setSpyglassOverlay(zooming);
 
   // Schwimmen: Koerper im Wasser (Fuesse oder Bauch) -> Auftrieb statt freiem Fall
   const inWater = world.getBlock(Math.floor(player.x), Math.floor(player.y), Math.floor(player.z))===WATER
@@ -3447,10 +3461,10 @@ addEventListener('keydown', (e)=>{
 });
 addEventListener('keyup', (e)=>keys.delete(e.code));
 document.addEventListener('pointerlockchange', ()=>{ locked=document.pointerLockElement===canvas; if(!invOpen) overlay.classList.toggle('hidden',locked); if(!locked) keys.clear(); });
-document.addEventListener('mousemove', (e)=>{ if(!locked)return; const sv=0.0024*settings.sensitivity; yaw-=e.movementX*sv; pitch-=e.movementY*sv; const l=Math.PI/2-0.01; pitch=Math.max(-l,Math.min(l,pitch)); });
+document.addEventListener('mousemove', (e)=>{ if(!locked)return; const zf = zoomActive ? Math.max(0.3, camera.fov/baseFov) : 1; const sv=0.0024*settings.sensitivity*zf; yaw-=e.movementX*sv; pitch-=e.movementY*sv; const l=Math.PI/2-0.01; pitch=Math.max(-l,Math.min(l,pitch)); });
 canvas.addEventListener('contextmenu', e=>e.preventDefault());
-canvas.addEventListener('mousedown', (e)=>{ if(!locked)return; if(e.button===0) startBreak(); else if(e.button===2) doPlace(); });
-document.addEventListener('mouseup', (e)=>{ if(e.button===0) breakHeld=false; });
+canvas.addEventListener('mousedown', (e)=>{ if(!locked)return; if(e.button===0) startBreak(); else if(e.button===2){ if(holdingSpyglass()) zoomActive=true; else doPlace(); } });
+document.addEventListener('mouseup', (e)=>{ if(e.button===0) breakHeld=false; else if(e.button===2) zoomActive=false; });
 addEventListener('wheel', (e)=>{ if(!locked)return; selectedSlot=(selectedSlot+(e.deltaY>0?1:-1)+HOTBAR_COUNT)%HOTBAR_COUNT; renderHotbar(); showSelectedName(); }, {passive:true});
 
 // ---- Start ----
@@ -4091,13 +4105,15 @@ const MOB_DEF = {
   end_crystal:{ hostile:true, hw:0.6, hh:1.2, fly:true },
   slime:       { hostile:true,  hw:0.45, hh:0.9 },
   slime_small: { hostile:true,  hw:0.25, hh:0.5 },
+  magma_cube:       { hostile:true, hw:0.45, hh:0.9, fly:true },   // Nether-Springer, feuerimmun; fly=true -> eigene Hoehensteuerung (magmaCubeAI)
+  magma_cube_small: { hostile:true, hw:0.25, hh:0.5, fly:true },
   villager:    { hostile:false, hw:0.4,  hh:1.0 },
   squid:       { hostile:false, hw:0.45, hh:0.55, fly:true },   // aquatisch: fly=true gibt uns manuelle Hoehensteuerung
   shulker:     { hostile:true,  hw:0.45, hh:0.5,  fly:true },    // ortsfest an der End-Stadt, schiesst Projektile
   phantom:     { hostile:true,  hw:0.5,  hh:0.3,  fly:true },    // Nachtflieger, taucht im Sturzflug auf den Spieler
   drowned:     { hostile:true,  hw:0.35, hh:0.95, fly:true },    // Unterwasser-Zombie: fly=true -> manuelle Hoehensteuerung im Wasser
 };
-const MOB_HP_MAX = { cow:8, sheep:6, chicken:4, pig:8, rabbit:4, fox:6, goat:8, llama:10, zombie:10, skeleton:8, creeper:10, spider:9, enderman:20, wolf:8, horse:15, ghast:10, blaze:12, ender_dragon:120, wither:80, end_crystal:5, slime:8, slime_small:3, villager:10, squid:6, shulker:15, phantom:7, drowned:10 }; // muss zum Server passen (squid/shulker/drowned nur lokal)
+const MOB_HP_MAX = { cow:8, sheep:6, chicken:4, pig:8, rabbit:4, fox:6, goat:8, llama:10, zombie:10, skeleton:8, creeper:10, spider:9, enderman:20, wolf:8, horse:15, ghast:10, blaze:12, ender_dragon:120, wither:80, end_crystal:5, slime:8, slime_small:3, magma_cube:16, magma_cube_small:6, villager:10, squid:6, shulker:15, phantom:7, drowned:10 }; // muss zum Server passen (squid/shulker/drowned nur lokal)
 function makeMobModel(kind){
   const g=new THREE.Group(); const legs=[], arms=[];
   if(kind==='zombie' || kind==='skeleton' || kind==='drowned'){
@@ -4215,12 +4231,16 @@ function makeMobModel(kind){
     const lL=legPivot(0.16,0.6,0.16, 0x3a2a18, -0.12,0.6,0);
     const lR=legPivot(0.16,0.6,0.16, 0x3a2a18,  0.12,0.6,0);
     g.add(lL); g.add(lR); legs.push(lL,lR);
-  } else if(kind==='slime' || kind==='slime_small'){
-    const sz = kind==='slime' ? 0.9 : 0.5;
-    const body=boxMesh(sz,sz,sz, 0x6acf6a, 0, sz*0.5, 0);
-    if(body.material){ body.material.transparent=true; body.material.opacity=0.78; }
+  } else if(kind==='slime' || kind==='slime_small' || kind==='magma_cube' || kind==='magma_cube_small'){
+    const magma = kind==='magma_cube' || kind==='magma_cube_small';
+    const big   = kind==='slime' || kind==='magma_cube';
+    const sz = big ? 0.9 : 0.5;
+    const outer = magma ? 0x3a0e08 : 0x6acf6a;            // Magma: dunkle Obsidian-Kruste
+    const core  = magma ? 0xff7a1e : 0x4eaa4e;            // Magma: gluehender Kern
+    const body=boxMesh(sz,sz,sz, outer, 0, sz*0.5, 0);
+    if(body.material){ body.material.transparent=true; body.material.opacity=magma?0.92:0.78; }
     g.add(body);
-    g.add(boxMesh(sz*0.6,sz*0.5,sz*0.6, 0x4eaa4e, 0, sz*0.5, 0)); // dunkler Kern
+    g.add(boxMesh(sz*0.6,sz*0.5,sz*0.6, core, 0, sz*0.5, 0)); // dunkler Kern
     g.add(boxMesh(sz*0.14,sz*0.12,0.02, 0x101510, -sz*0.18, sz*0.62, sz*0.45)); // Augen
     g.add(boxMesh(sz*0.14,sz*0.12,0.02, 0x101510,  sz*0.18, sz*0.62, sz*0.45));
     g.add(boxMesh(sz*0.22,sz*0.06,0.02, 0x101510, 0, sz*0.36, sz*0.45));        // Mund
@@ -4403,6 +4423,8 @@ const MOB_DROP = {
   end_crystal:[],
   slime:       [{id:SLIME_BALL, min:0, max:2}],
   slime_small: [{id:SLIME_BALL, min:0, max:1}],
+  magma_cube:       [{id:MAGMA_CREAM, min:0, max:1}],
+  magma_cube_small: [{id:MAGMA_CREAM, min:0, max:1}],
   villager:    [{id:EMERALD,    min:0, max:1}],
   squid:       [{id:INK_SAC,    min:1, max:3}],
   phantom:     [{id:PHANTOM_MEMBRANE, min:0, max:1}],
@@ -4488,14 +4510,15 @@ function onMobDead(id){
     spawnXPOrbs(m.group.position.x, m.group.position.y+0.6, m.group.position.z, MOB_XP[m.kind]||1);
     gameStats.mobsKilled++; unlockAch('first_kill'); }
   if(m && m.kind==='end_crystal'){ spawnExplosion(m.group.position.x, m.group.position.y, m.group.position.z); }
-  // Slime spaltet sich in 2-3 kleine Slimes
-  if(m && m.kind==='slime' && m.local){
-    const px=m.group.position.x, pz=m.group.position.z;
+  // Slime / Magmawuerfel spaltet sich in 2-3 kleine
+  if(m && (m.kind==='slime' || m.kind==='magma_cube') && m.local){
+    const small = m.kind==='magma_cube' ? 'magma_cube_small' : 'slime_small';
+    const px=m.group.position.x, py=m.group.position.y, pz=m.group.position.z;
     const n=2+((Math.random()*2)|0);
     for(let i=0;i<n;i++){
       const a=Math.random()*6.283, r=0.8;
-      const nid=spawnLocalMob('slime_small', px+Math.cos(a)*r, pz+Math.sin(a)*r);
-      const nm=mobsMap.get(nid); if(nm){ nm.hopT=0.2+Math.random()*0.3; }
+      const nid=spawnLocalMob(small, px+Math.cos(a)*r, pz+Math.sin(a)*r);
+      const nm=mobsMap.get(nid); if(nm){ nm.hopT=0.2+Math.random()*0.3; if(small==='magma_cube_small') nm.group.position.y=py; }   // Nether: Hoehe vom Eltern-Wuerfel uebernehmen
     }
   }
   myHits.delete(id);
@@ -5019,6 +5042,7 @@ function poofColor(kind){
   if(kind==='sheep') return 0xe8e8e0;
   if(kind==='chicken') return 0xf2f2ec;
   if(kind==='slime' || kind==='slime_small') return 0x6acf6a;
+  if(kind==='magma_cube' || kind==='magma_cube_small') return 0xff7a1e;
   if(kind==='villager') return 0x6f4a2e;
   if(kind==='squid') return 0x20203a;
   if(kind==='drowned') return 0x3f8f86;
@@ -5313,7 +5337,7 @@ function addXP(n){
   while(xp>=xpForLevel(xpLevel)){ xp-=xpForLevel(xpLevel); xpLevel++; SFX.levelup(); }
   renderXP();
 }
-const MOB_XP = { cow:1, sheep:1, chicken:1, pig:1, rabbit:1, fox:1, goat:1, llama:1, zombie:5, skeleton:5, creeper:5, spider:5, enderman:10, wolf:0, horse:0, ghast:5, blaze:10, ender_dragon:500, wither:50, end_crystal:0, slime:4, slime_small:1, villager:2, squid:3, shulker:5, phantom:5, drowned:5 };
+const MOB_XP = { cow:1, sheep:1, chicken:1, pig:1, rabbit:1, fox:1, goat:1, llama:1, zombie:5, skeleton:5, creeper:5, spider:5, enderman:10, wolf:0, horse:0, ghast:5, blaze:10, ender_dragon:500, wither:50, end_crystal:0, slime:4, slime_small:1, magma_cube:6, magma_cube_small:2, villager:2, squid:3, shulker:5, phantom:5, drowned:5 };
 const ORE_XP = { [COAL_ORE]:1, [COPPER_ORE]:1, [IRON_ORE]:2, [GOLD_ORE]:3, [DIAMOND_ORE]:5 };
 // Schwebende XP-Kuegelchen, die zum Spieler fliegen und dort gutgeschrieben werden
 const xpOrbs=[];
@@ -5692,18 +5716,57 @@ function updateCart(dt){
   camera.rotation.set(pitch,yaw,0);
 }
 // ---- Nether-Mobs (Ghast/Blaze) lokal spawnen ----
+// Magmawuerfel-KI: huepft in Schueben auf den Spieler zu (wie Slime, aber via fly-Pfad da updateLocalMobs in der Oberwelt steckt).
+// Setzt nur vx/vz/vy + airborne; updateMobs bewegt die Position (m.fly-Zweig). Feuerimmun (kein Mob-Lavaschaden vorhanden).
+function magmaCubeAI(m, dt){
+  const p=m.group.position;
+  const dx=player.x-p.x, dz=player.z-p.z, dist=Math.hypot(dx,dz);
+  const gy=mobFloorY(p.x, p.z, p.y+0.5);
+  if(m.airborne){
+    m.vy=(m.vy||0) - 16*dt;
+    if(p.y<=gy && m.vy<0){ p.y=gy; m.airborne=false; m.vy=0; m.vx=0; m.vz=0; m.hopT=0.6+Math.random()*0.6; }
+  } else {
+    p.y=gy; m.vx=0; m.vz=0;
+    m.hopT=(m.hopT||0)-dt;
+    if(m.hopT<=0){
+      const dir = dist<16 ? Math.atan2(dx,dz) : Math.random()*6.283;
+      const sp  = m.kind==='magma_cube' ? 2.6 : 1.6;
+      m.vx=Math.sin(dir)*sp; m.vz=Math.cos(dir)*sp;
+      m.airborne=true; m.vy = m.kind==='magma_cube' ? 6.0 : 4.6;
+    }
+  }
+  const ph = m.airborne ? Math.max(0, Math.min(1,((m.vy||0)+4)/9)) : 0;
+  m.group.scale.set(1+ph*0.18, 1-ph*0.22, 1+ph*0.18);
+  const nw=performance.now();
+  if(dist<m.hw+0.5 && Math.abs(p.y-player.y)<1.4 && nw-(m.lastAttack||0)>900){ m.lastAttack=nw; damagePlayer(m.kind==='magma_cube'?4:2); }
+}
 let _netherSpawnT=3;
 function updateNetherMobs(dt){
   if(net.connected || dimension!==1) return;
   _netherSpawnT-=dt;
   if(_netherSpawnT<=0){ _netherSpawnT=4+Math.random()*5;
     let count=0; for(const [,m] of mobsMap) if(m.local) count++;
-    if(count<6){ const ang=Math.random()*6.283, r=12+Math.random()*16;
-      const x=player.x+Math.cos(ang)*r, z=player.z+Math.sin(ang)*r, y=player.y+3+Math.random()*7;
-      spawnFlyingMob(Math.random()<0.45?'ghast':'blaze', x, y, z);
+    if(count<6){ const ang=Math.random()*6.283;
+      if(Math.random()<0.35){                                          // Magmawuerfel am Boden
+        const r=10+Math.random()*14;
+        const x=Math.floor(player.x+Math.cos(ang)*r), z=Math.floor(player.z+Math.sin(ang)*r);
+        const fy=mobFloorY(x+0.5, z+0.5, player.y+4);
+        if(world.getBlock(x,fy,z)===AIR && world.getBlock(x,fy+1,z)===AIR){
+          const mid=spawnLocalMob('magma_cube', x+0.5, z+0.5);
+          const mm=mobsMap.get(mid); if(mm) mm.group.position.y=fy;
+        }
+      } else {                                                          // fliegender Ghast/Blaze
+        const r=12+Math.random()*16;
+        const x=player.x+Math.cos(ang)*r, z=player.z+Math.sin(ang)*r, y=player.y+3+Math.random()*7;
+        spawnFlyingMob(Math.random()<0.45?'ghast':'blaze', x, y, z);
+      }
     }
   }
-  for(const [id,m] of mobsMap){ if(m.local && !m.boss && Math.hypot(m.group.position.x-player.x, m.group.position.z-player.z)>64) removeMob(id); }
+  for(const [id,m] of mobsMap){
+    if(!m.local) continue;
+    if(m.kind==='magma_cube' || m.kind==='magma_cube_small') magmaCubeAI(m, dt);
+    if(!m.boss && Math.hypot(m.group.position.x-player.x, m.group.position.z-player.z)>64) removeMob(id);
+  }
 }
 
 // ---- Funktionierende Mob-Spawner (Festung/Dungeon) ----
