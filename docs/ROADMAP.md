@@ -235,6 +235,8 @@
 ---
 
 ## Erledigt (Session 2026-06-26)
+- **Fledermaus (Höhlen-Atmosphäre-Mob)** — passiver Flatterer (`kind:'bat'`, HP 4, `fly:true`), erratische 3D-Flug-KI (`updateBatAI`) um ein Roam-Zentrum, spawnt in dunklen Höhlen (`tryCaveSpawnPoint`, max 4). Keine Drops/XP. Siehe `docs/MOBS.md`.
+- **Schneeball (werfbar)** — neues Item `SNOWBALL` (id 218), Rezept 1 Schnee-Block → 4 Schneebälle. Rechtsklick wirft (`thrownSnowballs`/`updateThrownSnowballs`): Rückstoß + 1 Schaden (3 vs Blaze, MC-konform), weißer Aufprall-Poof. Verbraucht beim Wurf.
 - **Enderperle werfen → Teleport** — Rechtsklick mit `ENDER_PEARL` wirft eine Perle (`thrownPearls`/`updateThrownPearls`); beim Aufprall teleportiert der Spieler zum Landepunkt (sucht 2 Luftblöcke für sichere Standhöhe, sichert Ziel-Chunks via `ensureChunkData`), kostet 1 Perle + 2 Schaden, Ender-Poof an beiden Enden. Verbraucht beim Wurf (MC-konform).
 - **Dreizack Channeling** — geworfener Dreizack ruft beim Einschlag im Gewitter (`weather==='thunder'`) einen Blitz (`doLightning(x,z)`). `doLightning` ist jetzt parametrisierbar (optionale Zielkoordinaten) und trifft Mobs im Umkreis (8 Schaden, AoE) — gilt auch für zufällige Gewitterblitze.
 - **Verifiziert bereits vorhanden:** Lagerfeuer-Garen (`cookOnCampfire`, Rechtsklick auf `CAMPFIRE` mit rohem Essen → gegart), Schnee-Akkumulation (`tickClimate`).

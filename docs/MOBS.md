@@ -65,6 +65,12 @@ class Mob {
 - Spawn: `updateLocalMobs` `_beeSpawnTimer`, tagsüber über Gras (`trySpawnPoint().ground===GRASS`), max 3
 - Reines Atmosphäre-Mob: kein Angriff, kein Stechen (Scope), kein Honig (kein Block dafür)
 
+### Fledermaus (Höhlen-Atmosphäre)  — *neu*
+- `kind:'bat'` (HP 4, hw 0.2, `fly:true`), passiv, keine Drops, XP 0
+- Modell: kleiner brauner Körper + Ohren + dunkle Flügel
+- KI: `updateBatAI()` — flattert erratisch in 3D um ein Roam-Zentrum (`m.cx/cy/cz`, bei Spawn gesetzt), weicht dem Boden aus; kein Spielerbezug
+- Spawn: `_batSpawnTimer` via `tryCaveSpawnPoint()` (dunkler Hohlraum tief unter der Oberfläche), max 4
+
 ## KI State Machine (alle Mobs)
 ```
 IDLE ──(Spieler in Range)──► DETECT
@@ -86,7 +92,7 @@ any ──(HP <= 0)──► DEAD → despawn
 - Unterirdisches Spawnen (Höhlen-aware)
 - Schwein, Kuh, Schaf (passive, farmbare Tiere)
 - Wolf (tameable)
-- Bat (Höhle, passiv)  — *Bee als Atmosphäre-Flieger erledigt ✅*
+- ~~Bat (Höhle, passiv)~~ ✅  (auch Bee als Wiesen-Flieger ✅)
 - Zombie (Basis-Melee, kein Skeleton)
 - Spider (klettert?)
 - Slime (splits on death)

@@ -939,9 +939,11 @@ const PHANTOM_MEMBRANE=213;             // Drop vom Phantom (Nachtflieger)
 const TRIDENT=214;                      // Wurf-/Nahkampfwaffe, seltener Drop vom Drowned
 const MAGMA_CREAM=216;                  // Drop vom Magmawuerfel (Nether), Brau-Zutat (spaeter)
 const SPYGLASS=217;                     // Fernglas: Rechtsklick halten -> Zoom
+const SNOWBALL=218;                      // werfbar: Rueckstoss + leichter Schaden (extra vs Blaze)
 const ITEM = {
   [MAGMA_CREAM]:   { name:'Magmacreme',     color:0xd24a10 },
   [SPYGLASS]:      { name:'Fernglas',       color:0xb07a3a },
+  [SNOWBALL]:      { name:'Schneeball',     color:0xeef3f8 },
   [STRING]:        { name:'Faden',          color:0xe8e8e8 },
   [ENDER_PEARL]:   { name:'Enderperle',     color:0x18a08a },
   [BLAZE_ROD]:     { name:'Lohenrute',      color:0xf0a020 },
@@ -1271,6 +1273,7 @@ const RECIPES = [
   // ---- Bett (Leder statt Wolle, da keine Schafwolle im Spiel) ----
   { shape:["WWW","XXX"],       key:{W:WOOL, X:WOOD},               out:{id:BED,        count:1} },
   { in:{[IRON_INGOT]:2},                                           out:{id:SHEARS,     count:1} },
+  { in:{[SNOW]:1},                                                 out:{id:SNOWBALL,   count:4} },
   // ---- Stationen ----
   { shape:["XXX","X.X","XXX"], key:{X:WOOD},                       out:{id:CHEST,      count:1} },
   { shape:["III",".I.","III"], key:{I:IRON_INGOT},                 out:{id:ANVIL,      count:1} },
@@ -3342,6 +3345,7 @@ function doPlace(){
   triggerSwing();
   { const st=inv[selectedSlot]; if(st && st.id===TRIDENT){ throwTrident(); return; } }   // Dreizack werfen (auch ohne Block-Ziel)
   { const st=inv[selectedSlot]; if(st && st.id===ENDER_PEARL){ throwPearl(); return; } }   // Enderperle werfen -> Teleport
+  { const st=inv[selectedSlot]; if(st && st.id===SNOWBALL){ throwSnowball(); return; } }   // Schneeball werfen
   const h=raycast(); if(!h) return;
   const tb=world.getBlock(h.x,h.y,h.z);
   if(tb===FURNACE){ openFurnace(h.x+'_'+h.y+'_'+h.z); return; }
@@ -4111,11 +4115,12 @@ const MOB_DEF = {
   villager:    { hostile:false, hw:0.4,  hh:1.0 },
   squid:       { hostile:false, hw:0.45, hh:0.55, fly:true },   // aquatisch: fly=true gibt uns manuelle Hoehensteuerung
   bee:         { hostile:false, hw:0.25, hh:0.3,  fly:true },   // Atmosphaere: schwebt tagsueber ueber Wiesen; fly=true -> eigene Hoehensteuerung (updateBeeAI)
+  bat:         { hostile:false, hw:0.2,  hh:0.25, fly:true },   // Hoehlen-Atmosphaere: flattert erratisch um sein Roam-Zentrum (updateBatAI)
   shulker:     { hostile:true,  hw:0.45, hh:0.5,  fly:true },    // ortsfest an der End-Stadt, schiesst Projektile
   phantom:     { hostile:true,  hw:0.5,  hh:0.3,  fly:true },    // Nachtflieger, taucht im Sturzflug auf den Spieler
   drowned:     { hostile:true,  hw:0.35, hh:0.95, fly:true },    // Unterwasser-Zombie: fly=true -> manuelle Hoehensteuerung im Wasser
 };
-const MOB_HP_MAX = { cow:8, sheep:6, chicken:4, pig:8, rabbit:4, fox:6, goat:8, llama:10, zombie:10, skeleton:8, creeper:10, spider:9, enderman:20, wolf:8, horse:15, ghast:10, blaze:12, ender_dragon:120, wither:80, end_crystal:5, slime:8, slime_small:3, magma_cube:16, magma_cube_small:6, villager:10, squid:6, bee:4, shulker:15, phantom:7, drowned:10 }; // muss zum Server passen (squid/shulker/drowned nur lokal)
+const MOB_HP_MAX = { cow:8, sheep:6, chicken:4, pig:8, rabbit:4, fox:6, goat:8, llama:10, zombie:10, skeleton:8, creeper:10, spider:9, enderman:20, wolf:8, horse:15, ghast:10, blaze:12, ender_dragon:120, wither:80, end_crystal:5, slime:8, slime_small:3, magma_cube:16, magma_cube_small:6, villager:10, squid:6, bee:4, bat:4, shulker:15, phantom:7, drowned:10 }; // muss zum Server passen (squid/shulker/drowned nur lokal)
 function makeMobModel(kind){
   const g=new THREE.Group(); const legs=[], arms=[];
   if(kind==='zombie' || kind==='skeleton' || kind==='drowned'){
@@ -4259,6 +4264,13 @@ function makeMobModel(kind){
     if(wl.material){ wl.material.transparent=true; wl.material.opacity=0.7; }
     if(wr.material){ wr.material.transparent=true; wr.material.opacity=0.7; }
     g.add(wl); g.add(wr);
+  } else if(kind==='bat'){
+    g.add(boxMesh(0.18,0.22,0.14, 0x3a2e22, 0,0.5,0));          // Koerper
+    g.add(boxMesh(0.14,0.14,0.1, 0x4a3a2a, 0,0.6,0.04));        // Kopf
+    g.add(boxMesh(0.04,0.1,0.02, 0x2a2018, -0.06,0.71,0.02));   // Ohren
+    g.add(boxMesh(0.04,0.1,0.02, 0x2a2018,  0.06,0.71,0.02));
+    g.add(boxMesh(0.26,0.16,0.02, 0x2a2018, -0.2,0.5,0));       // Fluegel
+    g.add(boxMesh(0.26,0.16,0.02, 0x2a2018,  0.2,0.5,0));
   } else if(kind==='chicken'){
     g.add(boxMesh(0.34,0.36,0.46, 0xf2f2ec, 0,0.5,0));        // Koerper
     g.add(boxMesh(0.26,0.28,0.26, 0xf6f6f0, 0,0.82,0.16));    // Kopf
@@ -4442,6 +4454,7 @@ const MOB_DROP = {
   villager:    [{id:EMERALD,    min:0, max:1}],
   squid:       [{id:INK_SAC,    min:1, max:3}],
   bee:         [],
+  bat:         [],
   phantom:     [{id:PHANTOM_MEMBRANE, min:0, max:1}],
   drowned:     [{id:ROTTEN_FLESH, min:1, max:2}, {id:COPPER_INGOT, min:0, max:1}],   // Dreizack separat (nur Dreizack-Drowned, in onMobDead)
   shulker:     [{id:SHULKER_SHELL, min:1, max:2}],
@@ -4662,7 +4675,7 @@ function survivalUpdate(dt, now){
 //  LOKALES MOB-SPAWNING + KI  (Solo-Modus: ohne Server gibt es sonst keine Mobs)
 //  Im Multiplayer uebernimmt der Server; diese Funktion haelt sich dann zurueck.
 // =====================================================================
-let localMobSeq = 1, _mobSpawnTimer = 1.5, _slimeSpawnTimer = 6, _squidSpawnTimer = 4, _caveSpawnTimer = 3, _drownedSpawnTimer = 8, _beeSpawnTimer = 5;
+let localMobSeq = 1, _mobSpawnTimer = 1.5, _slimeSpawnTimer = 6, _squidSpawnTimer = 4, _caveSpawnTimer = 3, _drownedSpawnTimer = 8, _beeSpawnTimer = 5, _batSpawnTimer = 7;
 let sleeplessDays = 0, _wasNight = false;   // Phantom-Motivation: Tage ohne Schlaf zaehlen
 const LOCAL_PASSIVE = ['cow','sheep','chicken','pig','rabbit','fox','goat','llama','horse','wolf','villager'];
 const LOCAL_HOSTILE = ['zombie','skeleton','creeper','spider'];
@@ -4753,6 +4766,17 @@ function updateDrownedAI(m, p, dt){
     m.dir += 2.3; m.vx = Math.sin(m.dir)*0.8; m.vz = Math.cos(m.dir)*0.8;
   }
 }
+// Fledermaus-KI: flattert erratisch um ein Roam-Zentrum (3D), weicht dem Boden aus
+function updateBatAI(m, p, dt){
+  m.batT=(m.batT||0)-dt;
+  if(m.batT<=0){ m.batT=0.4+Math.random()*0.9; m.bvx=(Math.random()-0.5)*3; m.bvy=(Math.random()-0.5)*2.4; m.bvz=(Math.random()-0.5)*3; }
+  m.vx=(m.vx||0)*0.9 + (m.bvx||0)*0.1;                          // sanft zur Ziel-Geschwindigkeit
+  m.vy=(m.vy||0)*0.9 + (m.bvy||0)*0.1;
+  m.vz=(m.vz||0)*0.9 + (m.bvz||0)*0.1;
+  if(m.cx!==undefined){ m.vx+=(m.cx-p.x)*0.15; m.vy+=(m.cy-p.y)*0.15; m.vz+=(m.cz-p.z)*0.15; }   // an Roam-Zentrum binden
+  if(isSolid(world.getBlock(Math.floor(p.x),Math.floor(p.y-0.3),Math.floor(p.z))) && m.vy<0) m.vy=0.6;   // nicht in den Boden
+  m.phase=(m.phase||0)+dt*24;                                   // Fluegelschlag
+}
 // Bienen-KI: schwebt gemaechlich in Schueben ueber dem Boden (proportionale Hoehensteuerung + leichtes Wippen)
 function updateBeeAI(m, p, dt){
   m.beeT=(m.beeT||0)-dt;
@@ -4825,6 +4849,13 @@ function updateLocalMobs(dt, now){
       if(sp && sp.ground===GRASS){ const id=spawnLocalMob('bee', sp.x, sp.z); const be=mobsMap.get(id); if(be){ be.group.position.y=mobGroundY(sp.x,sp.z)+2; be.tx=sp.x; be.tz=sp.z; be.beeT=Math.random()*1.5; } }
     }
   }
+  // Fledermaeuse in dunklen Hoehlen (Atmosphaere)
+  _batSpawnTimer-=dt;
+  if(_batSpawnTimer<=0){
+    _batSpawnTimer = 7 + Math.random()*8;
+    let bats=0; for(const [,mm] of mobsMap) if(mm.kind==='bat') bats++;
+    if(bats<4){ const sp=tryCaveSpawnPoint(); if(sp){ const id=spawnLocalMob('bat', sp.x, sp.z); const ba=mobsMap.get(id); if(ba){ ba.group.position.y=sp.y+0.5; ba.cx=sp.x; ba.cy=sp.y+0.8; ba.cz=sp.z; ba.tx=sp.x; ba.tz=sp.z; } } }
+  }
   // Drowned (Unterwasser-Zombie) im tiefen Wasser, nachts haeufiger; ~15% tragen einen Dreizack
   _drownedSpawnTimer-=dt;
   if(_drownedSpawnTimer<=0){
@@ -4847,6 +4878,7 @@ function updateLocalMobs(dt, now){
     if(m.kind==='squid'){ updateSquidAI(m, p, dt); continue; }
     if(m.kind==='drowned'){ updateDrownedAI(m, p, dt); continue; }
     if(m.kind==='bee'){ updateBeeAI(m, p, dt); continue; }
+    if(m.kind==='bat'){ updateBatAI(m, p, dt); continue; }
     if(m.hostile){
       // Untote (Zombie/Skelett) verbrennen tagsueber im offenen Sonnenlicht
       if((m.kind==='zombie'||m.kind==='skeleton') && !night){
@@ -5110,6 +5142,37 @@ function updateThrownPearls(dt){
     }
   }
 }
+// ---- Schneeball: werfen -> Rueckstoss + leichter Schaden (3 vs Blaze) ----
+const thrownSnowballs=[]; // {mesh, vx,vy,vz, life}
+function throwSnowball(){
+  const now=performance.now(); if(now-lastShot<300) return; lastShot=now;
+  const sel=inv[selectedSlot]; if(!sel || sel.id!==SNOWBALL) return;
+  const dir=new THREE.Vector3(); camera.getWorldDirection(dir);
+  const mesh=new THREE.Mesh(new THREE.SphereGeometry(0.1,6,6), new THREE.MeshBasicMaterial({color:0xffffff}));
+  const o=camera.position; mesh.position.set(o.x+dir.x*0.6, o.y+dir.y*0.6, o.z+dir.z*0.6); scene.add(mesh);
+  const sp=22; thrownSnowballs.push({ mesh, vx:dir.x*sp, vy:dir.y*sp, vz:dir.z*sp, life:2.5 });
+  consumeSelected(1); SFX.ui();
+}
+function updateThrownSnowballs(dt){
+  for(let i=thrownSnowballs.length-1;i>=0;i--){
+    const t=thrownSnowballs[i], p=t.mesh.position;
+    t.vy -= 14*dt; p.x+=t.vx*dt; p.y+=t.vy*dt; p.z+=t.vz*dt; t.life-=dt;
+    let done=false;
+    for(const [mid,m] of mobsMap){ const mp=m.group.position;
+      if(Math.abs(p.x-mp.x)<m.hw+0.3 && Math.abs(p.z-mp.z)<m.hw+0.3 && p.y>mp.y-0.2 && p.y<mp.y+m.hh*2+0.2){
+        const dmg = m.kind==='blaze'?3:1;
+        if(m.local){ m.hp=Math.max(0,(m.hp||0)-dmg); m.flash=0.25; m.hpShow=Math.max(m.hpShow||0,1.5); m.provoked=true; onMobHp(mid,m.hp);
+          const a=Math.atan2(mp.x-p.x, mp.z-p.z); m.vx=Math.sin(a)*4; m.vz=Math.cos(a)*4;          // Rueckstoss
+          if(m.hp<=0) onMobDead(mid); }
+        else net.send({t:'mobhit', mobId:mid, dmg});
+        spawnDamagePop(mp.x,mp.y+m.hh*2,mp.z,dmg);
+        done=true; break;
+      }
+    }
+    if(!done && isSolid(world.getBlock(Math.floor(p.x),Math.floor(p.y),Math.floor(p.z)))) done=true;
+    if(done || t.life<=0 || p.y<Y_MIN+2){ spawnPoof(p.x,p.y,p.z,'sheep'); scene.remove(t.mesh); t.mesh.geometry.dispose(); t.mesh.material.dispose(); thrownSnowballs.splice(i,1); }
+  }
+}
 const particles=[]; // {mesh, vx,vy,vz, life, max}
 const _poofGeo = new THREE.BoxGeometry(0.18,0.18,0.18);
 function poofColor(kind){
@@ -5122,6 +5185,7 @@ function poofColor(kind){
   if(kind==='slime' || kind==='slime_small') return 0x6acf6a;
   if(kind==='magma_cube' || kind==='magma_cube_small') return 0xff7a1e;
   if(kind==='bee') return 0xf2c14e;
+  if(kind==='bat') return 0x4a3a2a;
   if(kind==='enderman') return 0x9b59b6;
   if(kind==='villager') return 0x6f4a2e;
   if(kind==='squid') return 0x20203a;
@@ -5417,7 +5481,7 @@ function addXP(n){
   while(xp>=xpForLevel(xpLevel)){ xp-=xpForLevel(xpLevel); xpLevel++; SFX.levelup(); }
   renderXP();
 }
-const MOB_XP = { cow:1, sheep:1, chicken:1, pig:1, rabbit:1, fox:1, goat:1, llama:1, zombie:5, skeleton:5, creeper:5, spider:5, enderman:10, wolf:0, horse:0, ghast:5, blaze:10, ender_dragon:500, wither:50, end_crystal:0, slime:4, slime_small:1, magma_cube:6, magma_cube_small:2, villager:2, squid:3, bee:1, shulker:5, phantom:5, drowned:5 };
+const MOB_XP = { cow:1, sheep:1, chicken:1, pig:1, rabbit:1, fox:1, goat:1, llama:1, zombie:5, skeleton:5, creeper:5, spider:5, enderman:10, wolf:0, horse:0, ghast:5, blaze:10, ender_dragon:500, wither:50, end_crystal:0, slime:4, slime_small:1, magma_cube:6, magma_cube_small:2, villager:2, squid:3, bee:1, bat:0, shulker:5, phantom:5, drowned:5 };
 const ORE_XP = { [COAL_ORE]:1, [COPPER_ORE]:1, [IRON_ORE]:2, [GOLD_ORE]:3, [DIAMOND_ORE]:5 };
 // Schwebende XP-Kuegelchen, die zum Spieler fliegen und dort gutgeschrieben werden
 const xpOrbs=[];
@@ -6123,6 +6187,7 @@ function frame(now){
   updateArrows(dt);
   updateThrownTridents(dt);
   updateThrownPearls(dt);
+  updateThrownSnowballs(dt);
   updateParticles(dt);
   updateGroundItems(dt);
   updateDamagePops(dt);
