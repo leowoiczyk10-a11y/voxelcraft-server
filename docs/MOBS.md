@@ -58,6 +58,13 @@ class Mob {
 - Spawn: `updateNetherMobs()` ~35 % Bodenspawn (sonst Ghast/Blaze), Limit 6 lokale Mobs
 - Drops: **Magmacreme** (`MAGMA_CREAM`, id 216, Brau-Zutat für später), XP 6 (groß) / 2 (klein)
 
+### Biene (Atmosphäre)  — *neu*
+- `kind:'bee'` (HP 4, hw 0.25, `fly:true`), passiv, keine Drops, XP 1
+- Modell: kleiner gelb-schwarz gestreifter Körper + durchscheinende Flügel (`makeMobModel`)
+- KI: `updateBeeAI()` — schwebt gemächlich in Schüben über dem Boden (proportionale Höhensteuerung auf `mobGroundY+2.5` + leichtes Wippen via `m.phase`)
+- Spawn: `updateLocalMobs` `_beeSpawnTimer`, tagsüber über Gras (`trySpawnPoint().ground===GRASS`), max 3
+- Reines Atmosphäre-Mob: kein Angriff, kein Stechen (Scope), kein Honig (kein Block dafür)
+
 ## KI State Machine (alle Mobs)
 ```
 IDLE ──(Spieler in Range)──► DETECT
@@ -79,7 +86,7 @@ any ──(HP <= 0)──► DEAD → despawn
 - Unterirdisches Spawnen (Höhlen-aware)
 - Schwein, Kuh, Schaf (passive, farmbare Tiere)
 - Wolf (tameable)
-- Bat (Höhle, passiv)
+- Bat (Höhle, passiv)  — *Bee als Atmosphäre-Flieger erledigt ✅*
 - Zombie (Basis-Melee, kein Skeleton)
 - Spider (klettert?)
 - Slime (splits on death)

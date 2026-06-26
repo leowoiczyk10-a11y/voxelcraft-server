@@ -235,6 +235,9 @@
 ---
 
 ## Erledigt (Session 2026-06-26)
+- **Biene (Atmosphäre-Mob)** — passiver Flieger (`kind:'bee'`, HP 4, `fly:true`), schwebt tagsüber über Wiesen (`updateBeeAI` proportionale Höhe + Wippen), gelb-schwarzes Modell mit durchscheinenden Flügeln. Spawn via `_beeSpawnTimer` (max 3, Gras, Tag). Keine Drops/kein Stechen (Scope). Siehe `docs/MOBS.md`.
+- **Dreizack-Treuepflicht (Loyalty)** — geworfener Dreizack kehrt nach Einschlag (Mob/Block/Ablauf) zum Spieler zurück und landet im Inventar (`thrownTrident.returning`), statt als Bodenitem liegenzubleiben. Als Basis-Verhalten umgesetzt (kein Enchant-Wiring nötig); MC-Anpassung, da Dreizack hier ein seltenes Einzelstück (Drowned-Drop) ist.
+- **Schnee-Akkumulation (Roadmap P2): verifiziert bereits vorhanden** — `tickClimate()` legt bei Regen/Gewitter in kalten Biomen `SNOW_LAYER` auf Oberflächen + friert Wasser zu `ICE`. Kein Code nötig.
 - **Magmawürfel (Nether-Mob)** — slime-artiger Springer in zwei Größen (`magma_cube` HP 16 / `magma_cube_small` HP 6), `fly:true` + eigene `magmaCubeAI()` (nötig, weil `updateLocalMobs` nur Dim 0 läuft und `updateMobs` im Nether alles außer `local && fly` cullt). Dunkle Kruste + glühender Kern, hüpft auf den Spieler zu (Kontakt 4/2), feuerimmun (kein Mob-Lava-Pfad), splittet beim Tod in 2–3 kleine. Spawnt am Boden via `updateNetherMobs` (~35 %, sonst Ghast/Blaze). Neuer Drop **Magmacreme** (`MAGMA_CREAM`, id 216). Siehe `docs/MOBS.md`.
 - **Fernglas / Spyglass** — neues Item (`SPYGLASS`, id 217), Rezept Glas + 2 Kupfer (vertikal). Rechtsklick **halten** zoomt (FOV → 22°, sanfter Lerp), feineres Zielen (Sensitivität ∝ FOV) + runde Vignette (`#spyglassOverlay`). Loslassen/Inventar/Tod = Zoom aus. Desktop (Maus); kein Item-Verbrauch.
 - **Hinweis Frustum-Culling (Roadmap P2):** *nicht* umgesetzt — Three.js cullt Chunk-Section-Meshes bereits automatisch per `geometry.boundingSphere` (`makeMesh` ruft `computeBoundingSphere`) + Default `frustumCulled=true`. Manuelles Culling wäre redundanter Dead-Code. Roadmap-Item entsprechend obsolet.
@@ -284,14 +287,14 @@
 ### Mobs die fehlen:
 - Pillager, Ravager (P3)
 - ~~Magma Cube (Nether)~~ ✅, Zombified Piglin (P3)
-- Bee (Atmosphäre)
+- ~~Bee (Atmosphäre)~~ ✅
 - Warden / Deep Dark (P3)
 - ~~Drowned~~ ✅, ~~Phantom~~ ✅, ~~Zombie/Spider/Slime~~ ✅ (erledigt)
 
 ### Mechaniken die fehlen:
 - Elytra fliegen (Item vorhanden, Mechanik fehlt)
 - ~~Trident~~ ✅ (id 214: Nahkampf dmg 9 + Wurf; Drowned-Drop)
-- Trident-Enchants (Loyalty=Rückkehr, Channeling=Blitz) fehlen noch
+- Trident: **Loyalty (Rückkehr) jetzt als Basis-Verhalten** ✅ (geworfener Dreizack kehrt zum Spieler zurück statt liegenzubleiben); Channeling=Blitz fehlt noch
 - Shield-Blocker Animation (Shield-Item vorhanden, nur Damage-Reduction)
 - Schneefall + Schnee-Akkumulation (Snow Layer Block vorhanden)
 - Tropfstein / Stalagmiten (Schaden)
