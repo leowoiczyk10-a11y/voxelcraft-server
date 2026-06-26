@@ -3341,6 +3341,7 @@ function doPlace(){
   if(!isActive()||dead||invOpen) return;
   triggerSwing();
   { const st=inv[selectedSlot]; if(st && st.id===TRIDENT){ throwTrident(); return; } }   // Dreizack werfen (auch ohne Block-Ziel)
+  { const st=inv[selectedSlot]; if(st && st.id===ENDER_PEARL){ throwPearl(); return; } }   // Enderperle werfen -> Teleport
   const h=raycast(); if(!h) return;
   const tb=world.getBlock(h.x,h.y,h.z);
   if(tb===FURNACE){ openFurnace(h.x+'_'+h.y+'_'+h.z); return; }
@@ -5072,7 +5073,40 @@ function updateThrownTridents(dt){
     }
     if(!landed && isSolid(world.getBlock(Math.floor(p.x),Math.floor(p.y),Math.floor(p.z)))) landed=true;
     if(landed || t.life<=0 || p.y<Y_MIN+2){
+      if(landed && weather==='thunder') doLightning(p.x, p.z);   // Channeling: Blitz beim Einschlag im Gewitter
       t.returning=true; t.vx=t.vy=t.vz=0;   // Treuepflicht: statt liegenzulassen kehrt der Dreizack zurueck
+    }
+  }
+}
+// ---- Enderperle: werfen -> zum Landepunkt teleportieren ----
+const thrownPearls=[]; // {mesh, vx,vy,vz, life}
+function throwPearl(){
+  const now=performance.now(); if(now-lastShot<450) return; lastShot=now;
+  const sel=inv[selectedSlot]; if(!sel || sel.id!==ENDER_PEARL) return;
+  const dir=new THREE.Vector3(); camera.getWorldDirection(dir);
+  const mesh=new THREE.Mesh(new THREE.SphereGeometry(0.13,8,8), new THREE.MeshBasicMaterial({color:0x18a08a}));
+  const o=camera.position; mesh.position.set(o.x+dir.x*0.6, o.y+dir.y*0.6, o.z+dir.z*0.6); scene.add(mesh);
+  const sp=18; thrownPearls.push({ mesh, vx:dir.x*sp, vy:dir.y*sp, vz:dir.z*sp, life:4 });
+  consumeSelected(1); SFX.ui();
+}
+function updateThrownPearls(dt){
+  for(let i=thrownPearls.length-1;i>=0;i--){
+    const t=thrownPearls[i], p=t.mesh.position;
+    t.vy -= 12*dt;
+    p.x+=t.vx*dt; p.y+=t.vy*dt; p.z+=t.vz*dt;
+    t.life-=dt;
+    const hit = isSolid(world.getBlock(Math.floor(p.x),Math.floor(p.y),Math.floor(p.z)));
+    if(hit || t.life<=0 || p.y<Y_MIN+2){
+      let bx=Math.floor(p.x), bz=Math.floor(p.z), by=Math.max(Y_MIN+1, Math.floor(p.y));
+      while(by<Y_MAX-2 && (isSolid(world.getBlock(bx,by,bz))||isSolid(world.getBlock(bx,by+1,bz)))) by++;   // sichere Standhoehe (2 Luftbloecke)
+      spawnPoof(player.x, player.y+0.9, player.z, 'enderman');                                            // Verschwinde-Wolke
+      player.x=bx+0.5; player.z=bz+0.5; player.y=by; player.vx=player.vy=player.vz=0;
+      const scx=Math.floor(player.x/CHUNK_SIZE), scz=Math.floor(player.z/CHUNK_SIZE);                     // Ziel-Chunks sichern
+      for(let dz=-1;dz<=1;dz++) for(let dx=-1;dx<=1;dx++) world.ensureChunkData(scx+dx,scz+dz);
+      camera.position.set(player.x, player.y+EYE_HEIGHT, player.z);
+      spawnPoof(player.x, player.y+0.9, player.z, 'enderman');
+      damagePlayer(2);                                                                                    // leichter Teleportschaden (MC: 5)
+      scene.remove(t.mesh); t.mesh.geometry.dispose(); t.mesh.material.dispose(); thrownPearls.splice(i,1);
     }
   }
 }
@@ -5088,6 +5122,7 @@ function poofColor(kind){
   if(kind==='slime' || kind==='slime_small') return 0x6acf6a;
   if(kind==='magma_cube' || kind==='magma_cube_small') return 0xff7a1e;
   if(kind==='bee') return 0xf2c14e;
+  if(kind==='enderman') return 0x9b59b6;
   if(kind==='villager') return 0x6f4a2e;
   if(kind==='squid') return 0x20203a;
   if(kind==='drowned') return 0x3f8f86;
@@ -6087,6 +6122,7 @@ function frame(now){
   updateMobs(dt);
   updateArrows(dt);
   updateThrownTridents(dt);
+  updateThrownPearls(dt);
   updateParticles(dt);
   updateGroundItems(dt);
   updateDamagePops(dt);
@@ -6337,8 +6373,9 @@ function updateWeather(dt){
   for(let i=rainParts.length-1;i>=0;i--){ const p=rainParts[i]; p.mesh.position.y+=p.vy*dt; if(p.snow){ p.mesh.position.x+=Math.sin(performance.now()*0.002+i)*dt*0.4; } if(p.mesh.position.y<player.y-2){ scene.remove(p.mesh); p.mesh.material.dispose(); rainParts.splice(i,1); } }
   if(weather==='clear'){ for(const p of rainParts){ scene.remove(p.mesh); p.mesh.material.dispose(); } rainParts.length=0; }
 }
-function doLightning(){
-  const x=Math.floor(player.x+(Math.random()-0.5)*30), z=Math.floor(player.z+(Math.random()-0.5)*30);
+function doLightning(tx, tz){
+  const x = tx!==undefined ? Math.floor(tx) : Math.floor(player.x+(Math.random()-0.5)*30);
+  const z = tz!==undefined ? Math.floor(tz) : Math.floor(player.z+(Math.random()-0.5)*30);
   const y=terrainHeight(x,z);
   // Blitzsaeule
   const mat=new THREE.MeshBasicMaterial({color:0xfafaff, transparent:true, opacity:0.95});
@@ -6347,6 +6384,11 @@ function doLightning(){
   SFX.explode({x:x+0.5,y:y+0.5,z:z+0.5});
   // Baum/brennbares anzuenden
   const tb=world.getBlock(x,y,z); if(FLAMMABLE.has(tb) && world.getBlock(x,y+1,z)===AIR){ world.setBlock(x,y+1,z,FIRE); fires.set(x+'_'+(y+1)+'_'+z,0); }
+  // Mobs im Umkreis treffen (Blitzschlag; auch Quelle des Dreizack-Channeling)
+  for(const [mid,m] of mobsMap){ const mp=m.group.position; if(Math.hypot(mp.x-(x+0.5), mp.z-(z+0.5))<2.6 && mp.y>y-4 && mp.y<y+8){
+    if(m.local){ m.hp=Math.max(0,(m.hp||0)-8); m.flash=0.3; m.hpShow=Math.max(m.hpShow||0,1.5); onMobHp(mid,m.hp); spawnDamagePop(mp.x,mp.y+m.hh*2,mp.z,8); if(m.hp<=0) onMobDead(mid); }
+    else net.send({t:'mobhit', mobId:mid, dmg:8});
+  } }
 }
 
 // ---- Beacon (vereinfacht: 3x3 Mineral-Basis darunter -> Buff im Umkreis) ----

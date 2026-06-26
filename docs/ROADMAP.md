@@ -235,6 +235,9 @@
 ---
 
 ## Erledigt (Session 2026-06-26)
+- **Enderperle werfen → Teleport** — Rechtsklick mit `ENDER_PEARL` wirft eine Perle (`thrownPearls`/`updateThrownPearls`); beim Aufprall teleportiert der Spieler zum Landepunkt (sucht 2 Luftblöcke für sichere Standhöhe, sichert Ziel-Chunks via `ensureChunkData`), kostet 1 Perle + 2 Schaden, Ender-Poof an beiden Enden. Verbraucht beim Wurf (MC-konform).
+- **Dreizack Channeling** — geworfener Dreizack ruft beim Einschlag im Gewitter (`weather==='thunder'`) einen Blitz (`doLightning(x,z)`). `doLightning` ist jetzt parametrisierbar (optionale Zielkoordinaten) und trifft Mobs im Umkreis (8 Schaden, AoE) — gilt auch für zufällige Gewitterblitze.
+- **Verifiziert bereits vorhanden:** Lagerfeuer-Garen (`cookOnCampfire`, Rechtsklick auf `CAMPFIRE` mit rohem Essen → gegart), Schnee-Akkumulation (`tickClimate`).
 - **Biene (Atmosphäre-Mob)** — passiver Flieger (`kind:'bee'`, HP 4, `fly:true`), schwebt tagsüber über Wiesen (`updateBeeAI` proportionale Höhe + Wippen), gelb-schwarzes Modell mit durchscheinenden Flügeln. Spawn via `_beeSpawnTimer` (max 3, Gras, Tag). Keine Drops/kein Stechen (Scope). Siehe `docs/MOBS.md`.
 - **Dreizack-Treuepflicht (Loyalty)** — geworfener Dreizack kehrt nach Einschlag (Mob/Block/Ablauf) zum Spieler zurück und landet im Inventar (`thrownTrident.returning`), statt als Bodenitem liegenzubleiben. Als Basis-Verhalten umgesetzt (kein Enchant-Wiring nötig); MC-Anpassung, da Dreizack hier ein seltenes Einzelstück (Drowned-Drop) ist.
 - **Schnee-Akkumulation (Roadmap P2): verifiziert bereits vorhanden** — `tickClimate()` legt bei Regen/Gewitter in kalten Biomen `SNOW_LAYER` auf Oberflächen + friert Wasser zu `ICE`. Kein Code nötig.
@@ -294,7 +297,7 @@
 ### Mechaniken die fehlen:
 - Elytra fliegen (Item vorhanden, Mechanik fehlt)
 - ~~Trident~~ ✅ (id 214: Nahkampf dmg 9 + Wurf; Drowned-Drop)
-- Trident: **Loyalty (Rückkehr) jetzt als Basis-Verhalten** ✅ (geworfener Dreizack kehrt zum Spieler zurück statt liegenzubleiben); Channeling=Blitz fehlt noch
+- Trident: **Loyalty (Rückkehr)** ✅ + **Channeling (Blitz bei Einschlag im Gewitter)** ✅ — beide umgesetzt
 - Shield-Blocker Animation (Shield-Item vorhanden, nur Damage-Reduction)
 - Schneefall + Schnee-Akkumulation (Snow Layer Block vorhanden)
 - Tropfstein / Stalagmiten (Schaden)
